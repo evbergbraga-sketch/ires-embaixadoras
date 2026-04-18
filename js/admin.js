@@ -327,12 +327,35 @@ function abrirFormProduto(id) {
         </div>
       </div>
       <div class="form-group">
-        <label>URL da imagem (opcional)</label>
-        <input type="url" id="prod-img" value="${p.images?.[0] || ''}" placeholder="https://..."/>
+        <label>Imagem do produto</label>
+        <div id="upload-area"
+          onclick="document.getElementById('prod-img-file').click()"
+          ondragover="event.preventDefault();this.style.borderColor='var(--pink)'"
+          ondragleave="this.style.borderColor='var(--border)'"
+          ondrop="handleImageDrop(event)"
+          style="border:0.5px dashed var(--border);border-radius:var(--radius-md);padding:24px 16px;text-align:center;cursor:pointer;transition:border-color 0.2s;background:var(--black)">
+          <div id="upload-preview">
+            ${p.images?.[0]
+              ? `<img src="${p.images[0]}" id="preview-img" style="max-height:100px;border-radius:var(--radius-md);margin-bottom:8px;display:block;margin-left:auto;margin-right:auto"/>`
+              : `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--gray)" stroke-width="1.5" style="margin-bottom:8px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`
+            }
+            <div style="font-size:12px;color:var(--gray)" id="upload-label">
+              ${p.images?.[0] ? 'Clique para trocar a imagem' : 'Clique ou arraste uma imagem'}
+            </div>
+          </div>
+          <div id="upload-progress" style="display:none;margin-top:10px">
+            <div style="height:3px;background:var(--border);border-radius:2px;overflow:hidden">
+              <div id="upload-bar" style="height:100%;width:0%;background:var(--pink);transition:width 0.3s"></div>
+            </div>
+            <span style="font-size:11px;color:var(--gray);margin-top:4px;display:block">Enviando imagem...</span>
+          </div>
+        </div>
+        <input type="file" id="prod-img-file" accept="image/*" style="display:none" onchange="uploadImagem(this.files[0])"/>
+        <input type="hidden" id="prod-img-url" value="${p.images?.[0] || ''}"/>
       </div>
       <div style="display:flex;gap:10px;margin-top:4px">
         <button class="btn btn-outline" style="flex:1" onclick="fecharModal()">Cancelar</button>
-        <button class="btn btn-primary" style="flex:1" onclick="salvarProduto(${id ? `'${id}'` : 'null'})">Salvar produto</button>
+        <button class="btn btn-primary" style="flex:1" id="btn-salvar-prod" onclick="salvarProduto(${id ? `'${id}'` : 'null'})">Salvar produto</button>
       </div>
     `);
   };
@@ -347,7 +370,7 @@ async function salvarProduto(id) {
   const min    = parseInt(document.getElementById('prod-min').value);
   const estoque= document.getElementById('prod-estoque').value;
   const catId  = document.getElementById('prod-cat').value;
-  const imgUrl = document.getElementById('prod-img').value.trim();
+  const imgUrl = document.getElementById('prod-img-url').value.trim();
 
   if (!nome)        { showToast('Informe o nome do produto.', 'error'); return; }
   if (isNaN(preco)) { showToast('Informe o preço.', 'error'); return; }
@@ -574,3 +597,81 @@ function fecharModal() {
 document.getElementById('modal').addEventListener('click', function(e) {
   if (e.target === this) fecharModal();
 });
+
+// ════════════════════════════════════════════
+// UPLOAD DE IMAGEM — Supabase Storage
+// ════════════════════════════════════════════
+async function uploadImagem(file) {
+  if (!file) return;
+
+  // validações
+  if (!file.type.startsWith('image/')) {
+    showToast('Selecione apenas imagens.', 'error'); return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('Imagem deve ter no máximo 5MB.', 'error'); return;
+  }
+
+  // mostra progresso
+  document.getElementById('upload-progress').style.display = 'block';
+  document.getElementById('upload-bar').style.width = '30%';
+  document.getElementById('btn-salvar-prod').disabled = true;
+
+  // preview imediato
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const preview = document.getElementById('upload-preview');
+    const existing = document.getElementById('preview-img');
+    if (existing) existing.remove();
+    const img = document.createElement('img');
+    img.id = 'preview-img';
+    img.src = e.target.result;
+    img.style.cssText = 'max-height:100px;border-radius:8px;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto';
+    preview.insertBefore(img, preview.firstChild);
+  };
+  reader.readAsDataURL(file);
+
+  // gera nome único
+  const ext      = file.name.split('.').pop();
+  const fileName = `produto_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+
+  document.getElementById('upload-bar').style.width = '60%';
+
+  // faz upload
+  const { data, error } = await _supabase.storage
+    .from('produtos')
+    .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+  if (error) {
+    showToast('Erro no upload: ' + error.message, 'error');
+    document.getElementById('upload-progress').style.display = 'none';
+    document.getElementById('btn-salvar-prod').disabled = false;
+    return;
+  }
+
+  document.getElementById('upload-bar').style.width = '100%';
+
+  // pega URL pública
+  const { data: { publicUrl } } = _supabase.storage
+    .from('produtos')
+    .getPublicUrl(fileName);
+
+  // salva URL no campo hidden
+  document.getElementById('prod-img-url').value = publicUrl;
+  document.getElementById('upload-label').textContent = 'Imagem pronta!';
+  document.getElementById('upload-label').style.color = 'var(--green)';
+
+  setTimeout(() => {
+    document.getElementById('upload-progress').style.display = 'none';
+    document.getElementById('btn-salvar-prod').disabled = false;
+  }, 600);
+
+  showToast('Imagem enviada!', 'success');
+}
+
+function handleImageDrop(event) {
+  event.preventDefault();
+  event.currentTarget.style.borderColor = 'var(--border)';
+  const file = event.dataTransfer.files[0];
+  if (file) uploadImagem(file);
+}

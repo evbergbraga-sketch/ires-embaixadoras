@@ -28,6 +28,7 @@ function irPara(pagina) {
     dashboard:     renderDashboard,
     pedidos:       renderPedidos,
     produtos:      renderProdutos,
+    categorias:    renderCategorias,
     embaixadoras:  renderEmbaixadoras,
     comunicados:   renderComunicados,
   };
@@ -282,7 +283,6 @@ async function renderProdutos() {
 
 function abrirFormProduto(id) {
   const cats = window._categorias || [];
-  const prod = id ? null : null; // carregado abaixo se edição
 
   const carregarEAbrir = async () => {
     let p = {};
@@ -290,6 +290,16 @@ function abrirFormProduto(id) {
       const { data } = await _supabase.from('products').select('*').eq('id', id).single();
       p = data || {};
     }
+
+    // imagens existentes
+    window._prodImagens = Array.isArray(p.images) ? [...p.images] : [];
+
+    const fotos = window._prodImagens.map((url, i) => `
+      <div id="foto-${i}" style="position:relative;width:72px;height:72px;flex-shrink:0">
+        <img src="${url}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:0.5px solid var(--border)"/>
+        <button onclick="removerFoto(${i})" style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--red);border:none;color:#fff;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">✕</button>
+      </div>
+    `).join('');
 
     abrirModal(`
       <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
@@ -326,33 +336,29 @@ function abrirFormProduto(id) {
           </select>
         </div>
       </div>
+
       <div class="form-group">
-        <label>Imagem do produto</label>
-        <div id="upload-area"
-          onclick="document.getElementById('prod-img-file').click()"
-          ondragover="event.preventDefault();this.style.borderColor='var(--pink)'"
-          ondragleave="this.style.borderColor='var(--border)'"
-          ondrop="handleImageDrop(event)"
-          style="border:0.5px dashed var(--border);border-radius:var(--radius-md);padding:24px 16px;text-align:center;cursor:pointer;transition:border-color 0.2s;background:var(--black)">
-          <div id="upload-preview">
-            ${p.images?.[0]
-              ? `<img src="${p.images[0]}" id="preview-img" style="max-height:100px;border-radius:var(--radius-md);margin-bottom:8px;display:block;margin-left:auto;margin-right:auto"/>`
-              : `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--gray)" stroke-width="1.5" style="margin-bottom:8px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`
-            }
-            <div style="font-size:12px;color:var(--gray)" id="upload-label">
-              ${p.images?.[0] ? 'Clique para trocar a imagem' : 'Clique ou arraste uma imagem'}
-            </div>
-          </div>
-          <div id="upload-progress" style="display:none;margin-top:10px">
-            <div style="height:3px;background:var(--border);border-radius:2px;overflow:hidden">
-              <div id="upload-bar" style="height:100%;width:0%;background:var(--pink);transition:width 0.3s"></div>
-            </div>
-            <span style="font-size:11px;color:var(--gray);margin-top:4px;display:block">Enviando imagem...</span>
+        <label>Fotos do produto (até 6)</label>
+        <div id="fotos-grid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+          ${fotos}
+          <div id="btn-add-foto"
+            onclick="document.getElementById('prod-img-file').click()"
+            style="width:72px;height:72px;border:0.5px dashed var(--border);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:var(--black);flex-shrink:0;transition:border-color 0.2s"
+            onmouseover="this.style.borderColor='var(--pink)'"
+            onmouseout="this.style.borderColor='var(--border)'">
+            <span style="font-size:24px;color:var(--gray);line-height:1">+</span>
+            <span style="font-size:9px;color:var(--gray);margin-top:2px">Adicionar</span>
           </div>
         </div>
-        <input type="file" id="prod-img-file" accept="image/*" style="display:none" onchange="uploadImagem(this.files[0])"/>
-        <input type="hidden" id="prod-img-url" value="${p.images?.[0] || ''}"/>
+        <div id="upload-progress" style="display:none">
+          <div style="height:3px;background:var(--border);border-radius:2px;overflow:hidden">
+            <div id="upload-bar" style="height:100%;width:0%;background:var(--pink);transition:width 0.3s"></div>
+          </div>
+          <span style="font-size:11px;color:var(--gray);margin-top:4px;display:block" id="upload-label">Enviando...</span>
+        </div>
+        <input type="file" id="prod-img-file" accept="image/*" multiple style="display:none" onchange="uploadMultiplas(this.files)"/>
       </div>
+
       <div style="display:flex;gap:10px;margin-top:4px">
         <button class="btn btn-outline" style="flex:1" onclick="fecharModal()">Cancelar</button>
         <button class="btn btn-primary" style="flex:1" id="btn-salvar-prod" onclick="salvarProduto(${id ? `'${id}'` : 'null'})">Salvar produto</button>
@@ -370,7 +376,7 @@ async function salvarProduto(id) {
   const min    = parseInt(document.getElementById('prod-min').value);
   const estoque= document.getElementById('prod-estoque').value;
   const catId  = document.getElementById('prod-cat').value;
-  const imgUrl = document.getElementById('prod-img-url').value.trim();
+  const imgUrl = (window._prodImagens || []).length > 0 ? window._prodImagens[0] : '';
 
   if (!nome)        { showToast('Informe o nome do produto.', 'error'); return; }
   if (isNaN(preco)) { showToast('Informe o preço.', 'error'); return; }
@@ -383,7 +389,7 @@ async function salvarProduto(id) {
     min_quantity: min,
     stock:        estoque ? parseInt(estoque) : null,
     category_id:  catId || null,
-    images:       imgUrl ? [imgUrl] : [],
+    images:       window._prodImagens || [],
   };
 
   const { error } = id
@@ -599,46 +605,43 @@ document.getElementById('modal').addEventListener('click', function(e) {
 });
 
 // ════════════════════════════════════════════
-// UPLOAD DE IMAGEM — Supabase Storage
+// UPLOAD MÚLTIPLO — até 6 fotos
 // ════════════════════════════════════════════
-async function uploadImagem(file) {
-  if (!file) return;
+async function uploadMultiplas(files) {
+  if (!files || !files.length) return;
 
-  // validações
-  if (!file.type.startsWith('image/')) {
-    showToast('Selecione apenas imagens.', 'error'); return;
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    showToast('Imagem deve ter no máximo 5MB.', 'error'); return;
+  const imgs = window._prodImagens || [];
+  const disponiveis = 6 - imgs.length;
+
+  if (disponiveis <= 0) {
+    showToast('Máximo de 6 fotos atingido.', 'error'); return;
   }
 
-  // mostra progresso
+  const lista = Array.from(files).slice(0, disponiveis);
+
+  for (const file of lista) {
+    if (!file.type.startsWith('image/')) { showToast(`${file.name} não é imagem.`, 'error'); continue; }
+    if (file.size > 5 * 1024 * 1024)    { showToast(`${file.name} excede 5MB.`, 'error'); continue; }
+    await uploadUmaImagem(file);
+  }
+
+  // esconde botão + se chegou no limite
+  if ((window._prodImagens || []).length >= 6) {
+    const btn = document.getElementById('btn-add-foto');
+    if (btn) btn.style.display = 'none';
+  }
+}
+
+async function uploadUmaImagem(file) {
   document.getElementById('upload-progress').style.display = 'block';
-  document.getElementById('upload-bar').style.width = '30%';
+  document.getElementById('upload-bar').style.width = '40%';
+  document.getElementById('upload-label').textContent = `Enviando ${file.name}...`;
   document.getElementById('btn-salvar-prod').disabled = true;
 
-  // preview imediato
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const preview = document.getElementById('upload-preview');
-    const existing = document.getElementById('preview-img');
-    if (existing) existing.remove();
-    const img = document.createElement('img');
-    img.id = 'preview-img';
-    img.src = e.target.result;
-    img.style.cssText = 'max-height:100px;border-radius:8px;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto';
-    preview.insertBefore(img, preview.firstChild);
-  };
-  reader.readAsDataURL(file);
-
-  // gera nome único
   const ext      = file.name.split('.').pop();
   const fileName = `produto_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
 
-  document.getElementById('upload-bar').style.width = '60%';
-
-  // faz upload
-  const { data, error } = await _supabase.storage
+  const { error } = await _supabase.storage
     .from('produtos')
     .upload(fileName, file, { cacheControl: '3600', upsert: false });
 
@@ -651,27 +654,120 @@ async function uploadImagem(file) {
 
   document.getElementById('upload-bar').style.width = '100%';
 
-  // pega URL pública
-  const { data: { publicUrl } } = _supabase.storage
-    .from('produtos')
-    .getPublicUrl(fileName);
+  const { data: { publicUrl } } = _supabase.storage.from('produtos').getPublicUrl(fileName);
 
-  // salva URL no campo hidden
-  document.getElementById('prod-img-url').value = publicUrl;
-  document.getElementById('upload-label').textContent = 'Imagem pronta!';
-  document.getElementById('upload-label').style.color = 'var(--green)';
+  window._prodImagens = window._prodImagens || [];
+  window._prodImagens.push(publicUrl);
+
+  // adiciona thumbnail no grid
+  const idx  = window._prodImagens.length - 1;
+  const grid = document.getElementById('fotos-grid');
+  const btn  = document.getElementById('btn-add-foto');
+  const div  = document.createElement('div');
+  div.id = `foto-${idx}`;
+  div.style.cssText = 'position:relative;width:72px;height:72px;flex-shrink:0';
+  div.innerHTML = `
+    <img src="${publicUrl}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:0.5px solid var(--border)"/>
+    <button onclick="removerFoto(${idx})" style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--red);border:none;color:#fff;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+  `;
+  grid.insertBefore(div, btn);
 
   setTimeout(() => {
     document.getElementById('upload-progress').style.display = 'none';
     document.getElementById('btn-salvar-prod').disabled = false;
-  }, 600);
+  }, 500);
+}
 
-  showToast('Imagem enviada!', 'success');
+function removerFoto(idx) {
+  window._prodImagens = (window._prodImagens || []).filter((_, i) => i !== idx);
+  // re-renderiza thumbnails
+  const grid = document.getElementById('fotos-grid');
+  const btn  = document.getElementById('btn-add-foto');
+  // remove todos exceto o botão
+  Array.from(grid.children).forEach(el => { if (el.id !== 'btn-add-foto') el.remove(); });
+  // recria
+  window._prodImagens.forEach((url, i) => {
+    const div = document.createElement('div');
+    div.id = `foto-${i}`;
+    div.style.cssText = 'position:relative;width:72px;height:72px;flex-shrink:0';
+    div.innerHTML = `
+      <img src="${url}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:0.5px solid var(--border)"/>
+      <button onclick="removerFoto(${i})" style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--red);border:none;color:#fff;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+    `;
+    grid.insertBefore(div, btn);
+  });
+  btn.style.display = 'flex';
 }
 
 function handleImageDrop(event) {
   event.preventDefault();
-  event.currentTarget.style.borderColor = 'var(--border)';
-  const file = event.dataTransfer.files[0];
-  if (file) uploadImagem(file);
+  uploadMultiplas(event.dataTransfer.files);
+}
+
+// ════════════════════════════════════════════
+// CATEGORIAS
+// ════════════════════════════════════════════
+async function renderCategorias() {
+  const { data } = await _supabase.from('categories').select('*').order('name');
+
+  document.getElementById('conteudo-principal').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h2 style="font-size:20px;font-weight:800">Categorias</h2>
+      <button class="btn btn-primary btn-sm" style="width:auto" onclick="abrirFormCategoria()">+ Nova categoria</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px" id="lista-cats">
+      ${(data || []).map(c => `
+        <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:13px;font-weight:600">${c.name}</span>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-sm btn-outline" onclick="abrirFormCategoria('${c.id}','${c.name}')">Editar</button>
+            <button class="btn btn-sm btn-danger" onclick="deletarCategoria('${c.id}')">Excluir</button>
+          </div>
+        </div>
+      `).join('') || '<p style="color:var(--gray);font-size:13px">Nenhuma categoria ainda.</p>'}
+    </div>
+  `;
+}
+
+function abrirFormCategoria(id, nome) {
+  abrirModal(`
+    <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:16px">${id ? 'Editar categoria' : 'Nova categoria'}</h3>
+    <div class="form-group">
+      <label>Nome *</label>
+      <input type="text" id="cat-nome" value="${nome || ''}" placeholder="Ex: Roupas"/>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-outline" style="flex:1" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" style="flex:1" onclick="salvarCategoria(${id ? `'${id}'` : 'null'})">Salvar</button>
+    </div>
+  `);
+}
+
+async function salvarCategoria(id) {
+  const nome = document.getElementById('cat-nome').value.trim();
+  if (!nome) { showToast('Informe o nome.', 'error'); return; }
+
+  const slug = nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+
+  const { error } = id
+    ? await _supabase.from('categories').update({ name: nome, slug }).eq('id', id)
+    : await _supabase.from('categories').insert({ name: nome, slug });
+
+  if (error) { showToast('Erro: ' + error.message, 'error'); return; }
+  showToast(id ? 'Categoria atualizada!' : 'Categoria criada!', 'success');
+  fecharModal();
+  renderCategorias();
+
+  // atualiza cache de categorias
+  const { data } = await _supabase.from('categories').select('id,name').order('name');
+  window._categorias = data || [];
+}
+
+async function deletarCategoria(id) {
+  if (!confirm('Excluir esta categoria? Os produtos ficarão sem categoria.')) return;
+  const { error } = await _supabase.from('categories').delete().eq('id', id);
+  if (error) { showToast('Erro ao excluir.', 'error'); return; }
+  showToast('Categoria excluída.', 'success');
+  renderCategorias();
 }

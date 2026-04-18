@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IRES Embaixadoras — Meu Painel</title>
+  <link rel="stylesheet" href="css/ires.css"/>
+</head>
+<body class="page">
+
+<!-- Topbar -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-logo">
+      <span>ires</span>
+      <span>emb.</span>
+    </div>
+    <span class="brand-name">ires<span>.</span></span>
+  </div>
+  <div class="topbar-right" id="topbar-right"></div>
+</header>
+
+<!-- Nav -->
+<nav class="nav-tabs">
+  <a class="nav-tab active" id="tab-painel"   onclick="irAba('painel')">Início</a>
+  <a class="nav-tab"        id="tab-pedidos"  onclick="irAba('pedidos')">Meus pedidos</a>
+  <a class="nav-tab"        id="tab-avisos"   onclick="irAba('avisos')">Avisos</a>
+</nav>
+
+<div class="main-content" id="conteudo"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/painel.js"></script>
+</body>
+</html>

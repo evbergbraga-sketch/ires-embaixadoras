@@ -57,6 +57,15 @@
     </div>
 
     <div class="form-group" style="margin-top:16px">
+      <label>Forma de pagamento</label>
+      <select id="forma-pagamento">
+        <option value="PIX">PIX</option>
+        <option value="BOLETO">Boleto bancário</option>
+        <option value="CREDIT_CARD">Cartão de crédito</option>
+      </select>
+    </div>
+
+    <div class="form-group">
       <label>Observação (opcional)</label>
       <input type="text" id="obs-pedido" placeholder="Ex: Preciso para dia 20"/>
     </div>
@@ -94,9 +103,14 @@
     <p style="font-size:12px;color:var(--gray);margin-bottom:20px">
       Você será notificada quando o status for atualizado.
     </p>
-    <div style="display:flex;gap:10px">
-      <a href="pedidos.html" class="btn btn-outline" style="flex:1">Ver pedidos</a>
-      <a href="vitrine.html" class="btn btn-primary" style="flex:1">Continuar</a>
+    <div style="display:flex;gap:10px;flex-direction:column">
+      <a id="link-pagamento" href="#" target="_blank" class="btn btn-primary" style="display:none">
+        Pagar agora →
+      </a>
+      <div style="display:flex;gap:10px">
+        <a href="pedidos.html" class="btn btn-outline" style="flex:1">Ver pedidos</a>
+        <a href="vitrine.html" class="btn btn-primary" style="flex:1">Continuar</a>
+      </div>
     </div>
   </div>
 </div>

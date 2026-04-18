@@ -148,7 +148,6 @@ async function finalizarPedido() {
   const cart = getCart();
   if (!cart.length) return;
 
-  // valida mínimos
   const invalidos = cart.filter(i => i.quantity < i.min_quantity);
   if (invalidos.length) {
     showToast('Ajuste as quantidades mínimas antes de finalizar.', 'error');
@@ -161,9 +160,10 @@ async function finalizarPedido() {
 
   const total = cart.reduce((acc, i) => acc + i.price * i.quantity, 0);
   const obs   = document.getElementById('obs-pedido').value.trim();
+  const forma = document.getElementById('forma-pagamento')?.value || 'PIX';
 
   try {
-    // cria o pedido
+    // 1. Cria o pedido no Supabase
     const { data: pedido, error: errPedido } = await _supabase
       .from('orders')
       .insert({
@@ -177,7 +177,7 @@ async function finalizarPedido() {
 
     if (errPedido) throw errPedido;
 
-    // insere os itens
+    // 2. Insere os itens
     const itens = cart.map(i => ({
       order_id:   pedido.id,
       product_id: i.id,
@@ -192,17 +192,44 @@ async function finalizarPedido() {
 
     if (errItens) throw errItens;
 
-    // limpa o carrinho
+    // 3. Chama o n8n para gerar a cobrança no Asaas
+    btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
+
+    const resp = await fetch('https://webhook.ruahsystems.com.br/webhook/asaas-cobranca', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nome:             _perfil.full_name,
+        email:            (await _supabase.auth.getUser()).data.user.email,
+        cpf:              _perfil.cpf || '00000000000',
+        total:            total,
+        pedido_id:        pedido.id,
+        forma_pagamento:  forma,
+      }),
+    });
+
+    const asaas = await resp.json();
+
+    // 4. Limpa o carrinho
     clearCart();
 
-    // mostra modal de sucesso
-    document.getElementById('num-pedido').textContent =
-      '#' + pedido.id.slice(-6).toUpperCase();
-    document.getElementById('modal-sucesso').style.display = 'flex';
+    // 5. Exibe resultado
+    if (asaas.ok && asaas.link) {
+      document.getElementById('num-pedido').textContent = '#' + pedido.id.slice(-6).toUpperCase();
+      document.getElementById('link-pagamento').href    = asaas.link;
+      document.getElementById('link-pagamento').style.display = 'flex';
+      document.getElementById('modal-sucesso').style.display  = 'flex';
+    } else {
+      // Pedido salvo mas pagamento falhou — mostra sucesso sem link
+      document.getElementById('num-pedido').textContent = '#' + pedido.id.slice(-6).toUpperCase();
+      document.getElementById('link-pagamento').style.display = 'none';
+      document.getElementById('modal-sucesso').style.display  = 'flex';
+      showToast('Pedido salvo! Mas houve um erro ao gerar o pagamento. Entre em contato com a IRES.', 'error');
+    }
 
   } catch (err) {
     showToast('Erro ao finalizar: ' + err.message, 'error');
-    btn.disabled  = false;
+    btn.disabled    = false;
     btn.textContent = 'Finalizar pedido →';
   }
 }

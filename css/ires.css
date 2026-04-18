@@ -322,19 +322,22 @@ select option { background: var(--card); }
 }
 
 .auth-logo-circle {
-  width: 72px; height: 72px;
+  width: 82px; height: 82px;
   border-radius: 50%;
   background: var(--pink);
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
+  overflow: hidden;
+  padding: 10px;
 }
 .auth-logo-circle .logo-ires {
-  font-size: 24px; font-weight: 900;
+  font-size: 26px; font-weight: 900;
   color: #fff; line-height: 1; letter-spacing: -1px;
 }
 .auth-logo-circle .logo-sub {
-  font-size: 6px; font-weight: 700;
-  color: #fff; letter-spacing: 2px; text-transform: uppercase;
+  font-size: 5.5px; font-weight: 700;
+  color: #fff; letter-spacing: 1.8px; text-transform: uppercase;
+  text-align: center; width: 100%;
 }
 
 .auth-title { font-size: 17px; font-weight: 700; color: var(--white); }

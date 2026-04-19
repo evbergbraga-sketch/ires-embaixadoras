@@ -1190,7 +1190,7 @@ async function abrirEditarEmb(id) {
     <div class="form-row">
       <div class="form-group">
         <label>CPF</label>
-        <input type="text" id="adm-cpf" value="${e.cpf || ''}" placeholder="000.000.000-00"/>
+        <input type="text" id="adm-cpf" value="${e.cpf || ''}" placeholder="000.000.000-00" maxlength="14" oninput="mascaraCPFAdmin(this)"/>
       </div>
       <div class="form-group">
         <label>Status</label>
@@ -1250,6 +1250,39 @@ async function abrirEditarEmb(id) {
   `);
 }
 
+function validarCPF(cpf) {
+  const digits = cpf.replace(/\D/g, '');
+  if (digits.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(digits)) return false; // todos iguais
+
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += parseInt(digits[i]) * (10 - i);
+  let r = (sum * 10) % 11;
+  if (r === 10 || r === 11) r = 0;
+  if (r !== parseInt(digits[9])) return false;
+
+  sum = 0;
+  for (let i = 0; i < 10; i++) sum += parseInt(digits[i]) * (11 - i);
+  r = (sum * 10) % 11;
+  if (r === 10 || r === 11) r = 0;
+  return r === parseInt(digits[10]);
+}
+
+function mascaraCPFAdmin(input) {
+  let v = input.value.replace(/\D/g,'').slice(0,11);
+  if (v.length > 9) v = `${v.slice(0,3)}.${v.slice(3,6)}.${v.slice(6,9)}-${v.slice(9)}`;
+  else if (v.length > 6) v = `${v.slice(0,3)}.${v.slice(3,6)}.${v.slice(6)}`;
+  else if (v.length > 3) v = `${v.slice(0,3)}.${v.slice(3)}`;
+  input.value = v;
+  // feedback visual em tempo real
+  const digits = input.value.replace(/\D/g,'');
+  if (digits.length === 11) {
+    input.style.borderColor = validarCPF(digits) ? 'var(--green)' : 'var(--red)';
+  } else {
+    input.style.borderColor = '';
+  }
+}
+
 async function buscarCEPAdmin(cep) {
   const digits = cep.replace(/\D/g,'');
   if (digits.length !== 8) return;
@@ -1266,8 +1299,19 @@ async function buscarCEPAdmin(cep) {
 }
 
 async function salvarEmbAdmin(id) {
+  const cpf = document.getElementById('adm-cpf').value.trim();
+
+  // valida CPF se preenchido
+  if (cpf && !validarCPF(cpf)) {
+    showToast('CPF inválido. Verifique o número.', 'error');
+    document.getElementById('adm-cpf').style.borderColor = 'var(--red)';
+    return;
+  }
+  document.getElementById('adm-cpf').style.borderColor = '';
+
   const btn = document.getElementById('btn-salvar-emb');
   btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
   btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
 
   const address = {

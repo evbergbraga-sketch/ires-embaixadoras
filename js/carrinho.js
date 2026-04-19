@@ -211,12 +211,18 @@ async function finalizarPedido() {
 
     const asaas = await resp.json();
 
-    // salva payment_url direto no pedido
+    // salva payment_url direto no pedido via REST (bypassa RLS)
     if (asaas.ok && asaas.link) {
-      await _supabase
-        .from('orders')
-        .update({ payment_url: asaas.link, payment_ref: asaas.id })
-        .eq('id', pedido.id);
+      await fetch(`https://cqhcbbrpxytpybgnpxys.supabase.co/rest/v1/orders?id=eq.${pedido.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': IRES_CONFIG.supabaseAnonKey,
+          'Authorization': `Bearer ${(await _supabase.auth.getSession()).data.session.access_token}`,
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({ payment_url: asaas.link, payment_ref: asaas.id }),
+      });
     }
 
     // 4. Limpa o carrinho

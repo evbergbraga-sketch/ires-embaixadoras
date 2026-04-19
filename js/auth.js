@@ -167,7 +167,7 @@ async function renderTopbar(opts = {}) {
         <span id="cart-badge" style="background:#c0307e;color:#fff;font-size:9px;font-weight:700;border-radius:999px;padding:1px 6px;min-width:16px;text-align:center;display:${cartCount > 0 ? 'inline' : 'none'}">${cartCount}</span>
       </a>
     ` : ''}
-    <div class="notif-wrap" onclick="window.location.href='painel.html#avisos'">
+    <div class="notif-wrap" onclick="toggleNotif(event)" style="position:relative">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gray)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
         <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -253,4 +253,56 @@ function updateCartQty(productId, quantity) {
     item.quantity = quantity;
     saveCart(cart);
   }
+}
+
+// ── Dropdown de notificações ──
+async function toggleNotif(e) {
+  e.stopPropagation();
+
+  // remove dropdown existente
+  const existing = document.getElementById('notif-dropdown');
+  if (existing) { existing.remove(); return; }
+
+  // busca avisos recentes
+  const { data } = await _supabase
+    .from('messages')
+    .select('id,subject,body,created_at')
+    .eq('is_broadcast', true)
+    .order('created_at', { ascending: false })
+    .limit(4);
+
+  const dropdown = document.createElement('div');
+  dropdown.id = 'notif-dropdown';
+  dropdown.style.cssText = `
+    position:fixed;top:52px;right:8px;width:300px;max-width:calc(100vw - 16px);
+    background:#161616;border:0.5px solid #2a2a2a;border-radius:14px;
+    z-index:999;overflow:hidden;
+    box-shadow:0 8px 32px rgba(0,0,0,0.5);
+  `;
+
+  dropdown.innerHTML = `
+    <div style="padding:12px 16px;border-bottom:0.5px solid #222;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:13px;font-weight:700;color:#fff">Avisos</span>
+      <a href="painel.html#avisos" style="font-size:11px;color:#f03faa;text-decoration:none">Ver todos</a>
+    </div>
+    ${(data||[]).length ? (data||[]).map(a => `
+      <div style="padding:12px 16px;border-bottom:0.5px solid #1a1a1a">
+        <div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:3px">${a.subject || 'Aviso'}</div>
+        <div style="font-size:11px;color:#666;line-height:1.5">${a.body.slice(0,80)}${a.body.length>80?'...':''}</div>
+        <div style="font-size:10px;color:#444;margin-top:4px">${new Date(a.created_at).toLocaleDateString('pt-BR')}</div>
+      </div>
+    `).join('') : `
+      <div style="padding:20px 16px;text-align:center;font-size:12px;color:#555">Nenhum aviso no momento</div>
+    `}
+  `;
+
+  document.body.appendChild(dropdown);
+
+  // fecha ao clicar fora
+  setTimeout(() => {
+    document.addEventListener('click', function handler() {
+      dropdown.remove();
+      document.removeEventListener('click', handler);
+    });
+  }, 100);
 }

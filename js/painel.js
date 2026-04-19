@@ -215,6 +215,10 @@ function pedidoCard(o, expandido = false) {
           }).join('')}
 
           <div style="display:flex;gap:8px;margin-top:4px">
+            ${o.status === 'pending' ? (o.payment_url
+              ? `<a href="${o.payment_url}" target="_blank" class="btn btn-primary btn-sm" style="flex:1">Efetuar pagamento ↗</a>`
+              : `<button class="btn btn-primary btn-sm" id="btn-pagar-${o.id}" onclick="gerarLinkPainel('${o.id}',${o.total})" style="flex:1">Gerar link de pagamento</button>`
+            ) : ''}
             <button class="btn btn-sm btn-outline" onclick="recomprar('${o.id}')" style="flex:1">
               Recomprar →
             </button>
@@ -282,4 +286,40 @@ async function renderAvisos() {
       </div>
     `}
   `;
+}
+
+// ── Gera link de pagamento para pedido pendente ──
+async function gerarLinkPainel(orderId, total) {
+  const btn = document.getElementById(`btn-pagar-${orderId}`);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner" style="margin:0 auto;width:14px;height:14px"></div>'; }
+
+  try {
+    const user = await _supabase.auth.getUser();
+    const resp = await fetch('https://webhook.ruahsystems.com.br/webhook/asaas-cobranca', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nome:            _perfil.full_name,
+        email:           user.data.user.email,
+        cpf:             _perfil.cpf || '00000000000',
+        telefone:        _perfil.phone || '',
+        total:           Number(total),
+        pedido_id:       orderId,
+        forma_pagamento: 'PIX',
+      }),
+    });
+
+    const asaas = await resp.json();
+
+    if (asaas.ok && asaas.link) {
+      showToast('Link gerado!', 'success');
+      if (btn) btn.outerHTML = `<a href="${asaas.link}" target="_blank" class="btn btn-primary btn-sm" style="flex:1">Efetuar pagamento ↗</a>`;
+    } else {
+      showToast('Erro ao gerar link.', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Gerar link de pagamento'; }
+    }
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'error');
+    if (btn) { btn.disabled = false; btn.textContent = 'Gerar link de pagamento'; }
+  }
 }

@@ -13,9 +13,10 @@ let _abaAtiva = 'painel';
   _perfil = ctx.profile;
   await renderTopbar();
 
-  // aba via hash
+  // aba via hash — aguarda DOM estar pronto
   const hash = window.location.hash.replace('#','');
-  irAba(hash || 'painel');
+  const abaValida = ['painel','pedidos','avisos'].includes(hash);
+  irAba(abaValida ? hash : 'painel');
 })();
 
 // ── Navegação entre abas ──
@@ -24,7 +25,9 @@ function irAba(aba) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   const tab = document.getElementById(`tab-${aba}`);
   if (tab) tab.classList.add('active');
-  window.location.hash = aba;
+
+  // atualiza hash sem recarregar
+  history.replaceState(null, '', '#' + aba);
 
   const acoes = { painel: renderInicio, pedidos: renderPedidos, avisos: renderAvisos };
   (acoes[aba] || renderInicio)();

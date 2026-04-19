@@ -211,6 +211,14 @@ async function finalizarPedido() {
 
     const asaas = await resp.json();
 
+    // salva payment_url direto no pedido
+    if (asaas.ok && asaas.link) {
+      await _supabase
+        .from('orders')
+        .update({ payment_url: asaas.link, payment_ref: asaas.id })
+        .eq('id', pedido.id);
+    }
+
     // 4. Limpa o carrinho
     clearCart();
 

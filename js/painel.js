@@ -338,12 +338,12 @@ async function renderVitrine() {
     <!-- Filtros -->
     <div class="filters" style="margin-bottom:16px">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <div class="filter-pill active" onclick="setFiltroPainel(this,'all')">Todos</div>
-        <div class="filter-pill" onclick="setFiltroPainel(this,'new')">Novidades</div>
-        <div class="filter-pill" onclick="setFiltroPainel(this,'promo')">Promoção</div>
-        <div id="filtros-cat"></div>
+        <div class="filter-pill active" id="filtro-todos" onclick="setFiltroCatPainel(this,'')">Todos</div>
+        <div id="filtros-cat" style="display:contents"></div>
       </div>
-      <input type="text" id="busca-vitrine" class="search-input" placeholder="Buscar produto..." oninput="filtrarProdutosPainel()"/>
+      <input type="text" id="busca-vitrine" placeholder="Buscar produto..."
+        style="background:var(--black);border:0.5px solid var(--border);border-radius:20px;padding:7px 16px;font-size:13px;color:var(--white);outline:none;width:200px"
+        oninput="filtrarProdutosPainel()"/>
     </div>
 
     <div id="loading-vitrine" class="loading"><div class="spinner"></div> Carregando...</div>
@@ -377,9 +377,22 @@ async function renderVitrine() {
     const el = document.createElement('div');
     el.className = 'filter-pill';
     el.textContent = c.name;
-    el.onclick = () => { _categoriaAtiva = c.id; document.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active')); el.classList.add('active'); filtrarProdutosPainel(); };
+    el.onclick = () => {
+      _categoriaAtiva = c.id;
+      document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      filtrarProdutosPainel();
+    };
     filtrosCat.appendChild(el);
   });
+
+  // clique em "Todos" reseta categoria
+  document.getElementById('filtro-todos').onclick = () => {
+    _categoriaAtiva = '';
+    document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+    document.getElementById('filtro-todos').classList.add('active');
+    filtrarProdutosPainel();
+  };
 
   filtrarProdutosPainel();
 }

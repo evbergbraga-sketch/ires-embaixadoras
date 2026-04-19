@@ -202,6 +202,7 @@ async function finalizarPedido() {
         nome:             _perfil.full_name,
         email:            (await _supabase.auth.getUser()).data.user.email,
         cpf:              _perfil.cpf || '00000000000',
+        telefone:         _perfil.phone || '',
         total:            total,
         pedido_id:        pedido.id,
         forma_pagamento:  forma,

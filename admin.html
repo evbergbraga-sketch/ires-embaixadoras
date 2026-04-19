@@ -11,6 +11,9 @@
 <!-- Topbar -->
 <header class="topbar">
   <div class="topbar-brand">
+    <button id="btn-menu" onclick="toggleMenu()" style="display:none;background:none;border:none;cursor:pointer;padding:4px 8px 4px 0;margin-right:4px">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gray-lighter)" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
     <div class="brand-logo">
       <span>ires</span>
       <span>emb.</span>
@@ -20,10 +23,13 @@
   <div class="topbar-right" id="topbar-right"></div>
 </header>
 
+<!-- Overlay mobile -->
+<div id="sidebar-overlay" onclick="fecharMenu()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:98"></div>
+
 <div class="admin-layout">
 
   <!-- Sidebar -->
-  <aside class="admin-sidebar">
+  <aside class="admin-sidebar" id="admin-sidebar">
     <a class="sidebar-item active" id="nav-dashboard"     onclick="irPara('dashboard')">
       <div class="sidebar-dot"></div> Dashboard
     </a>
@@ -62,5 +68,33 @@
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/admin.js"></script>
+<script>
+function toggleMenu() {
+  const sidebar  = document.getElementById('admin-sidebar');
+  const overlay  = document.getElementById('sidebar-overlay');
+  const aberto   = sidebar.classList.toggle('mobile-open');
+  overlay.style.display = aberto ? 'block' : 'none';
+}
+function fecharMenu() {
+  document.getElementById('admin-sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebar-overlay').style.display = 'none';
+}
+// fecha menu ao navegar
+document.addEventListener('click', e => {
+  if (e.target.closest('.sidebar-item')) fecharMenu();
+});
+</script>
+<style>
+@media (max-width:700px) {
+  #btn-menu { display:block !important; }
+  .admin-sidebar {
+    position:fixed;left:-220px;top:0;height:100vh;
+    z-index:99;transition:left 0.25s ease;
+    padding-top:60px;
+  }
+  .admin-sidebar.mobile-open { left:0; }
+  .admin-main { padding:16px; }
+}
+</style>
 </body>
 </html>

@@ -229,13 +229,19 @@ function pedidoCard(o, expandido = false) {
 async function recomprar(orderId) {
   const { data } = await _supabase
     .from('order_items')
-    .select('quantity, products(*)')
+    .select('quantity, unit_price, products(*)')
     .eq('order_id', orderId);
 
   if (!data?.length) { showToast('Erro ao carregar pedido.', 'error'); return; }
 
   data.forEach(item => {
-    if (item.products) addToCart(item.products, item.quantity);
+    if (!item.products) return;
+    const produto = {
+      ...item.products,
+      price:        Number(item.unit_price) || Number(item.products.price) || 0,
+      min_quantity: Number(item.products.min_quantity) || 1,
+    };
+    addToCart(produto, item.quantity);
   });
 
   showToast('Itens adicionados ao carrinho!', 'success');

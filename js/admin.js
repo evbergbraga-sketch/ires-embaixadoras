@@ -48,8 +48,8 @@ async function renderDashboard() {
     _supabase.from('orders').select('id, total, status, created_at, profiles(full_name)').order('created_at', { ascending: false }).limit(6),
   ]);
 
-  // só conta pedidos pagos ou entregues
-  const pedidosPagosHoje    = (pedidosHoje||[]).filter(o => ['paid','delivered'].includes(o.status));
+  const statusPagos         = ['paid','processing','shipped','delivered'];
+  const pedidosPagosHoje    = (pedidosHoje||[]).filter(o => statusPagos.includes(o.status));
   const faturamentoHoje     = pedidosPagosHoje.reduce((a,o) => a + Number(o.total), 0);
   const pedidosPendentesHj  = (pedidosHoje||[]).filter(o => o.status === 'pending').length;
 

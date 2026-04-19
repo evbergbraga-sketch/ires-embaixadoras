@@ -17,7 +17,7 @@ let paginaAtiva = 'dashboard';
 // ── Navegação ──
 function irPara(pagina) {
   paginaAtiva = pagina;
-  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
   const nav = document.getElementById(`nav-${pagina}`);
   if (nav) nav.classList.add('active');
 

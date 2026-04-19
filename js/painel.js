@@ -36,9 +36,10 @@ function irAba(aba) {
 async function renderInicio() {
   const nome = _perfil.full_name?.split(' ')[0] || 'Embaixadora';
 
-  const [{ data: pedidos }, { data: avisos }] = await Promise.all([
+  const [{ data: pedidos }, { data: avisos }, { data: produtos }] = await Promise.all([
     _supabase.from('orders').select('id,total,status,created_at').eq('reseller_id', _perfil.id).order('created_at', { ascending: false }).limit(3),
     _supabase.from('messages').select('id,subject,body,created_at').eq('is_broadcast', true).order('created_at', { ascending: false }).limit(2),
+    _supabase.from('products').select('id,name,price,min_quantity,images,categories(name)').eq('is_active', true).order('created_at', { ascending: false }).limit(4),
   ]);
 
   const totalGasto = (pedidos || []).reduce((a, o) => a + Number(o.total), 0);
@@ -74,6 +75,42 @@ async function renderInicio() {
       </div>
     </div>
 
+    <!-- Novidades — produtos recentes -->
+    ${(produtos || []).length ? `
+      <div style="margin-bottom:24px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div class="section-title">Novidades na vitrine</div>
+          <a href="vitrine.html" class="btn btn-sm btn-outline">Ver tudo</a>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px">
+          ${produtos.map(p => {
+            const img = p.images?.[0] || '';
+            return `
+              <div class="product-card" onclick="window.location.href='vitrine.html'">
+                <div class="product-img">
+                  ${img
+                    ? `<img src="${img}" alt="${p.name}" loading="lazy"/>`
+                    : `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>`
+                  }
+                  ${p.categories?.name ? `<div class="product-tag"><span class="pill pill-pink">${p.categories.name}</span></div>` : ''}
+                </div>
+                <div class="product-info">
+                  <div class="product-name">${p.name}</div>
+                  <div class="product-bottom">
+                    <div>
+                      <div class="product-price">${formatBRL(p.price)}</div>
+                      <div class="product-min">mín. ${p.min_quantity} un.</div>
+                    </div>
+                    <button class="btn-add" onclick="event.stopPropagation(); adicionarProduto('${p.id}')">+</button>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    ` : ''}
+
     <!-- Últimos pedidos -->
     <div style="margin-bottom:20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -107,6 +144,17 @@ async function renderInicio() {
       </div>
     ` : ''}
   `;
+
+  // carrega lista de produtos para o addToCart funcionar
+  window._produtosPainel = produtos || [];
+}
+
+// ── Adiciona produto ao carrinho direto do painel ──
+function adicionarProduto(id) {
+  const p = (window._produtosPainel || []).find(x => x.id === id);
+  if (!p) return;
+  addToCart(p);
+  showToast(`${p.name} adicionado ao carrinho!`, 'success');
 }
 
 // ════════════════════════════════════════════

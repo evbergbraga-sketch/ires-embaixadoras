@@ -558,6 +558,7 @@ async function abrirDetalhesEmb(id) {
       ${e.status === 'pending'   ? `<button class="btn btn-primary btn-sm" style="flex:1" onclick="aprovarEmb('${e.id}');fecharModal()">Aprovar</button>` : ''}
       ${e.status === 'active'    ? `<button class="btn btn-danger btn-sm" style="flex:1" onclick="suspenderEmb('${e.id}');fecharModal()">Suspender</button>` : ''}
       ${e.status === 'suspended' ? `<button class="btn btn-outline btn-sm" style="flex:1" onclick="aprovarEmb('${e.id}');fecharModal()">Reativar</button>` : ''}
+      <button class="btn btn-primary btn-sm" style="flex:1" onclick="abrirEditarEmb('${e.id}')">Editar perfil</button>
       <button class="btn btn-outline btn-sm" style="flex:1" onclick="fecharModal()">Fechar</button>
     </div>
   `);
@@ -1157,4 +1158,145 @@ function abrirLightboxAdmin(url) {
   lb.style.display = 'flex';
   document.body.style.overflow = 'hidden';
   lb.onclick = (e) => { if (e.target === lb) { lb.remove(); document.body.style.overflow=''; } };
+}
+
+// ════════════════════════════════════════════
+// EDITAR PERFIL DA EMBAIXADORA — Admin
+// ════════════════════════════════════════════
+async function abrirEditarEmb(id) {
+  const { data: e } = await _supabase.from('profiles').select('*').eq('id', id).single();
+  if (!e) return;
+
+  const addr = e.address || {};
+
+  abrirModal(`
+    <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:16px">Editar — ${e.full_name || 'Embaixadora'}</h3>
+
+    <div class="form-group">
+      <label>Nome completo *</label>
+      <input type="text" id="adm-nome" value="${e.full_name || ''}"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>WhatsApp</label>
+        <input type="tel" id="adm-phone" value="${e.phone || ''}"/>
+      </div>
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="adm-email" value="${e.email || ''}"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>CPF</label>
+        <input type="text" id="adm-cpf" value="${e.cpf || ''}" placeholder="000.000.000-00"/>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="adm-status">
+          <option value="pending"   ${e.status==='pending'?'selected':''}>Pendente</option>
+          <option value="active"    ${e.status==='active'?'selected':''}>Ativa</option>
+          <option value="suspended" ${e.status==='suspended'?'selected':''}>Suspensa</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:1.5px;margin:12px 0 10px">Endereço</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>CEP</label>
+        <input type="text" id="adm-cep" value="${addr.cep || ''}" placeholder="00000-000" maxlength="9" onblur="buscarCEPAdmin(this.value)"/>
+      </div>
+      <div class="form-group">
+        <label>Estado</label>
+        <input type="text" id="adm-estado" value="${addr.estado || ''}" maxlength="2"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Rua</label>
+      <input type="text" id="adm-rua" value="${addr.rua || ''}"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Número</label>
+        <input type="text" id="adm-numero" value="${addr.numero || ''}"/>
+      </div>
+      <div class="form-group">
+        <label>Complemento</label>
+        <input type="text" id="adm-complemento" value="${addr.complemento || ''}"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Bairro</label>
+        <input type="text" id="adm-bairro" value="${addr.bairro || ''}"/>
+      </div>
+      <div class="form-group">
+        <label>Cidade</label>
+        <input type="text" id="adm-cidade" value="${addr.cidade || ''}"/>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Observações internas (visível só para admins)</label>
+      <textarea id="adm-notes" rows="3" placeholder="Anotações sobre esta embaixadora...">${e.admin_notes || ''}</textarea>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-outline" style="flex:1" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" style="flex:1" id="btn-salvar-emb" onclick="salvarEmbAdmin('${id}')">Salvar</button>
+    </div>
+  `);
+}
+
+async function buscarCEPAdmin(cep) {
+  const digits = cep.replace(/\D/g,'');
+  if (digits.length !== 8) return;
+  try {
+    const resp = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+    const data = await resp.json();
+    if (data.erro) return;
+    document.getElementById('adm-rua').value    = data.logradouro || '';
+    document.getElementById('adm-bairro').value = data.bairro || '';
+    document.getElementById('adm-cidade').value = data.localidade || '';
+    document.getElementById('adm-estado').value = data.uf || '';
+    showToast('Endereço preenchido!', 'success');
+  } catch {}
+}
+
+async function salvarEmbAdmin(id) {
+  const btn = document.getElementById('btn-salvar-emb');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
+
+  const address = {
+    cep:         document.getElementById('adm-cep').value.trim(),
+    rua:         document.getElementById('adm-rua').value.trim(),
+    numero:      document.getElementById('adm-numero').value.trim(),
+    complemento: document.getElementById('adm-complemento').value.trim(),
+    bairro:      document.getElementById('adm-bairro').value.trim(),
+    cidade:      document.getElementById('adm-cidade').value.trim(),
+    estado:      document.getElementById('adm-estado').value.trim(),
+  };
+
+  const { error } = await _supabase.from('profiles').update({
+    full_name:   document.getElementById('adm-nome').value.trim(),
+    phone:       document.getElementById('adm-phone').value.trim(),
+    email:       document.getElementById('adm-email').value.trim(),
+    cpf:         document.getElementById('adm-cpf').value.trim(),
+    status:      document.getElementById('adm-status').value,
+    admin_notes: document.getElementById('adm-notes').value.trim(),
+    address,
+  }).eq('id', id);
+
+  if (error) {
+    showToast('Erro ao salvar: ' + error.message, 'error');
+    btn.disabled = false; btn.textContent = 'Salvar';
+    return;
+  }
+
+  showToast('Perfil atualizado!', 'success');
+  fecharModal();
+  renderEmbaixadoras();
 }

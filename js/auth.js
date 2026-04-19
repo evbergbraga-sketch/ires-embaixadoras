@@ -203,7 +203,8 @@ function clearCart() {
 
 function addToCart(product, quantity = null) {
   const cart = getCart();
-  const qty = quantity || product.min_quantity;
+  const min  = parseInt(product.min_quantity) || 1;
+  const qty  = quantity ? parseInt(quantity) : min;
   const existing = cart.find(i => i.id === product.id);
 
   if (existing) {
@@ -212,16 +213,14 @@ function addToCart(product, quantity = null) {
     cart.push({
       id:           product.id,
       name:         product.name,
-      price:        product.price,
-      min_quantity: product.min_quantity,
+      price:        parseFloat(product.price) || 0,
+      min_quantity: min,
       images:       product.images,
       quantity:     qty,
     });
   }
   saveCart(cart);
   showToast(`${product.name} adicionado ao carrinho!`, 'success');
-
-  // atualiza badge imediatamente
   _atualizarBadgeCarrinho();
 }
 

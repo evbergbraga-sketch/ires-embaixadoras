@@ -27,6 +27,9 @@
   <a class="nav-tab" href="painel.html">Início</a>
   <a class="nav-tab active" href="pedidos.html">Meus pedidos</a>
   <a class="nav-tab" href="painel.html#avisos">Avisos</a>
+  <a class="nav-tab" href="painel.html#perfil">Meu perfil</a>
+  <a class="nav-tab" href="comunidade.html">Depoimentos</a>
+  <a class="nav-tab" href="comunidade.html#suporte">Suporte</a>
 </nav>
 
 <div class="main-content">
@@ -236,40 +239,40 @@ async function gerarCobranca(orderId, total) {
   if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>'; }
 
   try {
-    const user = await _supabase.auth.getUser();
-    const email = user.data.user.email;
-
-    const resp = await fetch('https://webhook.ruahsystems.com.br/webhook/asaas-cobranca', {
+    // busca cobrança existente no Asaas pelo externalReference (pedido_id)
+    const resp = await fetch('https://webhook.ruahsystems.com.br/webhook/asaas-buscar-cobranca', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        nome:            _perfil.full_name,
-        email:           email,
-        cpf:             _perfil.cpf || '00000000000',
-        telefone:        _perfil.phone || '',
-        total:           Number(total),
-        pedido_id:       orderId,
-        forma_pagamento: 'PIX',
-      }),
+      body: JSON.stringify({ pedido_id: orderId }),
     });
 
-    const asaas = await resp.json();
+    const result = await resp.json();
 
-    if (asaas.ok && asaas.link) {
+    if (result.ok && result.link) {
       // salva no Supabase
-      await _supabase.from('orders').update({ payment_url: asaas.link }).eq('id', orderId);
+      const session = await _supabase.auth.getSession();
+      await fetch(`https://cqhcbbrpxytpybgnpxys.supabase.co/rest/v1/orders?id=eq.${orderId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': IRES_CONFIG.supabaseAnonKey,
+          'Authorization': `Bearer ${session.data.session.access_token}`,
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({ payment_url: result.link }),
+      });
 
       // atualiza no array local
       const o = _todosPedidos.find(x => x.id === orderId);
-      if (o) o.payment_url = asaas.link;
+      if (o) o.payment_url = result.link;
 
-      // substitui botão por link
+      // substitui botão por link direto
       if (btn) {
-        btn.outerHTML = `<a href="${asaas.link}" target="_blank" class="btn btn-primary" style="margin-bottom:10px">Finalizar pagamento agora ↗</a>`;
+        btn.outerHTML = `<a href="${result.link}" target="_blank" class="btn btn-primary" style="margin-bottom:10px">Efetuar pagamento ↗</a>`;
       }
-      showToast('Link de pagamento gerado!', 'success');
+      showToast('Link encontrado!', 'success');
     } else {
-      showToast('Erro ao gerar cobrança.', 'error');
+      showToast('Não foi possível recuperar o link. Tente um novo pedido.', 'error');
       if (btn) { btn.disabled = false; btn.textContent = 'Gerar link de pagamento'; }
     }
   } catch (e) {

@@ -190,9 +190,9 @@ async function abrirDetalhe(id) {
       </div>
     ` : ''}
 
-    ${o.payment_url ? `
+    ${o.payment_url && o.status === 'pending' ? `
       <a href="${o.payment_url}" target="_blank" class="btn btn-primary" style="margin-bottom:10px">
-        Pagar agora →
+        Finalizar pagamento agora ↗
       </a>
     ` : ''}
 

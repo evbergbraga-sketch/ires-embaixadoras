@@ -693,7 +693,20 @@ select option { background: var(--card); }
   .form-row { grid-template-columns: 1fr; }
   .products-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .auth-card { padding: 24px 20px; }
-  .admin-sidebar { display: none; }
+  .admin-sidebar {
+    position: fixed;
+    left: -220px;
+    top: 52px;
+    height: calc(100vh - 52px);
+    width: 200px;
+    z-index: 99;
+    transition: left 0.25s ease;
+    display: block !important;
+  }
+  .admin-sidebar.mobile-open {
+    left: 0;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.6);
+  }
   .metrics-grid { grid-template-columns: repeat(2, 1fr); }
   .order-row { flex-wrap: wrap; }
   .filters { padding: 10px 16px; }

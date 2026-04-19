@@ -31,6 +31,8 @@ function irPara(pagina) {
     categorias:    renderCategorias,
     embaixadoras:  renderEmbaixadoras,
     comunicados:   renderComunicados,
+    depoimentos:   renderDepoimentosAdmin,
+    suporte:       renderSuporteAdmin,
   };
   (acoes[pagina] || renderDashboard)();
 }
@@ -922,4 +924,214 @@ async function deletarCategoria(id) {
   if (error) { showToast('Erro ao excluir.', 'error'); return; }
   showToast('Categoria excluída.', 'success');
   renderCategorias();
+}
+
+// ════════════════════════════════════════════
+// DEPOIMENTOS — Admin
+// ════════════════════════════════════════════
+async function renderDepoimentosAdmin() {
+  const { data } = await _supabase
+    .from('testimonials')
+    .select('*, profiles(full_name)')
+    .order('created_at', { ascending: false });
+
+  const pendentes  = (data||[]).filter(t => t.status === 'pending');
+  const aprovados  = (data||[]).filter(t => t.status === 'approved');
+  const rejeitados = (data||[]).filter(t => t.status === 'rejected');
+
+  document.getElementById('conteudo-principal').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h2 style="font-size:20px;font-weight:800">Depoimentos</h2>
+      <div style="display:flex;gap:8px">
+        <span class="pill pill-amber">${pendentes.length} pendentes</span>
+        <span class="pill pill-green">${aprovados.length} aprovados</span>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <div class="filter-pill active" onclick="filtrarDeps(this,'all')">Todos</div>
+      <div class="filter-pill" onclick="filtrarDeps(this,'pending')">Pendentes</div>
+      <div class="filter-pill" onclick="filtrarDeps(this,'approved')">Aprovados</div>
+      <div class="filter-pill" onclick="filtrarDeps(this,'rejected')">Rejeitados</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px" id="lista-deps">
+      ${(data||[]).map(t => depAdminCard(t)).join('')
+        || '<p style="color:var(--gray);font-size:13px">Nenhum depoimento ainda.</p>'}
+    </div>
+  `;
+  window._todosDepos = data || [];
+}
+
+function depAdminCard(t) {
+  const nome = t.profiles?.full_name || 'Embaixadora';
+  const ini  = nome.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  const stMap = { pending:{label:'Pendente',cls:'pill-amber'}, approved:{label:'Aprovado',cls:'pill-green'}, rejected:{label:'Rejeitado',cls:'pill-red'} };
+  const st = stMap[t.status] || stMap.pending;
+
+  return `
+    <div class="card" data-status="${t.status}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div class="avatar">${ini}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600">${nome}</div>
+          <div style="font-size:11px;color:var(--gray)">${new Date(t.created_at).toLocaleDateString('pt-BR')}</div>
+        </div>
+        <span class="pill ${st.cls}">${st.label}</span>
+      </div>
+      ${t.image_url ? `<div style="border-radius:var(--radius-md);overflow:hidden;margin-bottom:10px;max-height:200px"><img src="${t.image_url}" style="width:100%;object-fit:cover;display:block"/></div>` : ''}
+      <p style="font-size:13px;color:var(--gray-lighter);line-height:1.7;margin-bottom:12px">${t.body}</p>
+      ${t.status === 'pending' ? `
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary btn-sm" style="flex:1" onclick="aprovarDep('${t.id}')">Aprovar</button>
+          <button class="btn btn-danger btn-sm" style="flex:1" onclick="rejeitarDep('${t.id}')">Rejeitar</button>
+        </div>
+      ` : t.status === 'approved' ? `
+        <button class="btn btn-outline btn-sm" onclick="rejeitarDep('${t.id}')">Remover aprovação</button>
+      ` : `
+        <button class="btn btn-outline btn-sm" onclick="aprovarDep('${t.id}')">Aprovar</button>
+      `}
+    </div>
+  `;
+}
+
+function filtrarDeps(el, status) {
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  const lista = status === 'all' ? window._todosDepos : (window._todosDepos||[]).filter(t => t.status === status);
+  document.getElementById('lista-deps').innerHTML =
+    lista.map(t => depAdminCard(t)).join('') || '<p style="color:var(--gray);font-size:13px">Nenhum depoimento.</p>';
+}
+
+async function aprovarDep(id) {
+  const { error } = await _supabase.from('testimonials').update({ status:'approved' }).eq('id', id);
+  if (error) { showToast('Erro.','error'); return; }
+  showToast('Depoimento aprovado!','success');
+  renderDepoimentosAdmin();
+}
+
+async function rejeitarDep(id) {
+  const { error } = await _supabase.from('testimonials').update({ status:'rejected' }).eq('id', id);
+  if (error) { showToast('Erro.','error'); return; }
+  showToast('Depoimento rejeitado.','success');
+  renderDepoimentosAdmin();
+}
+
+// ════════════════════════════════════════════
+// SUPORTE — Admin
+// ════════════════════════════════════════════
+async function renderSuporteAdmin() {
+  const { data } = await _supabase
+    .from('support_messages')
+    .select('*, profiles(full_name)')
+    .order('created_at', { ascending: false });
+
+  const abertos = (data||[]).filter(m => m.status === 'open');
+
+  document.getElementById('conteudo-principal').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h2 style="font-size:20px;font-weight:800">Suporte</h2>
+      <span class="pill pill-amber">${abertos.length} em aberto</span>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <div class="filter-pill active" onclick="filtrarSup(this,'all')">Todos</div>
+      <div class="filter-pill" onclick="filtrarSup(this,'open')">Em aberto</div>
+      <div class="filter-pill" onclick="filtrarSup(this,'answered')">Respondidos</div>
+      <div class="filter-pill" onclick="filtrarSup(this,'closed')">Encerrados</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px" id="lista-sup">
+      ${(data||[]).map(m => supAdminCard(m)).join('')
+        || '<p style="color:var(--gray);font-size:13px">Nenhuma mensagem de suporte.</p>'}
+    </div>
+  `;
+  window._todosSup = data || [];
+}
+
+function supAdminCard(m) {
+  const nome = m.profiles?.full_name || 'Embaixadora';
+  const stMap = { open:{label:'Em aberto',cls:'pill-amber'}, answered:{label:'Respondido',cls:'pill-green'}, closed:{label:'Encerrado',cls:'pill-gray'} };
+  const st = stMap[m.status] || stMap.open;
+
+  return `
+    <div class="card" data-status="${m.status}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px">
+        <div>
+          <div style="font-size:13px;font-weight:700">${m.subject}</div>
+          <div style="font-size:11px;color:var(--gray);margin-top:2px">${nome} · ${new Date(m.created_at).toLocaleDateString('pt-BR')}</div>
+        </div>
+        <span class="pill ${st.cls}" style="flex-shrink:0">${st.label}</span>
+      </div>
+      <p style="font-size:13px;color:var(--gray-lighter);line-height:1.7;margin-bottom:12px">${m.body}</p>
+      ${m.reply ? `
+        <div style="background:var(--black);border:0.5px solid var(--pink-deep);border-radius:var(--radius-md);padding:12px;margin-bottom:12px">
+          <div style="font-size:10px;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">Sua resposta</div>
+          <p style="font-size:12px;color:var(--gray-lighter);line-height:1.6">${m.reply}</p>
+        </div>
+      ` : ''}
+      <div style="display:flex;gap:8px">
+        ${m.status !== 'closed' ? `<button class="btn btn-primary btn-sm" style="flex:1" onclick="abrirRespostaSuporteAdmin('${m.id}')">
+          ${m.status === 'answered' ? 'Editar resposta' : 'Responder'}
+        </button>` : ''}
+        ${m.status !== 'closed' ? `<button class="btn btn-outline btn-sm" onclick="encerrarSuporteAdmin('${m.id}')">Encerrar</button>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function filtrarSup(el, status) {
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  const lista = status === 'all' ? window._todosSup : (window._todosSup||[]).filter(m => m.status === status);
+  document.getElementById('lista-sup').innerHTML =
+    lista.map(m => supAdminCard(m)).join('') || '<p style="color:var(--gray);font-size:13px">Nenhuma mensagem.</p>';
+}
+
+function abrirRespostaSuporteAdmin(id) {
+  const m = (window._todosSup||[]).find(x => x.id === id);
+  if (!m) return;
+  abrirModal(`
+    <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:6px">Responder suporte</h3>
+    <div style="background:var(--black);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:16px">
+      <div style="font-size:11px;color:var(--gray);margin-bottom:4px">${m.profiles?.full_name} perguntou:</div>
+      <p style="font-size:13px;color:var(--gray-lighter);line-height:1.6">${m.body}</p>
+    </div>
+    <div class="form-group">
+      <label>Sua resposta *</label>
+      <textarea id="sup-reply" rows="5" style="resize:vertical" placeholder="Escreva a resposta...">${m.reply || ''}</textarea>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-outline" style="flex:1" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" style="flex:1" id="btn-reply" onclick="enviarRespostaSuporteAdmin('${m.id}')">Enviar resposta</button>
+    </div>
+  `);
+}
+
+async function enviarRespostaSuporteAdmin(id) {
+  const reply = document.getElementById('sup-reply').value.trim();
+  if (!reply) { showToast('Escreva a resposta.','error'); return; }
+
+  const btn = document.getElementById('btn-reply');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
+
+  const { error } = await _supabase.from('support_messages').update({
+    reply,
+    status: 'answered',
+    replied_at: new Date().toISOString(),
+  }).eq('id', id);
+
+  if (error) { showToast('Erro ao responder.','error'); btn.disabled=false; btn.textContent='Enviar resposta'; return; }
+  showToast('Resposta enviada!','success');
+  fecharModal();
+  renderSuporteAdmin();
+}
+
+async function encerrarSuporteAdmin(id) {
+  const { error } = await _supabase.from('support_messages').update({ status:'closed' }).eq('id', id);
+  if (error) { showToast('Erro.','error'); return; }
+  showToast('Conversa encerrada.','success');
+  renderSuporteAdmin();
 }

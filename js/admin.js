@@ -160,14 +160,15 @@ async function renderPedidos() {
 
 function pedidoRow(o) {
   return `
-    <div class="order-row" data-status="${o.status}" onclick="abrirPedido('${o.id}')">
-      <div>
-        <div class="order-id">#${o.id.slice(-4).toUpperCase()}</div>
-        <div class="order-date">${new Date(o.created_at).toLocaleDateString('pt-BR')}</div>
+    <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px;cursor:pointer" onclick="abrirPedido('${o.id}')" data-status="${o.status}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="order-id">#${o.id.slice(-4).toUpperCase()}</span>
+          ${statusLabel(o.status)}
+        </div>
+        <span style="font-size:14px;font-weight:800;color:var(--white)">${formatBRL(o.total)}</span>
       </div>
-      <div class="order-items-preview">${o.profiles?.full_name || 'Embaixadora'}</div>
-      <div class="order-total">${formatBRL(o.total)}</div>
-      ${statusLabel(o.status)}
+      <div style="font-size:11px;color:var(--gray)">${o.profiles?.full_name || 'Embaixadora'} · ${new Date(o.created_at).toLocaleDateString('pt-BR')}</div>
     </div>
   `;
 }
@@ -258,22 +259,29 @@ async function renderProdutos() {
 
     <div style="display:flex;flex-direction:column;gap:8px" id="lista-produtos">
       ${(produtos || []).map(p => `
-        <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;display:flex;align-items:center;gap:14px">
-          <div style="width:52px;height:52px;border-radius:var(--radius-md);background:var(--black);border:0.5px solid var(--border);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
-            ${p.images?.[0]
-              ? `<img src="${p.images[0]}" style="width:100%;height:100%;object-fit:cover"/>`
-              : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>`
-            }
+        <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+            <div style="width:52px;height:52px;border-radius:var(--radius-md);background:var(--black);border:0.5px solid var(--border);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+              ${p.images?.[0]
+                ? `<img src="${p.images[0]}" style="width:100%;height:100%;object-fit:cover"/>`
+                : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>`
+              }
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600;color:var(--white)">${p.name}</div>
+              <div style="font-size:11px;color:var(--gray);margin-top:2px">${p.categories?.name || 'Sem categoria'}</div>
+            </div>
+            <span class="pill ${p.is_active ? 'pill-green' : 'pill-gray'}">${p.is_active ? 'Ativo' : 'Inativo'}</span>
           </div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:600;color:var(--white)">${p.name}</div>
-            <div style="font-size:11px;color:var(--gray);margin-top:2px">${p.categories?.name || 'Sem categoria'} · mín. ${p.min_quantity} un.</div>
-          </div>
-          <div style="font-size:14px;font-weight:800;color:var(--white);white-space:nowrap">${formatBRL(p.price)}</div>
-          <span class="pill ${p.is_active ? 'pill-green' : 'pill-gray'}">${p.is_active ? 'Ativo' : 'Inativo'}</span>
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-sm btn-outline" onclick="abrirFormProduto('${p.id}')">Editar</button>
-            <button class="btn btn-sm btn-danger" onclick="toggleProduto('${p.id}', ${p.is_active})">${p.is_active ? 'Desativar' : 'Ativar'}</button>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:14px;font-weight:800;color:var(--white)">${formatBRL(p.price)}</div>
+              <div style="font-size:10px;color:var(--gray)">mín. ${p.min_quantity} un.</div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-sm btn-outline" onclick="abrirFormProduto('${p.id}')">Editar</button>
+              <button class="btn btn-sm btn-danger" onclick="toggleProduto('${p.id}', ${p.is_active})">${p.is_active ? 'Desativar' : 'Ativar'}</button>
+            </div>
           </div>
         </div>
       `).join('') || '<p style="color:var(--gray);font-size:13px">Nenhum produto cadastrado.</p>'}
@@ -458,16 +466,18 @@ async function renderEmbaixadoras() {
 
 function embRow(e, statusCores, statusNomes) {
   return `
-    <div class="order-row" data-status="${e.status}">
-      <div class="avatar" style="cursor:pointer" onclick="abrirDetalhesEmb('${e.id}')">${initials(e.full_name)}</div>
-      <div style="flex:1;min-width:0;cursor:pointer" onclick="abrirDetalhesEmb('${e.id}')">
-        <div style="font-size:13px;font-weight:600">${e.full_name || 'Sem nome'}</div>
-        <div style="font-size:11px;color:var(--gray)">${e.phone || ''} · ${new Date(e.created_at).toLocaleDateString('pt-BR')}</div>
+    <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px;" data-status="${e.status}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;cursor:pointer" onclick="abrirDetalhesEmb('${e.id}')">
+        <div class="avatar">${initials(e.full_name)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.full_name || 'Sem nome'}</div>
+          <div style="font-size:11px;color:var(--gray);margin-top:1px">${e.phone || ''} · ${new Date(e.created_at).toLocaleDateString('pt-BR')}</div>
+        </div>
+        <span class="pill ${statusCores[e.status] || 'pill-gray'}">${statusNomes[e.status] || e.status}</span>
       </div>
-      <span class="pill ${statusCores[e.status] || 'pill-gray'}">${statusNomes[e.status] || e.status}</span>
-      <div style="display:flex;gap:6px">
+      <div style="display:flex;gap:6px;justify-content:flex-end">
         ${e.status === 'pending'   ? `<button class="btn btn-sm btn-primary" style="width:auto" onclick="aprovarEmb('${e.id}')">Aprovar</button>` : ''}
-        ${e.status === 'active'    ? `<button class="btn btn-sm btn-danger"  onclick="suspenderEmb('${e.id}')">Suspender</button>` : ''}
+        ${e.status === 'active'    ? `<button class="btn btn-sm btn-danger" onclick="suspenderEmb('${e.id}')">Suspender</button>` : ''}
         ${e.status === 'suspended' ? `<button class="btn btn-sm btn-outline" onclick="aprovarEmb('${e.id}')">Reativar</button>` : ''}
         ${e.status === 'pending'   ? `<button class="btn btn-sm btn-outline" onclick="reprovarEmb('${e.id}')">Reprovar</button>` : ''}
       </div>

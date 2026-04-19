@@ -283,7 +283,7 @@ async function toggleNotif(e) {
   dropdown.innerHTML = `
     <div style="padding:12px 16px;border-bottom:0.5px solid #222;display:flex;align-items:center;justify-content:space-between">
       <span style="font-size:13px;font-weight:700;color:#fff">Avisos</span>
-      <a href="painel.html#avisos" style="font-size:11px;color:#f03faa;text-decoration:none">Ver todos</a>
+      <a href="painel.html#avisos" style="font-size:11px;color:#f03faa;text-decoration:none" onclick="document.getElementById('notif-dropdown')?.remove()">Ver todos →</a>
     </div>
     ${(data||[]).length ? (data||[]).map(a => `
       <div style="padding:12px 16px;border-bottom:0.5px solid #1a1a1a">

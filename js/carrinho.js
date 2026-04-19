@@ -214,23 +214,43 @@ async function finalizarPedido() {
     // 4. Limpa o carrinho
     clearCart();
 
-    // 5. Exibe resultado
+    // 5. Abre modal com iframe do Asaas
+    const numPedido = '#' + pedido.id.slice(-6).toUpperCase();
+    document.getElementById('num-pedido').textContent = numPedido;
+
     if (asaas.ok && asaas.link) {
-      document.getElementById('num-pedido').textContent = '#' + pedido.id.slice(-6).toUpperCase();
-      document.getElementById('link-pagamento').href    = asaas.link;
-      document.getElementById('link-pagamento').style.display = 'flex';
-      document.getElementById('modal-sucesso').style.display  = 'flex';
+      document.getElementById('asaas-iframe').src     = asaas.link;
+      document.getElementById('link-asaas-externo').href = asaas.link;
+      document.getElementById('iframe-loading').style.display = 'flex';
+      document.getElementById('asaas-iframe').style.display   = 'none';
     } else {
-      // Pedido salvo mas pagamento falhou — mostra sucesso sem link
-      document.getElementById('num-pedido').textContent = '#' + pedido.id.slice(-6).toUpperCase();
-      document.getElementById('link-pagamento').style.display = 'none';
-      document.getElementById('modal-sucesso').style.display  = 'flex';
-      showToast('Pedido salvo! Mas houve um erro ao gerar o pagamento. Entre em contato com a IRES.', 'error');
+      // sem link — mostra só confirmação
+      document.getElementById('iframe-wrap').innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;padding:32px">
+          <div style="width:56px;height:56px;border-radius:50%;background:var(--green-bg);border:0.5px solid var(--green-border);display:flex;align-items:center;justify-content:center">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div style="font-size:15px;font-weight:800;color:#fff">Pedido confirmado!</div>
+          <div style="font-size:13px;color:#666;text-align:center;line-height:1.6">Seu pedido foi salvo.<br/>Entre em contato com a IRES para combinar o pagamento.</div>
+        </div>
+      `;
     }
+
+    document.getElementById('modal-sucesso').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
 
   } catch (err) {
     showToast('Erro ao finalizar: ' + err.message, 'error');
     btn.disabled    = false;
     btn.textContent = 'Finalizar pedido →';
   }
+}
+
+function fecharModalPagamento() {
+  document.getElementById('modal-sucesso').style.display = 'none';
+  document.body.style.overflow = '';
+  // limpa iframe para parar carregamento
+  const iframe = document.getElementById('asaas-iframe');
+  if (iframe) iframe.src = '';
+  window.location.href = 'pedidos.html';
 }

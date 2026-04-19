@@ -87,22 +87,6 @@ document.addEventListener('click', e => {
 <style>
 @media (max-width:700px) {
   #btn-menu { display:block !important; }
-  .admin-layout { position:relative; }
-  .admin-sidebar {
-    position:fixed;
-    left:-220px;
-    top:52px;
-    height:calc(100vh - 52px);
-    width:200px;
-    z-index:99;
-    transition:left 0.25s ease;
-    box-shadow:none;
-  }
-  .admin-sidebar.mobile-open {
-    left:0;
-    box-shadow:4px 0 20px rgba(0,0,0,0.5);
-  }
-  .admin-main { padding:16px; }
 }
 </style>
 </body>

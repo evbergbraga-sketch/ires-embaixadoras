@@ -173,7 +173,12 @@ async function renderTopbar(opts = {}) {
         <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
       </svg>
     </div>
-    <div class="avatar" title="${profile.full_name || ''}">${initials(profile.full_name)}</div>
+    <div class="avatar" title="${profile.full_name || ''}" style="${profile.avatar_url ? 'padding:0;overflow:hidden' : ''}">
+      ${profile.avatar_url
+        ? `<img src="${profile.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`
+        : initials(profile.full_name)
+      }
+    </div>
     <button class="btn btn-sm btn-outline" style="width:auto" onclick="signOut()">Sair</button>
   `;
 }

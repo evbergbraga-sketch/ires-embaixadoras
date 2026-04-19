@@ -280,10 +280,14 @@ async function toggleNotif(e) {
     box-shadow:0 8px 32px rgba(0,0,0,0.5);
   `;
 
+  const isAdmin = window.location.pathname.includes('admin');
+  const verTodosHref = isAdmin ? 'javascript:irPara("comunicados")' : 'painel.html#avisos';
+  const verTodosLabel = isAdmin ? 'Ver comunicados →' : 'Ver todos →';
+
   dropdown.innerHTML = `
     <div style="padding:12px 16px;border-bottom:0.5px solid #222;display:flex;align-items:center;justify-content:space-between">
       <span style="font-size:13px;font-weight:700;color:#fff">Avisos</span>
-      <a href="painel.html#avisos" style="font-size:11px;color:#f03faa;text-decoration:none" onclick="document.getElementById('notif-dropdown')?.remove()">Ver todos →</a>
+      <a href="${verTodosHref}" style="font-size:11px;color:#f03faa;text-decoration:none" onclick="document.getElementById('notif-dropdown')?.remove()">${verTodosLabel}</a>
     </div>
     ${(data||[]).length ? (data||[]).map(a => `
       <div style="padding:12px 16px;border-bottom:0.5px solid #1a1a1a">

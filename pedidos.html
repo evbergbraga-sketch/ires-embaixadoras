@@ -196,10 +196,9 @@ async function abrirDetalhe(id) {
           Finalizar pagamento agora ↗
         </a>
       ` : `
-        <div class="info-box" style="margin-bottom:10px">
-          <div class="info-box-dot" style="background:var(--amber)"></div>
-          <p style="color:var(--gray-lighter)">Pagamento pendente. Entre em contato com a IRES para finalizar.</p>
-        </div>
+        <button class="btn btn-primary" style="margin-bottom:10px" id="btn-gerar-${o.id}" onclick="gerarCobranca('${o.id}', ${o.total})">
+          Gerar link de pagamento
+        </button>
       `}
     ` : ''}
 
@@ -230,6 +229,53 @@ async function recomprar(orderId) {
 
   showToast('Itens adicionados ao carrinho!', 'success');
   setTimeout(() => window.location.href = 'carrinho.html', 1000);
+}
+
+async function gerarCobranca(orderId, total) {
+  const btn = document.getElementById(`btn-gerar-${orderId}`);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>'; }
+
+  try {
+    const user = await _supabase.auth.getUser();
+    const email = user.data.user.email;
+
+    const resp = await fetch('https://webhook.ruahsystems.com.br/webhook/asaas-cobranca', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nome:            _perfil.full_name,
+        email:           email,
+        cpf:             _perfil.cpf || '00000000000',
+        telefone:        _perfil.phone || '',
+        total:           Number(total),
+        pedido_id:       orderId,
+        forma_pagamento: 'PIX',
+      }),
+    });
+
+    const asaas = await resp.json();
+
+    if (asaas.ok && asaas.link) {
+      // salva no Supabase
+      await _supabase.from('orders').update({ payment_url: asaas.link }).eq('id', orderId);
+
+      // atualiza no array local
+      const o = _todosPedidos.find(x => x.id === orderId);
+      if (o) o.payment_url = asaas.link;
+
+      // substitui botão por link
+      if (btn) {
+        btn.outerHTML = `<a href="${asaas.link}" target="_blank" class="btn btn-primary" style="margin-bottom:10px">Finalizar pagamento agora ↗</a>`;
+      }
+      showToast('Link de pagamento gerado!', 'success');
+    } else {
+      showToast('Erro ao gerar cobrança.', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Gerar link de pagamento'; }
+    }
+  } catch (e) {
+    showToast('Erro: ' + e.message, 'error');
+    if (btn) { btn.disabled = false; btn.textContent = 'Gerar link de pagamento'; }
+  }
 }
 
 function fecharModal() {

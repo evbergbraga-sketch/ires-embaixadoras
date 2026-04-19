@@ -684,31 +684,94 @@ document.getElementById('modal').addEventListener('click', function(e) {
 });
 
 // ════════════════════════════════════════════
-// UPLOAD MÚLTIPLO — até 6 fotos
+// UPLOAD MÚLTIPLO — até 6 fotos com cropper
 // ════════════════════════════════════════════
+let _cropperInstance = null;
+let _arquivosPendentes = [];
+
 async function uploadMultiplas(files) {
   if (!files || !files.length) return;
-
   const imgs = window._prodImagens || [];
-  const disponiveis = 6 - imgs.length;
+  if (imgs.length >= 6) { showToast('Máximo de 6 fotos atingido.', 'error'); return; }
 
-  if (disponiveis <= 0) {
-    showToast('Máximo de 6 fotos atingido.', 'error'); return;
-  }
+  _arquivosPendentes = Array.from(files)
+    .filter(f => f.type.startsWith('image/'))
+    .slice(0, 6 - imgs.length);
 
-  const lista = Array.from(files).slice(0, disponiveis);
+  if (!_arquivosPendentes.length) return;
+  abrirCropper(_arquivosPendentes.shift());
+}
 
-  for (const file of lista) {
-    if (!file.type.startsWith('image/')) { showToast(`${file.name} não é imagem.`, 'error'); continue; }
-    if (file.size > 5 * 1024 * 1024)    { showToast(`${file.name} excede 5MB.`, 'error'); continue; }
+function abrirCropper(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    let mc = document.getElementById('modal-cropper');
+    if (!mc) {
+      mc = document.createElement('div');
+      mc.id = 'modal-cropper';
+      mc.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+      document.body.appendChild(mc);
+    }
+
+    mc.innerHTML = `
+      <div style="background:#161616;border:0.5px solid #2a2a2a;border-radius:16px;padding:20px;width:100%;max-width:520px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div>
+            <div style="font-size:15px;font-weight:700;color:#fff">Recortar imagem</div>
+            <div style="font-size:11px;color:#666;margin-top:2px">Tamanho ideal: <strong style="color:#f03faa">800 × 800px</strong> · recorte quadrado</div>
+          </div>
+          <button onclick="fecharCropper()" style="background:none;border:none;color:#666;cursor:pointer;font-size:20px">✕</button>
+        </div>
+        <div style="max-height:360px;overflow:hidden;border-radius:8px;background:#0d0d0d;margin-bottom:14px">
+          <img id="cropper-img" src="${e.target.result}" style="max-width:100%;display:block"/>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="pularCrop()" style="flex:1;padding:10px;background:transparent;border:0.5px solid #2a2a2a;border-radius:8px;color:#999;font-size:13px;cursor:pointer">Usar original</button>
+          <button onclick="confirmarCrop()" style="flex:1;padding:10px;background:#f03faa;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">Recortar e usar ✓</button>
+        </div>
+      </div>
+    `;
+    mc.style.display = 'flex';
+
+    if (_cropperInstance) { _cropperInstance.destroy(); _cropperInstance = null; }
+    const imgEl = document.getElementById('cropper-img');
+    _cropperInstance = new Cropper(imgEl, {
+      aspectRatio: 1,
+      viewMode: 1,
+      dragMode: 'move',
+      autoCropArea: 0.9,
+      background: false,
+      guides: true,
+    });
+
+    window._arquivoAtual = file;
+  };
+  reader.readAsDataURL(file);
+}
+
+function fecharCropper() {
+  const mc = document.getElementById('modal-cropper');
+  if (mc) mc.style.display = 'none';
+  if (_cropperInstance) { _cropperInstance.destroy(); _cropperInstance = null; }
+  _arquivosPendentes = [];
+}
+
+async function confirmarCrop() {
+  if (!_cropperInstance) return;
+  const canvas = _cropperInstance.getCroppedCanvas({ width: 800, height: 800 });
+  canvas.toBlob(async (blob) => {
+    const file = new File([blob], `crop_${Date.now()}.jpg`, { type: 'image/jpeg' });
+    fecharCropper();
     await uploadUmaImagem(file);
-  }
+    if (_arquivosPendentes.length) abrirCropper(_arquivosPendentes.shift());
+  }, 'image/jpeg', 0.9);
+}
 
-  // esconde botão + se chegou no limite
-  if ((window._prodImagens || []).length >= 6) {
-    const btn = document.getElementById('btn-add-foto');
-    if (btn) btn.style.display = 'none';
-  }
+async function pularCrop() {
+  const file = window._arquivoAtual;
+  fecharCropper();
+  if (file) await uploadUmaImagem(file);
+  if (_arquivosPendentes.length) abrirCropper(_arquivosPendentes.shift());
 }
 
 async function uploadUmaImagem(file) {

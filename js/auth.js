@@ -259,11 +259,9 @@ function updateCartQty(productId, quantity) {
 async function toggleNotif(e) {
   e.stopPropagation();
 
-  // remove dropdown existente
   const existing = document.getElementById('notif-dropdown');
   if (existing) { existing.remove(); return; }
 
-  // busca avisos recentes
   const { data } = await _supabase
     .from('messages')
     .select('id,subject,body,created_at')
@@ -276,18 +274,20 @@ async function toggleNotif(e) {
   dropdown.style.cssText = `
     position:fixed;top:52px;right:8px;width:300px;max-width:calc(100vw - 16px);
     background:#161616;border:0.5px solid #2a2a2a;border-radius:14px;
-    z-index:999;overflow:hidden;
-    box-shadow:0 8px 32px rgba(0,0,0,0.5);
+    z-index:999;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.5);
   `;
 
   const isAdmin = window.location.pathname.includes('admin');
+
+  const verTodosAction = isAdmin
+    ? `document.getElementById('notif-dropdown').remove(); irPara('comunicados')`
+    : `document.getElementById('notif-dropdown').remove(); if(typeof irAba==='function'){irAba('avisos')}else{window.location.href='painel.html#avisos'}`;
 
   dropdown.innerHTML = `
     <div style="padding:12px 16px;border-bottom:0.5px solid #222;display:flex;align-items:center;justify-content:space-between">
       <span style="font-size:13px;font-weight:700;color:#fff">Avisos</span>
       <a href="#" style="font-size:11px;color:#f03faa;text-decoration:none"
-        onclick="document.getElementById('notif-dropdown')?.remove(); ${isAdmin ? "irPara('comunicados')" : "window.location.hash='avisos'"}"
-      >Ver todos →</a>
+         onclick="${verTodosAction}; return false">Ver todos →</a>
     </div>
     ${(data||[]).length ? (data||[]).map(a => `
       <div style="padding:12px 16px;border-bottom:0.5px solid #1a1a1a">
@@ -302,7 +302,6 @@ async function toggleNotif(e) {
 
   document.body.appendChild(dropdown);
 
-  // fecha ao clicar fora
   setTimeout(() => {
     document.addEventListener('click', function handler() {
       dropdown.remove();

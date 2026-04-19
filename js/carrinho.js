@@ -214,26 +214,62 @@ async function finalizarPedido() {
     // 4. Limpa o carrinho
     clearCart();
 
-    // 5. Abre modal com iframe do Asaas
-    const numPedido = '#' + pedido.id.slice(-6).toUpperCase();
-    document.getElementById('num-pedido').textContent = numPedido;
+    // 5. Monta o modal de pagamento
+    document.getElementById('num-pedido').textContent = '#' + pedido.id.slice(-6).toUpperCase();
+    document.getElementById('link-asaas-externo').href = asaas.link || '#';
 
-    if (asaas.ok && asaas.link) {
-      document.getElementById('asaas-iframe').src     = asaas.link;
-      document.getElementById('link-asaas-externo').href = asaas.link;
-      document.getElementById('iframe-loading').style.display = 'flex';
-      document.getElementById('asaas-iframe').style.display   = 'none';
-    } else {
-      // sem link — mostra só confirmação
-      document.getElementById('iframe-wrap').innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;padding:32px">
-          <div style="width:56px;height:56px;border-radius:50%;background:var(--green-bg);border:0.5px solid var(--green-border);display:flex;align-items:center;justify-content:center">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+    const conteudo = document.getElementById('pagamento-conteudo');
+
+    if (!asaas.ok || !asaas.forma) {
+      conteudo.innerHTML = `
+        <div style="text-align:center;padding:16px">
+          <div style="font-size:13px;color:#666;line-height:1.7">Pedido salvo com sucesso!<br/>Entre em contato com a IRES para combinar o pagamento.</div>
+        </div>`;
+    } else if (asaas.forma === 'PIX') {
+      conteudo.innerHTML = `
+        <div style="text-align:center">
+          <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:4px">Pague com PIX</div>
+          <div style="font-size:12px;color:#666;margin-bottom:16px">Válido até ${new Date(asaas.vencimento).toLocaleDateString('pt-BR')}</div>
+          ${asaas.pixQrCode ? `
+            <div style="background:#fff;border-radius:12px;padding:12px;display:inline-block;margin-bottom:16px">
+              <img src="data:image/png;base64,${asaas.pixQrCode}" style="width:180px;height:180px;display:block"/>
+            </div>
+          ` : ''}
+          ${asaas.pixCopiaECola ? `
+            <div style="font-size:11px;color:#666;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">PIX Copia e Cola</div>
+            <div style="background:#0d0d0d;border:0.5px solid #2a2a2a;border-radius:10px;padding:10px 14px;font-size:11px;color:#aaa;word-break:break-all;margin-bottom:12px;text-align:left;line-height:1.5">
+              ${asaas.pixCopiaECola.slice(0,60)}...
+            </div>
+            <button onclick="copiarPix()" style="width:100%;padding:11px;background:#f03faa;border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;cursor:pointer" id="btn-copiar">
+              Copiar código PIX
+            </button>
+          ` : ''}
+          <div style="font-size:22px;font-weight:900;color:#fff;margin-top:16px">${formatBRL(asaas.valor)}</div>
+        </div>`;
+      window._pixCode = asaas.pixCopiaECola;
+    } else if (asaas.forma === 'BOLETO') {
+      conteudo.innerHTML = `
+        <div style="text-align:center;padding:8px 0">
+          <div style="width:56px;height:56px;border-radius:50%;background:#1A1500;border:0.5px solid #3A2A00;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
           </div>
-          <div style="font-size:15px;font-weight:800;color:#fff">Pedido confirmado!</div>
-          <div style="font-size:13px;color:#666;text-align:center;line-height:1.6">Seu pedido foi salvo.<br/>Entre em contato com a IRES para combinar o pagamento.</div>
-        </div>
-      `;
+          <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:6px">Boleto bancário gerado</div>
+          <div style="font-size:12px;color:#666;margin-bottom:6px">Vencimento: ${new Date(asaas.vencimento).toLocaleDateString('pt-BR')}</div>
+          <div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:20px">${formatBRL(asaas.valor)}</div>
+          <div style="font-size:12px;color:#666;background:#0d0d0d;border:0.5px solid #2a2a2a;border-radius:10px;padding:12px;line-height:1.6">
+            O boleto pode levar até 3 dias úteis para compensar. Não pague após o vencimento sem antes verificar a disponibilidade.
+          </div>
+        </div>`;
+    } else {
+      conteudo.innerHTML = `
+        <div style="text-align:center;padding:8px 0">
+          <div style="width:56px;height:56px;border-radius:50%;background:#0A1020;border:0.5px solid #1A3050;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="1.5"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          </div>
+          <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:6px">Pagamento com cartão</div>
+          <div style="font-size:12px;color:#666;margin-bottom:20px">Clique no botão abaixo para pagar com segurança</div>
+          <div style="font-size:22px;font-weight:900;color:#fff">${formatBRL(asaas.valor)}</div>
+        </div>`;
     }
 
     document.getElementById('modal-sucesso').style.display = 'flex';
@@ -249,8 +285,17 @@ async function finalizarPedido() {
 function fecharModalPagamento() {
   document.getElementById('modal-sucesso').style.display = 'none';
   document.body.style.overflow = '';
-  // limpa iframe para parar carregamento
-  const iframe = document.getElementById('asaas-iframe');
-  if (iframe) iframe.src = '';
   window.location.href = 'pedidos.html';
+}
+
+function copiarPix() {
+  if (!window._pixCode) return;
+  navigator.clipboard.writeText(window._pixCode).then(() => {
+    const btn = document.getElementById('btn-copiar');
+    if (btn) { btn.textContent = 'Copiado! ✓'; btn.style.background = '#4CAF50'; }
+    showToast('Código PIX copiado!', 'success');
+    setTimeout(() => {
+      if (btn) { btn.textContent = 'Copiar código PIX'; btn.style.background = '#f03faa'; }
+    }, 3000);
+  });
 }

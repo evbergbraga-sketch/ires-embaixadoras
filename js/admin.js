@@ -979,7 +979,13 @@ function depAdminCard(t) {
         </div>
         <span class="pill ${st.cls}">${st.label}</span>
       </div>
-      ${t.image_url ? `<div style="border-radius:var(--radius-md);overflow:hidden;margin-bottom:10px;max-height:200px"><img src="${t.image_url}" style="width:100%;object-fit:cover;display:block"/></div>` : ''}
+      ${t.image_url ? `
+        <div onclick="abrirLightboxAdmin('${t.image_url}')"
+          style="border-radius:var(--radius-md);overflow:hidden;margin-bottom:10px;height:160px;cursor:zoom-in;position:relative;background:var(--black)">
+          <img src="${t.image_url}" style="width:100%;height:100%;object-fit:cover;display:block"/>
+          <div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.6);border-radius:6px;padding:3px 8px;font-size:10px;color:#fff">Ampliar</div>
+        </div>
+      ` : ''}
       <p style="font-size:13px;color:var(--gray-lighter);line-height:1.7;margin-bottom:12px">${t.body}</p>
       ${t.status === 'pending' ? `
         <div style="display:flex;gap:8px">
@@ -1134,4 +1140,24 @@ async function encerrarSuporteAdmin(id) {
   if (error) { showToast('Erro.','error'); return; }
   showToast('Conversa encerrada.','success');
   renderSuporteAdmin();
+}
+
+function abrirLightboxAdmin(url) {
+  let lb = document.getElementById('lightbox-admin');
+  if (!lb) {
+    lb = document.createElement('div');
+    lb.id = 'lightbox-admin';
+    lb.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;cursor:zoom-out';
+    document.body.appendChild(lb);
+  }
+  lb.innerHTML = `
+    <div style="position:relative;max-width:90vw;max-height:90vh">
+      <img src="${url}" style="max-width:100%;max-height:90vh;border-radius:12px;display:block;object-fit:contain"/>
+      <button onclick="document.getElementById('lightbox-admin').remove();document.body.style.overflow=''"
+        style="position:absolute;top:-14px;right:-14px;width:30px;height:30px;border-radius:50%;background:#f03faa;border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700">✕</button>
+    </div>
+  `;
+  lb.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  lb.onclick = (e) => { if (e.target === lb) { lb.remove(); document.body.style.overflow=''; } };
 }

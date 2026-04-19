@@ -209,9 +209,18 @@ async function abrirDetalhe(id) {
 async function recomprar(orderId) {
   const o = _todosPedidos.find(x => x.id === orderId);
   if (!o) return;
+
   (o.order_items || []).forEach(i => {
-    if (i.products) addToCart(i.products, i.quantity);
+    if (!i.products) return;
+    // usa unit_price do pedido original, não o preço atual do produto
+    const produto = {
+      ...i.products,
+      price:        Number(i.unit_price) || Number(i.products.price) || 0,
+      min_quantity: Number(i.products.min_quantity) || 1,
+    };
+    addToCart(produto, i.quantity);
   });
+
   showToast('Itens adicionados ao carrinho!', 'success');
   setTimeout(() => window.location.href = 'carrinho.html', 1000);
 }

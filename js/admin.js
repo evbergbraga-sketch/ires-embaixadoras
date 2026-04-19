@@ -458,9 +458,9 @@ async function renderEmbaixadoras() {
 
 function embRow(e, statusCores, statusNomes) {
   return `
-    <div class="order-row" data-status="${e.status}" style="cursor:default">
-      <div class="avatar">${initials(e.full_name)}</div>
-      <div style="flex:1;min-width:0">
+    <div class="order-row" data-status="${e.status}">
+      <div class="avatar" style="cursor:pointer" onclick="abrirDetalhesEmb('${e.id}')">${initials(e.full_name)}</div>
+      <div style="flex:1;min-width:0;cursor:pointer" onclick="abrirDetalhesEmb('${e.id}')">
         <div style="font-size:13px;font-weight:600">${e.full_name || 'Sem nome'}</div>
         <div style="font-size:11px;color:var(--gray)">${e.phone || ''} · ${new Date(e.created_at).toLocaleDateString('pt-BR')}</div>
       </div>
@@ -473,6 +473,85 @@ function embRow(e, statusCores, statusNomes) {
       </div>
     </div>
   `;
+}
+
+async function abrirDetalhesEmb(id) {
+  const [{ data: e }, { data: pedidos }] = await Promise.all([
+    _supabase.from('profiles').select('*').eq('id', id).single(),
+    _supabase.from('orders').select('id,total,status,created_at').eq('reseller_id', id).order('created_at', { ascending: false }).limit(5),
+  ]);
+
+  if (!e) return;
+
+  const totalGasto = (pedidos || []).reduce((a, o) => a + Number(o.total), 0);
+
+  const statusCores = { pending:'pill-amber', active:'pill-green', suspended:'pill-red' };
+  const statusNomes = { pending:'Pendente', active:'Ativa', suspended:'Suspensa' };
+
+  abrirModal(`
+    <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
+
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+      <div class="avatar" style="width:52px;height:52px;font-size:18px">${initials(e.full_name)}</div>
+      <div>
+        <div style="font-size:16px;font-weight:800">${e.full_name || 'Sem nome'}</div>
+        <span class="pill ${statusCores[e.status] || 'pill-gray'}">${statusNomes[e.status] || e.status}</span>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+      <div style="background:var(--black);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:12px">
+        <div style="font-size:11px;color:var(--gray);margin-bottom:4px">WhatsApp</div>
+        <div style="font-size:13px;font-weight:600">${e.phone || '—'}</div>
+      </div>
+      <div style="background:var(--black);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:12px">
+        <div style="font-size:11px;color:var(--gray);margin-bottom:4px">CPF</div>
+        <div style="font-size:13px;font-weight:600">${e.cpf || '—'}</div>
+      </div>
+      <div style="background:var(--black);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:12px">
+        <div style="font-size:11px;color:var(--gray);margin-bottom:4px">Como nos encontrou</div>
+        <div style="font-size:13px;font-weight:600">${e.how_found || '—'}</div>
+      </div>
+      <div style="background:var(--black);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:12px">
+        <div style="font-size:11px;color:var(--gray);margin-bottom:4px">Cadastro</div>
+        <div style="font-size:13px;font-weight:600">${new Date(e.created_at).toLocaleDateString('pt-BR')}</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+      <div style="background:var(--black);border:0.5px solid var(--border);border-top:2px solid var(--pink);border-radius:var(--radius-md);padding:12px">
+        <div style="font-size:20px;font-weight:900">${(pedidos||[]).length}</div>
+        <div style="font-size:11px;color:var(--gray)">Pedidos feitos</div>
+      </div>
+      <div style="background:var(--black);border:0.5px solid var(--border);border-top:2px solid var(--pink);border-radius:var(--radius-md);padding:12px">
+        <div style="font-size:20px;font-weight:900">${formatBRL(totalGasto)}</div>
+        <div style="font-size:11px;color:var(--gray)">Total comprado</div>
+      </div>
+    </div>
+
+    ${(pedidos||[]).length ? `
+      <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">Últimos pedidos</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
+        ${pedidos.map(o => `
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--black);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:10px 12px">
+            <div>
+              <div style="font-size:12px;font-weight:700">#${o.id.slice(-6).toUpperCase()}</div>
+              <div style="font-size:10px;color:var(--gray)">${new Date(o.created_at).toLocaleDateString('pt-BR')}</div>
+            </div>
+            <div style="font-size:13px;font-weight:800">${formatBRL(o.total)}</div>
+            ${statusLabel(o.status)}
+          </div>
+        `).join('')}
+      </div>
+    ` : ''}
+
+    <div style="display:flex;gap:8px">
+      ${e.status === 'pending'   ? `<button class="btn btn-primary btn-sm" style="flex:1" onclick="aprovarEmb('${e.id}');fecharModal()">Aprovar</button>` : ''}
+      ${e.status === 'active'    ? `<button class="btn btn-danger btn-sm" style="flex:1" onclick="suspenderEmb('${e.id}');fecharModal()">Suspender</button>` : ''}
+      ${e.status === 'suspended' ? `<button class="btn btn-outline btn-sm" style="flex:1" onclick="aprovarEmb('${e.id}');fecharModal()">Reativar</button>` : ''}
+      <button class="btn btn-outline btn-sm" style="flex:1" onclick="fecharModal()">Fechar</button>
+    </div>
+  `);
 }
 
 function filtrarEmbs(el, status) {

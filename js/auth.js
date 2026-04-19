@@ -158,16 +158,16 @@ async function renderTopbar(opts = {}) {
 
   topbarRight.innerHTML = `
     ${opts.showCart !== false ? `
-      <a href="carrinho.html" class="pill pill-pink" style="gap:6px;padding:5px 12px;text-decoration:none">
+      <a href="carrinho.html" id="cart-link" class="pill pill-pink" style="gap:6px;padding:5px 12px;text-decoration:none">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
           <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
         </svg>
         Carrinho
-        ${cartCount > 0 ? `<span style="background:var(--pink);color:#fff;font-size:9px;font-weight:700;border-radius:999px;padding:1px 5px">${cartCount}</span>` : ''}
+        <span id="cart-badge" style="background:#c0307e;color:#fff;font-size:9px;font-weight:700;border-radius:999px;padding:1px 6px;min-width:16px;text-align:center;display:${cartCount > 0 ? 'inline' : 'none'}">${cartCount}</span>
       </a>
     ` : ''}
-    <div class="notif-wrap" onclick="window.location.href='painel.html#notificacoes'">
+    <div class="notif-wrap" onclick="window.location.href='painel.html#avisos'">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gray)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
         <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -176,6 +176,15 @@ async function renderTopbar(opts = {}) {
     <div class="avatar" title="${profile.full_name || ''}">${initials(profile.full_name)}</div>
     <button class="btn btn-sm btn-outline" style="width:auto" onclick="signOut()">Sair</button>
   `;
+}
+
+function _atualizarBadgeCarrinho() {
+  const count = getCartCount();
+  const badge = document.getElementById('cart-badge');
+  if (badge) {
+    badge.textContent   = count;
+    badge.style.display = count > 0 ? 'inline' : 'none';
+  }
 }
 
 // ── Helpers do carrinho (localStorage) ──
@@ -211,6 +220,25 @@ function addToCart(product, quantity = null) {
   }
   saveCart(cart);
   showToast(`${product.name} adicionado ao carrinho!`, 'success');
+
+  // atualiza badge imediatamente
+  _atualizarBadgeCarrinho();
+}
+
+function _atualizarBadgeCarrinho() {
+  const count = getCartCount();
+  // badge no link do carrinho na topbar
+  const badge = document.querySelector('#topbar-right .pill-pink span');
+  if (badge) {
+    badge.textContent = count;
+    badge.style.display = count > 0 ? 'inline' : 'none';
+  }
+  // recria o link inteiro se o badge não existir
+  const cartLink = document.querySelector('#topbar-right a[href="carrinho.html"]');
+  if (cartLink && !badge) {
+    const span = cartLink.querySelector('span');
+    if (span) span.textContent = count;
+  }
 }
 
 function removeFromCart(productId) {

@@ -1,236 +1,123 @@
-// ============================================
-// IRES EMBAIXADORAS — carrinho.js
-// Exibe itens do carrinho, valida quantidade
-// mínima e finaliza o pedido no Supabase.
-// ============================================
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IRES Embaixadoras — Carrinho</title>
+  <link rel="stylesheet" href="css/ires.css"/>
+</head>
+<body class="page">
 
-let _perfil = null;
-
-// ── Inicialização ──
-(async () => {
-  const ctx = await requireActive();
-  if (!ctx) return;
-  _perfil = ctx.profile;
-  await renderTopbar();
-  renderCarrinho();
-})();
-
-// ── Renderiza o carrinho ──
-function renderCarrinho() {
-  const cart   = getCart();
-  const lista  = document.getElementById('lista-carrinho');
-  const vazio  = document.getElementById('carrinho-vazio');
-  const resumo = document.getElementById('resumo-pedido');
-  const badge  = document.getElementById('badge-itens');
-
-  if (!cart.length) {
-    lista.innerHTML  = '';
-    vazio.style.display  = 'block';
-    resumo.style.display = 'none';
-    badge.textContent    = '0 itens';
-    return;
-  }
-
-  vazio.style.display  = 'none';
-  resumo.style.display = 'block';
-
-  const total = cart.reduce((acc, i) => acc + i.price * i.quantity, 0);
-  badge.textContent = `${cart.reduce((a,i) => a + i.quantity, 0)} itens`;
-
-  document.getElementById('val-subtotal').textContent = formatBRL(total);
-  document.getElementById('val-total').textContent    = formatBRL(total);
-
-  lista.innerHTML = cart.map((item, idx) => {
-    const img      = item.images?.[0] || '';
-    const subtotal = formatBRL(item.price * item.quantity);
-    const abaixo   = item.quantity < item.min_quantity;
-
-    return `
-      <div class="cart-item" id="item-${idx}">
-        <div class="cart-thumb">
-          ${img
-            ? `<img src="${img}" alt="${item.name}"/>`
-            : `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>`
-          }
-        </div>
-        <div class="cart-info">
-          <div class="cart-name">${item.name}</div>
-          <div class="cart-variant">Mínimo: ${item.min_quantity} unidades</div>
-          <div class="cart-qty">
-            <button class="qty-btn" onclick="alterarQty(${idx}, -1)">−</button>
-            <span class="qty-value" id="qty-${idx}">${item.quantity}</span>
-            <button class="qty-btn" onclick="alterarQty(${idx}, 1)">+</button>
-            <span style="font-size:11px;color:var(--gray);margin-left:4px">un.</span>
-          </div>
-          <div class="cart-min-warn ${abaixo ? 'visible' : ''}" id="warn-${idx}">
-            Mínimo de ${item.min_quantity} unidades
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
-          <span class="cart-price" id="sub-${idx}">${subtotal}</span>
-          <button onclick="removerItem(${idx})" style="background:none;border:none;color:var(--gray);cursor:pointer;font-size:11px;text-decoration:underline">
-            Remover
-          </button>
-        </div>
+<!-- Topbar -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <a href="vitrine.html" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+      <div class="brand-logo">
+        <span>ires</span>
+        <span>emb.</span>
       </div>
-    `;
-  }).join('');
+      <span class="brand-name">ires<span>.</span></span>
+    </a>
+  </div>
+  <div class="topbar-right" id="topbar-right"></div>
+</header>
 
-  verificarMinimos();
-}
+<div class="main-content" style="max-width:680px">
 
-// ── Altera quantidade ──
-function alterarQty(idx, delta) {
-  const cart = getCart();
-  const item = cart[idx];
-  if (!item) return;
+  <!-- Header -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+    <a href="vitrine.html" style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--gray)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Continuar comprando
+    </a>
+    <h2 style="font-size:20px;font-weight:800">Meu carrinho</h2>
+    <span class="pill pill-pink" id="badge-itens">0 itens</span>
+  </div>
 
-  let novaQty = item.quantity + delta;
-  if (novaQty < 1) novaQty = 1;
+  <!-- Lista de itens -->
+  <div id="lista-carrinho"></div>
 
-  updateCartQty(item.id, novaQty);
+  <!-- Aviso quantidade mínima -->
+  <div id="aviso-minimo" style="display:none" class="info-box" style="border-color:var(--red)">
+    <div class="info-box-dot" style="background:var(--red)"></div>
+    <p id="texto-aviso" style="color:var(--gray-lighter)"></p>
+  </div>
 
-  // atualiza visual sem re-renderizar tudo
-  const cart2 = getCart();
-  const item2 = cart2[idx];
-  if (!item2) return;
+  <!-- Resumo -->
+  <div id="resumo-pedido" style="display:none;margin-top:16px">
+    <div class="order-summary order-summary-top">
+      <div class="summary-row">
+        <span style="color:var(--gray)">Subtotal</span>
+        <span id="val-subtotal" class="val">R$ 0,00</span>
+      </div>
+      <div class="summary-row total">
+        <span>Total</span>
+        <span id="val-total" class="val">R$ 0,00</span>
+      </div>
+    </div>
 
-  document.getElementById(`qty-${idx}`).textContent = item2.quantity;
-  document.getElementById(`sub-${idx}`).textContent = formatBRL(item2.price * item2.quantity);
+    <div class="form-group" style="margin-top:16px">
+      <label>Forma de pagamento</label>
+      <select id="forma-pagamento">
+        <option value="PIX">PIX</option>
+        <option value="BOLETO">Boleto bancário</option>
+        <option value="CREDIT_CARD">Cartão de crédito</option>
+      </select>
+    </div>
 
-  const warn = document.getElementById(`warn-${idx}`);
-  if (warn) {
-    warn.classList.toggle('visible', item2.quantity < item2.min_quantity);
-  }
+    <div class="form-group">
+      <label>Observação (opcional)</label>
+      <input type="text" id="obs-pedido" placeholder="Ex: Preciso para dia 20"/>
+    </div>
 
-  // atualiza totais
-  const total = cart2.reduce((acc, i) => acc + i.price * i.quantity, 0);
-  document.getElementById('val-subtotal').textContent = formatBRL(total);
-  document.getElementById('val-total').textContent    = formatBRL(total);
-  document.getElementById('badge-itens').textContent  = `${cart2.reduce((a,i) => a + i.quantity, 0)} itens`;
+    <button class="btn btn-primary" id="btn-finalizar" onclick="finalizarPedido()" style="margin-top:4px">
+      Finalizar pedido →
+    </button>
+  </div>
 
-  verificarMinimos();
-}
+  <!-- Carrinho vazio -->
+  <div id="carrinho-vazio" style="display:none" class="empty-state">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gray)" stroke-width="1.5">
+      <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+      <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/>
+    </svg>
+    <p>Seu carrinho está vazio.</p>
+    <a href="vitrine.html" class="btn btn-outline btn-sm" style="width:auto;margin-top:16px">Ver produtos</a>
+  </div>
 
-// ── Remove item ──
-function removerItem(idx) {
-  const cart = getCart();
-  const item = cart[idx];
-  if (!item) return;
-  removeFromCart(item.id);
-  renderCarrinho();
-}
+</div>
 
-// ── Verifica mínimos e bloqueia botão ──
-function verificarMinimos() {
-  const cart     = getCart();
-  const invalidos = cart.filter(i => i.quantity < i.min_quantity);
-  const aviso    = document.getElementById('aviso-minimo');
-  const btn      = document.getElementById('btn-finalizar');
+<!-- Modal confirmação de pedido -->
+<div id="modal-sucesso" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;align-items:center;justify-content:center;padding:16px">
+  <div class="card" style="max-width:380px;width:100%;text-align:center">
+    <div style="width:64px;height:64px;border-radius:50%;background:var(--green-bg);border:0.5px solid var(--green-border);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <h3 style="font-size:17px;font-weight:800;margin-bottom:8px">Pedido realizado!</h3>
+    <p style="font-size:13px;color:var(--gray);line-height:1.7;margin-bottom:8px">
+      Seu pedido foi enviado com sucesso.<br/>
+      Número: <strong id="num-pedido" style="color:var(--pink)"></strong>
+    </p>
+    <p style="font-size:12px;color:var(--gray);margin-bottom:20px">
+      Você será notificada quando o status for atualizado.
+    </p>
+    <div style="display:flex;gap:10px;flex-direction:column">
+      <a id="link-pagamento" href="#" target="_blank" class="btn btn-primary" style="display:none">
+        Pagar agora →
+      </a>
+      <div style="display:flex;gap:10px">
+        <a href="painel.html#pedidos" class="btn btn-outline" style="flex:1">Ver pedidos</a>
+        <a href="vitrine.html" class="btn btn-primary" style="flex:1">Continuar</a>
+      </div>
+    </div>
+  </div>
+</div>
 
-  if (invalidos.length) {
-    const nomes = invalidos.map(i => `${i.name} (mín. ${i.min_quantity})`).join(', ');
-    document.getElementById('texto-aviso').textContent =
-      `Quantidade abaixo do mínimo: ${nomes}. Ajuste antes de finalizar.`;
-    aviso.style.display = 'flex';
-    aviso.style.borderColor = 'var(--red)';
-    btn.disabled = true;
-    btn.style.opacity = '0.5';
-  } else {
-    aviso.style.display = 'none';
-    btn.disabled = false;
-    btn.style.opacity = '1';
-  }
-}
-
-// ── Finaliza o pedido ──
-async function finalizarPedido() {
-  const cart = getCart();
-  if (!cart.length) return;
-
-  const invalidos = cart.filter(i => i.quantity < i.min_quantity);
-  if (invalidos.length) {
-    showToast('Ajuste as quantidades mínimas antes de finalizar.', 'error');
-    return;
-  }
-
-  const btn = document.getElementById('btn-finalizar');
-  btn.disabled  = true;
-  btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
-
-  const total = cart.reduce((acc, i) => acc + i.price * i.quantity, 0);
-  const obs   = document.getElementById('obs-pedido').value.trim();
-  const forma = document.getElementById('forma-pagamento')?.value || 'PIX';
-
-  try {
-    // 1. Cria o pedido no Supabase
-    const { data: pedido, error: errPedido } = await _supabase
-      .from('orders')
-      .insert({
-        reseller_id: _perfil.id,
-        status:      'pending',
-        total,
-        notes:       obs || null,
-      })
-      .select()
-      .single();
-
-    if (errPedido) throw errPedido;
-
-    // 2. Insere os itens
-    const itens = cart.map(i => ({
-      order_id:   pedido.id,
-      product_id: i.id,
-      quantity:   i.quantity,
-      unit_price: i.price,
-      subtotal:   i.price * i.quantity,
-    }));
-
-    const { error: errItens } = await _supabase
-      .from('order_items')
-      .insert(itens);
-
-    if (errItens) throw errItens;
-
-    // 3. Chama o n8n para gerar a cobrança no Asaas
-    btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
-
-    const resp = await fetch('https://webhook.ruahsystems.com.br/webhook/asaas-cobranca', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        nome:             _perfil.full_name,
-        email:            (await _supabase.auth.getUser()).data.user.email,
-        cpf:              _perfil.cpf || '00000000000',
-        telefone:         _perfil.phone || '',
-        total:            total,
-        pedido_id:        pedido.id,
-        forma_pagamento:  forma,
-      }),
-    });
-
-    const asaas = await resp.json();
-
-    // 4. Limpa o carrinho
-    clearCart();
-
-    // 5. Exibe resultado
-    if (asaas.ok && asaas.link) {
-      document.getElementById('num-pedido').textContent = '#' + pedido.id.slice(-6).toUpperCase();
-      document.getElementById('link-pagamento').href    = asaas.link;
-      document.getElementById('link-pagamento').style.display = 'flex';
-      document.getElementById('modal-sucesso').style.display  = 'flex';
-    } else {
-      // Pedido salvo mas pagamento falhou — mostra sucesso sem link
-      document.getElementById('num-pedido').textContent = '#' + pedido.id.slice(-6).toUpperCase();
-      document.getElementById('link-pagamento').style.display = 'none';
-      document.getElementById('modal-sucesso').style.display  = 'flex';
-      showToast('Pedido salvo! Mas houve um erro ao gerar o pagamento. Entre em contato com a IRES.', 'error');
-    }
-
-  } catch (err) {
-    showToast('Erro ao finalizar: ' + err.message, 'error');
-    btn.disabled    = false;
-    btn.textContent = 'Finalizar pedido →';
-  }
-}
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/carrinho.js"></script>
+</body>
+</html>

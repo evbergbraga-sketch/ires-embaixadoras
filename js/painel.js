@@ -49,7 +49,12 @@ async function renderInicio() {
     <!-- Saudação -->
     <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px">
       <div style="display:flex;align-items:center;gap:14px">
-        <div class="avatar" style="width:48px;height:48px;font-size:16px">${initials(_perfil.full_name)}</div>
+        <div class="avatar" style="width:48px;height:48px;font-size:16px;cursor:pointer;${_perfil.avatar_url ? 'padding:0;overflow:hidden' : ''}" onclick="irAba('perfil')">
+          ${_perfil.avatar_url
+            ? `<img src="${_perfil.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`
+            : initials(_perfil.full_name)
+          }
+        </div>
         <div>
           <div style="font-size:18px;font-weight:800">Olá, ${nome}! 👋</div>
           <div style="font-size:12px;color:var(--gray);margin-top:2px">Embaixadora ativa</div>

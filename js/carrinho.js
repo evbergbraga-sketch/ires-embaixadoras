@@ -288,6 +288,15 @@ function fecharModalPagamento() {
   window.location.href = 'pedidos.html';
 }
 
+function pagarDepois() {
+  // salva o link de pagamento para mostrar nos pedidos
+  const link = document.getElementById('link-asaas-externo')?.href;
+  if (link && link !== '#') {
+    sessionStorage.setItem('link_pagamento_pendente', link);
+  }
+  fecharModalPagamento();
+}
+
 function copiarPix() {
   if (!window._pixCode) return;
   navigator.clipboard.writeText(window._pixCode).then(() => {

@@ -688,27 +688,74 @@ select option { background: var(--card); }
 
 /* ── Responsivo mobile ── */
 @media (max-width: 600px) {
-  .topbar { padding: 0 16px; }
-  .main-content { padding: 16px; }
+  /* Base */
+  .topbar { padding: 0 12px; }
+  .topbar .brand-name { font-size: 13px; }
+  .main-content { padding: 12px; }
   .form-row { grid-template-columns: 1fr; }
-  .products-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .auth-card { padding: 24px 20px; }
-  .admin-sidebar {
-    position: fixed;
-    left: -220px;
-    top: 52px;
-    height: calc(100vh - 52px);
-    width: 200px;
-    z-index: 99;
-    transition: left 0.25s ease;
-    display: block !important;
+
+  /* Nav tabs */
+  .nav-tabs { padding: 0 12px; }
+  .nav-tab { padding: 10px 12px; font-size: 11px; }
+
+  /* Vitrine hero */
+  .vitrine-hero { padding: 14px 12px; flex-direction: column; align-items: flex-start; gap: 8px; }
+  .vitrine-hero-badge { align-self: flex-end; }
+
+  /* Produtos grid */
+  .products-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .product-img { height: 130px; }
+  .product-name { font-size: 11px; }
+  .product-price { font-size: 13px; }
+  .product-min { font-size: 9px; }
+
+  /* Filtros */
+  .filters { padding: 10px 12px; gap: 6px; }
+  .filter-pill { font-size: 10px; padding: 4px 10px; }
+  .search-input { width: 120px !important; }
+
+  /* Métricas */
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .metric-value { font-size: 18px; }
+  .metric-label { font-size: 10px; }
+
+  /* Order rows */
+  .order-row {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px;
   }
-  .admin-sidebar.mobile-open {
-    left: 0;
-    box-shadow: 4px 0 24px rgba(0,0,0,0.6);
+  .order-id { font-size: 12px; min-width: 50px; }
+  .order-date { font-size: 10px; }
+  .order-items-preview { font-size: 11px; width: 100%; order: 3; color: var(--gray); }
+  .order-total { font-size: 13px; }
+
+  /* Cards admin — produto */
+  .admin-produto-row {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px;
   }
-  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
-  .order-row { flex-wrap: wrap; }
-  .filters { padding: 10px 16px; }
-  .vitrine-hero { padding: 14px 16px; }
+
+  /* Topbar right */
+  .topbar-right { gap: 8px; }
+  .topbar-right .btn { font-size: 11px; padding: 5px 10px; }
+  #cart-link { padding: 4px 10px !important; font-size: 11px; }
+
+  /* Carrinho */
+  .cart-item { padding: 10px; gap: 10px; }
+  .cart-thumb { width: 52px; height: 52px; }
+  .cart-name { font-size: 12px; }
+  .cart-price { font-size: 13px; }
+
+  /* Resumo pedido */
+  .summary-row { font-size: 12px; padding: 8px 12px; }
+  .summary-row.total { font-size: 14px; }
+
+  /* Seção title */
+  .section-title { font-size: 10px; }
+
+  /* Cards gerais */
+  .card { padding: 14px; }
 }

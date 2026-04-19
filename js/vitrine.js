@@ -152,19 +152,53 @@ function abrirProduto(id) {
   const p = todosProdutos.find(x => x.id === id);
   if (!p) return;
 
-  const modal = document.getElementById('modal-produto') || criarModal();
-  const img   = p.images?.[0] || '';
+  const modal  = document.getElementById('modal-produto') || criarModal();
+  const imgs   = Array.isArray(p.images) && p.images.length ? p.images : [];
+  const temFotos = imgs.length > 0;
 
   modal.innerHTML = `
     <div class="card" style="max-width:420px;width:100%;position:relative">
-      <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
+      <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;z-index:10;background:rgba(0,0,0,0.5);border:none;color:#fff;cursor:pointer;font-size:18px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center">✕</button>
 
-      <div style="height:200px;background:var(--black);border-radius:var(--radius-md);margin-bottom:16px;overflow:hidden;display:flex;align-items:center;justify-content:center">
-        ${img
-          ? `<img src="${img}" style="width:100%;height:100%;object-fit:cover" alt="${p.name}"/>`
-          : `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>`
-        }
+      <!-- Carrossel -->
+      <div style="position:relative;height:240px;background:var(--black);border-radius:var(--radius-md);margin-bottom:16px;overflow:hidden">
+        ${temFotos ? `
+          <div id="carousel-track" style="display:flex;height:100%;transition:transform 0.3s ease">
+            ${imgs.map(url => `
+              <div style="min-width:100%;height:100%;flex-shrink:0">
+                <img src="${url}" style="width:100%;height:100%;object-fit:cover"/>
+              </div>
+            `).join('')}
+          </div>
+
+          ${imgs.length > 1 ? `
+            <button onclick="moverCarrossel(-1)" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.6);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">‹</button>
+            <button onclick="moverCarrossel(1)"  style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.6);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">›</button>
+            <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:5px">
+              ${imgs.map((_, i) => `<div id="dot-${i}" style="width:6px;height:6px;border-radius:50%;background:${i===0?'#fff':'rgba(255,255,255,0.4)'};transition:background 0.2s"></div>`).join('')}
+            </div>
+          ` : ''}
+
+          ${imgs.length > 1 ? `
+            <div style="position:absolute;bottom:28px;right:10px;background:rgba(0,0,0,0.5);color:#fff;font-size:10px;padding:2px 7px;border-radius:10px" id="carousel-count">1/${imgs.length}</div>
+          ` : ''}
+        ` : `
+          <div style="display:flex;align-items:center;justify-content:center;height:100%">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+          </div>
+        `}
       </div>
+
+      <!-- Miniaturas -->
+      ${imgs.length > 1 ? `
+        <div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px">
+          ${imgs.map((url, i) => `
+            <img src="${url}" onclick="irParaSlide(${i})"
+              id="thumb-${i}"
+              style="width:52px;height:52px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid ${i===0?'var(--pink)':'transparent'};flex-shrink:0;transition:border-color 0.2s"/>
+          `).join('')}
+        </div>
+      ` : ''}
 
       <h3 style="font-size:16px;font-weight:800;margin-bottom:6px">${p.name}</h3>
       <p style="font-size:13px;color:var(--gray);margin-bottom:16px;line-height:1.6">${p.description || ''}</p>
@@ -194,8 +228,34 @@ function abrirProduto(id) {
     </div>
   `;
 
-  modal.style.display = 'flex';
+  window._carouselIdx   = 0;
+  window._carouselTotal = imgs.length;
+  modal.style.display   = 'flex';
   document.body.style.overflow = 'hidden';
+}
+
+function moverCarrossel(dir) {
+  const total = window._carouselTotal || 1;
+  window._carouselIdx = ((window._carouselIdx || 0) + dir + total) % total;
+  irParaSlide(window._carouselIdx);
+}
+
+function irParaSlide(idx) {
+  const track = document.getElementById('carousel-track');
+  if (!track) return;
+  track.style.transform = `translateX(-${idx * 100}%)`;
+  window._carouselIdx   = idx;
+
+  // atualiza dots
+  for (let i = 0; i < (window._carouselTotal || 1); i++) {
+    const dot = document.getElementById(`dot-${i}`);
+    if (dot) dot.style.background = i === idx ? '#fff' : 'rgba(255,255,255,0.4)';
+    const thumb = document.getElementById(`thumb-${i}`);
+    if (thumb) thumb.style.borderColor = i === idx ? 'var(--pink)' : 'transparent';
+  }
+
+  const count = document.getElementById('carousel-count');
+  if (count) count.textContent = `${idx + 1}/${window._carouselTotal}`;
 }
 
 let _prodAtual = null;

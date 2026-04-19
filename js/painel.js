@@ -241,7 +241,6 @@ async function recomprar(orderId) {
 
   showToast('Itens adicionados ao carrinho!', 'success');
   setTimeout(() => window.location.href = 'carrinho.html', 1000);
-}
 
 // ════════════════════════════════════════════
 // AVISOS

@@ -114,7 +114,7 @@ async function renderInicio() {
     <div style="margin-bottom:20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <div class="section-title">Últimos pedidos</div>
-        <button class="btn btn-sm btn-outline" onclick="irAba('pedidos')">Ver todos</button>
+        <button class="btn btn-sm btn-outline" onclick="window.location.href='pedidos.html'">Ver todos</button>
       </div>
       <div class="orders-list">
         ${(pedidos || []).length ? pedidos.map(o => pedidoCard(o)).join('') : `

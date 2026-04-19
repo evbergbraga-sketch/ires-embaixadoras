@@ -60,7 +60,7 @@ async function renderInicio() {
           <div style="font-size:12px;color:var(--gray);margin-top:2px">Embaixadora ativa</div>
         </div>
       </div>
-      <a href="vitrine.html" class="btn btn-primary btn-sm" style="width:auto;white-space:nowrap">Ver vitrine →</a>
+      <button onclick="irAba('vitrine')" class="btn btn-primary btn-sm" style="width:auto;white-space:nowrap">Ver vitrine →</button>
     </div>
 
     <!-- Métricas -->

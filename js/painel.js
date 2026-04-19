@@ -13,11 +13,18 @@ let _abaAtiva = 'painel';
   _perfil = ctx.profile;
   await renderTopbar();
 
-  // aba via hash — aguarda DOM estar pronto
+  // aba via hash
   const hash = window.location.hash.replace('#','');
   const abaValida = ['painel','pedidos','avisos'].includes(hash);
   irAba(abaValida ? hash : 'painel');
 })();
+
+// detecta mudança de hash sem recarregar (ex: sininho → "Ver todos")
+window.addEventListener('hashchange', () => {
+  const hash = window.location.hash.replace('#','');
+  const abaValida = ['painel','pedidos','avisos'].includes(hash);
+  if (abaValida && hash !== _abaAtiva) irAba(hash);
+});
 
 // ── Navegação entre abas ──
 function irAba(aba) {

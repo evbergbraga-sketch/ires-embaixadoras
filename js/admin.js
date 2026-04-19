@@ -41,20 +41,17 @@ function irPara(pagina) {
 // DASHBOARD
 // ════════════════════════════════════════════
 async function renderDashboard() {
-  const [{ count: totalPedidos }, { count: totalEmb }, { data: pedidosHoje }, { data: pendentes }] = await Promise.all([
-    _supabase.from('orders').select('*', { count: 'exact', head: true }),
+  const [{ count: totalEmb }, { data: pedidosHoje }, { data: pendentes }, { data: ultimosPedidos }] = await Promise.all([
     _supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('status','active').eq('role','reseller'),
-    _supabase.from('orders').select('total').gte('created_at', new Date().toISOString().slice(0,10)),
+    _supabase.from('orders').select('total,status').gte('created_at', new Date().toISOString().slice(0,10)),
     _supabase.from('profiles').select('id,full_name,created_at').eq('status','pending').eq('role','reseller').limit(5),
+    _supabase.from('orders').select('id, total, status, created_at, profiles(full_name)').order('created_at', { ascending: false }).limit(6),
   ]);
 
-  const faturamentoHoje = (pedidosHoje || []).reduce((a,o) => a + Number(o.total), 0);
-
-  const { data: ultimosPedidos } = await _supabase
-    .from('orders')
-    .select('id, total, status, created_at, profiles(full_name)')
-    .order('created_at', { ascending: false })
-    .limit(6);
+  // só conta pedidos pagos ou entregues
+  const pedidosPagosHoje    = (pedidosHoje||[]).filter(o => ['paid','delivered'].includes(o.status));
+  const faturamentoHoje     = pedidosPagosHoje.reduce((a,o) => a + Number(o.total), 0);
+  const pedidosPendentesHj  = (pedidosHoje||[]).filter(o => o.status === 'pending').length;
 
   document.getElementById('conteudo-principal').innerHTML = `
     <div style="margin-bottom:20px">
@@ -64,8 +61,8 @@ async function renderDashboard() {
 
     <div class="metrics-grid">
       <div class="metric-card" style="border-top-color:var(--pink)">
-        <div class="metric-value">${pedidosHoje?.length || 0}</div>
-        <div class="metric-label">Pedidos hoje</div>
+        <div class="metric-value">${pedidosPagosHoje.length}</div>
+        <div class="metric-label">Pedidos pagos hoje</div>
       </div>
       <div class="metric-card" style="border-top-color:var(--pink)">
         <div class="metric-value">${formatBRL(faturamentoHoje)}</div>
@@ -76,8 +73,8 @@ async function renderDashboard() {
         <div class="metric-label">Embaixadoras ativas</div>
       </div>
       <div class="metric-card" style="border-top-color:var(--amber)">
-        <div class="metric-value">${pendentes?.length || 0}</div>
-        <div class="metric-label">Aguardando aprovação</div>
+        <div class="metric-value">${pedidosPendentesHj}</div>
+        <div class="metric-label">Pagamentos pendentes</div>
       </div>
     </div>
 

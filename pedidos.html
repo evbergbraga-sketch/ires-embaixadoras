@@ -82,7 +82,7 @@ let _todosPedidos = [];
 async function carregarPedidos() {
   const { data, error } = await _supabase
     .from('orders')
-    .select('*, order_items(quantity, unit_price, subtotal, products(name, images))')
+    .select('id, status, total, notes, payment_url, payment_ref, created_at, order_items(quantity, unit_price, subtotal, products(name, images, min_quantity, price))')
     .eq('reseller_id', _perfil.id)
     .order('created_at', { ascending: false });
 
@@ -190,10 +190,17 @@ async function abrirDetalhe(id) {
       </div>
     ` : ''}
 
-    ${o.payment_url && o.status === 'pending' ? `
-      <a href="${o.payment_url}" target="_blank" class="btn btn-primary" style="margin-bottom:10px">
-        Finalizar pagamento agora ↗
-      </a>
+    ${o.status === 'pending' ? `
+      ${o.payment_url ? `
+        <a href="${o.payment_url}" target="_blank" class="btn btn-primary" style="margin-bottom:10px">
+          Finalizar pagamento agora ↗
+        </a>
+      ` : `
+        <div class="info-box" style="margin-bottom:10px">
+          <div class="info-box-dot" style="background:var(--amber)"></div>
+          <p style="color:var(--gray-lighter)">Pagamento pendente. Entre em contato com a IRES para finalizar.</p>
+        </div>
+      `}
     ` : ''}
 
     <div style="display:flex;gap:8px">

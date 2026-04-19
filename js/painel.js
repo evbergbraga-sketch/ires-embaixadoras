@@ -14,7 +14,7 @@ let _abaAtiva = 'painel';
   await renderTopbar();
 
   const hash = window.location.hash.replace('#','');
-  const abaValida = ['painel','pedidos','avisos'].includes(hash);
+  const abaValida = ['painel','pedidos','avisos','perfil'].includes(hash);
   irAba(abaValida ? hash : 'painel');
 })();
 
@@ -25,7 +25,7 @@ function irAba(aba) {
   const tab = document.getElementById(`tab-${aba}`);
   if (tab) tab.classList.add('active');
   history.replaceState(null, '', '#' + aba);
-  const acoes = { painel: renderInicio, pedidos: renderPedidos, avisos: renderAvisos };
+  const acoes = { painel: renderInicio, pedidos: renderPedidos, avisos: renderAvisos, perfil: renderPerfil };
   (acoes[aba] || renderInicio)();
 }
 
@@ -294,32 +294,255 @@ async function gerarLinkPainel(orderId, total) {
   if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner" style="margin:0 auto;width:14px;height:14px"></div>'; }
 
   try {
-    const user = await _supabase.auth.getUser();
-    const resp = await fetch('https://webhook.ruahsystems.com.br/webhook/asaas-cobranca', {
+    // primeiro tenta buscar cobrança existente no Asaas
+    const resp = await fetch('https://webhook.ruahsystems.com.br/webhook/asaas-buscar-cobranca', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        nome:            _perfil.full_name,
-        email:           user.data.user.email,
-        cpf:             _perfil.cpf || '00000000000',
-        telefone:        _perfil.phone || '',
-        total:           Number(total),
-        pedido_id:       orderId,
-        forma_pagamento: 'PIX',
-      }),
+      body: JSON.stringify({ pedido_id: orderId }),
     });
 
-    const asaas = await resp.json();
+    const result = await resp.json();
 
-    if (asaas.ok && asaas.link) {
-      showToast('Link gerado!', 'success');
-      if (btn) btn.outerHTML = `<a href="${asaas.link}" target="_blank" class="btn btn-primary btn-sm" style="flex:1">Efetuar pagamento ↗</a>`;
+    if (result.ok && result.link) {
+      showToast('Link encontrado!', 'success');
+      if (btn) btn.outerHTML = `<a href="${result.link}" target="_blank" class="btn btn-primary btn-sm" style="flex:1">Efetuar pagamento ↗</a>`;
     } else {
-      showToast('Erro ao gerar link.', 'error');
+      showToast('Nenhuma cobrança encontrada para este pedido.', 'error');
       if (btn) { btn.disabled = false; btn.textContent = 'Gerar link de pagamento'; }
     }
   } catch(e) {
     showToast('Erro: ' + e.message, 'error');
     if (btn) { btn.disabled = false; btn.textContent = 'Gerar link de pagamento'; }
   }
+}
+
+// ════════════════════════════════════════════
+// MEU PERFIL
+// ════════════════════════════════════════════
+async function renderPerfil() {
+  const { data: p } = await _supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', _perfil.id)
+    .single();
+
+  const addr = p.address || {};
+  const ini  = initials(p.full_name);
+
+  document.getElementById('conteudo').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h2 style="font-size:20px;font-weight:800">Meu perfil</h2>
+    </div>
+
+    <!-- Avatar -->
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
+      <div style="position:relative">
+        <div id="avatar-preview" style="width:72px;height:72px;border-radius:50%;background:var(--pink-faint);border:2px solid var(--pink);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:var(--pink);cursor:pointer" onclick="document.getElementById('avatar-file').click()">
+          ${p.avatar_url
+            ? `<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover"/>`
+            : ini}
+        </div>
+        <div onclick="document.getElementById('avatar-file').click()" style="position:absolute;bottom:0;right:0;width:22px;height:22px;border-radius:50%;background:var(--pink);display:flex;align-items:center;justify-content:center;cursor:pointer">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:15px;font-weight:700">${p.full_name || ''}</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:2px">Clique na foto para alterar</div>
+        <div id="avatar-progress" style="display:none;margin-top:6px">
+          <div style="height:3px;background:var(--border);border-radius:2px;width:120px;overflow:hidden">
+            <div id="avatar-bar" style="height:100%;width:0%;background:var(--pink);transition:width 0.3s"></div>
+          </div>
+        </div>
+      </div>
+      <input type="file" id="avatar-file" accept="image/*" style="display:none" onchange="uploadAvatar(this.files[0])"/>
+    </div>
+
+    <!-- Dados pessoais -->
+    <div class="card" style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px">Dados pessoais</div>
+      <div class="form-group">
+        <label>Nome completo *</label>
+        <input type="text" id="pf-nome" value="${p.full_name || ''}"/>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>WhatsApp *</label>
+          <input type="tel" id="pf-phone" value="${p.phone || ''}" placeholder="(21) 99999-9999" oninput="mascaraTel(this)"/>
+        </div>
+        <div class="form-group">
+          <label>E-mail *</label>
+          <input type="email" id="pf-email" value="${p.email || ''}"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Endereço -->
+    <div class="card" style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px">Endereço de entrega</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>CEP</label>
+          <div style="position:relative">
+            <input type="text" id="pf-cep" value="${addr.cep || ''}" placeholder="00000-000" maxlength="9" oninput="mascaraCEP(this)" onblur="buscarCEP(this.value)"/>
+            <div id="cep-loading" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%)">
+              <div class="spinner" style="width:14px;height:14px"></div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <input type="text" id="pf-estado" value="${addr.estado || ''}" placeholder="RJ" maxlength="2"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Rua / Logradouro</label>
+        <input type="text" id="pf-rua" value="${addr.rua || ''}" placeholder="Rua das Flores"/>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Número</label>
+          <input type="text" id="pf-numero" value="${addr.numero || ''}" placeholder="123"/>
+        </div>
+        <div class="form-group">
+          <label>Complemento</label>
+          <input type="text" id="pf-complemento" value="${addr.complemento || ''}" placeholder="Apto 4"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Bairro</label>
+          <input type="text" id="pf-bairro" value="${addr.bairro || ''}" placeholder="Centro"/>
+        </div>
+        <div class="form-group">
+          <label>Cidade</label>
+          <input type="text" id="pf-cidade" value="${addr.cidade || ''}" placeholder="Rio de Janeiro"/>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="btn-salvar-perfil" onclick="salvarPerfil()">Salvar alterações</button>
+  `;
+}
+
+// ── Upload avatar ──
+async function uploadAvatar(file) {
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('Selecione uma imagem.','error'); return; }
+  if (file.size > 3*1024*1024) { showToast('Máximo 3MB.','error'); return; }
+
+  document.getElementById('avatar-progress').style.display = 'block';
+  document.getElementById('avatar-bar').style.width = '40%';
+
+  const ext  = file.name.split('.').pop();
+  const name = `avatar_${_perfil.id}.${ext}`;
+
+  // faz upload para bucket 'depoimentos' (já existe e é público)
+  const { error } = await _supabase.storage.from('depoimentos').upload(name, file, { upsert: true, cacheControl: '3600' });
+  if (error) { showToast('Erro no upload.','error'); return; }
+
+  document.getElementById('avatar-bar').style.width = '100%';
+
+  const { data: { publicUrl } } = _supabase.storage.from('depoimentos').getPublicUrl(name);
+
+  // salva no perfil
+  await _supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', _perfil.id);
+  _perfil.avatar_url = publicUrl;
+
+  // atualiza preview
+  const prev = document.getElementById('avatar-preview');
+  prev.innerHTML = `<img src="${publicUrl}" style="width:100%;height:100%;object-fit:cover"/>`;
+
+  setTimeout(() => { document.getElementById('avatar-progress').style.display = 'none'; }, 500);
+  showToast('Foto atualizada!', 'success');
+}
+
+// ── Máscaras ──
+function mascaraTel(input) {
+  let v = input.value.replace(/\D/g,'').slice(0,11);
+  if (v.length > 6) v = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
+  else if (v.length > 2) v = `(${v.slice(0,2)}) ${v.slice(2)}`;
+  else if (v.length > 0) v = `(${v}`;
+  input.value = v;
+}
+
+function mascaraCEP(input) {
+  let v = input.value.replace(/\D/g,'').slice(0,8);
+  if (v.length > 5) v = `${v.slice(0,5)}-${v.slice(5)}`;
+  input.value = v;
+}
+
+// ── Busca CEP ──
+async function buscarCEP(cep) {
+  const digits = cep.replace(/\D/g,'');
+  if (digits.length !== 8) return;
+
+  document.getElementById('cep-loading').style.display = 'flex';
+
+  try {
+    const resp = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+    const data = await resp.json();
+
+    if (data.erro) { showToast('CEP não encontrado.','error'); return; }
+
+    document.getElementById('pf-rua').value    = data.logradouro || '';
+    document.getElementById('pf-bairro').value = data.bairro || '';
+    document.getElementById('pf-cidade').value = data.localidade || '';
+    document.getElementById('pf-estado').value = data.uf || '';
+
+    // foca no campo número
+    document.getElementById('pf-numero').focus();
+    showToast('Endereço preenchido!', 'success');
+  } catch {
+    showToast('Erro ao buscar CEP.','error');
+  } finally {
+    document.getElementById('cep-loading').style.display = 'none';
+  }
+}
+
+// ── Salva perfil ──
+async function salvarPerfil() {
+  const nome  = document.getElementById('pf-nome').value.trim();
+  const phone = document.getElementById('pf-phone').value.trim();
+  const email = document.getElementById('pf-email').value.trim();
+
+  if (!nome)  { showToast('Informe o nome.','error'); return; }
+  if (!phone) { showToast('Informe o WhatsApp.','error'); return; }
+  if (!email) { showToast('Informe o e-mail.','error'); return; }
+
+  const btn = document.getElementById('btn-salvar-perfil');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
+
+  const address = {
+    cep:         document.getElementById('pf-cep').value.trim(),
+    rua:         document.getElementById('pf-rua').value.trim(),
+    numero:      document.getElementById('pf-numero').value.trim(),
+    complemento: document.getElementById('pf-complemento').value.trim(),
+    bairro:      document.getElementById('pf-bairro').value.trim(),
+    cidade:      document.getElementById('pf-cidade').value.trim(),
+    estado:      document.getElementById('pf-estado').value.trim(),
+  };
+
+  const { error } = await _supabase.from('profiles').update({
+    full_name: nome,
+    phone,
+    email,
+    address,
+  }).eq('id', _perfil.id);
+
+  if (error) {
+    showToast('Erro ao salvar: ' + error.message, 'error');
+    btn.disabled = false; btn.textContent = 'Salvar alterações';
+    return;
+  }
+
+  // atualiza cache local
+  _perfil.full_name = nome;
+  _perfil.phone     = phone;
+  _perfil.email     = email;
+  _perfil.address   = address;
+
+  showToast('Perfil atualizado!', 'success');
+  btn.disabled = false; btn.textContent = 'Salvar alterações';
 }

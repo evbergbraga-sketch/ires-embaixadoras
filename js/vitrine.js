@@ -161,12 +161,12 @@ function abrirProduto(id) {
       <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;z-index:10;background:rgba(0,0,0,0.5);border:none;color:#fff;cursor:pointer;font-size:18px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center">✕</button>
 
       <!-- Carrossel -->
-      <div style="position:relative;height:240px;background:var(--black);border-radius:var(--radius-md);margin-bottom:16px;overflow:hidden">
+      <div style="position:relative;background:var(--black);border-radius:var(--radius-md);margin-bottom:16px;overflow:hidden">
         ${temFotos ? `
-          <div id="carousel-track" style="display:flex;height:100%;transition:transform 0.3s ease">
+          <div id="carousel-track" style="display:flex;transition:transform 0.3s ease">
             ${imgs.map(url => `
-              <div style="min-width:100%;height:100%;flex-shrink:0">
-                <img src="${url}" style="width:100%;height:100%;object-fit:cover"/>
+              <div style="min-width:100%;flex-shrink:0">
+                <img src="${url}" style="width:100%;height:auto;display:block;max-height:320px;object-fit:contain;background:var(--black)"/>
               </div>
             `).join('')}
           </div>

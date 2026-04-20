@@ -17,16 +17,16 @@
       z-index: 100;
       background: #0e0810;
       border-bottom: 0.5px solid #2E1E2D;
-      height: 56px;
-      padding: 0 20px;
+      height: 64px;
+      padding: 0 28px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      gap: 20px;
     }
     .admin-logo {
       font-family: 'DM Serif Display', Georgia, serif;
-      font-size: 20px;
+      font-size: 24px;
       font-weight: 400;
       color: #F5EEF0;
       letter-spacing: 0.3px;
@@ -34,7 +34,7 @@
       flex-shrink: 0;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 9px;
     }
     .admin-logo em { color: #C4325A; font-style: normal; }
     .admin-logo-badge {
@@ -42,15 +42,16 @@
       font-size: 10px;
       font-weight: 600;
       color: #705868;
-      letter-spacing: 0.5px;
-      padding: 2px 8px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      padding: 2px 9px;
       background: #201520;
       border: 0.5px solid #3E2A3C;
       border-radius: 20px;
     }
     .admin-nav {
       display: flex;
-      gap: 1px;
+      gap: 2px;
       flex: 1;
       justify-content: center;
       overflow-x: auto;
@@ -59,11 +60,11 @@
     .admin-nav::-webkit-scrollbar { display: none; }
     .admin-nav-tab {
       font-family: 'DM Sans', sans-serif;
-      font-size: 11px;
+      font-size: 12px;
       color: #705868;
       font-weight: 500;
-      padding: 5px 9px;
-      border-radius: 7px;
+      padding: 6px 11px;
+      border-radius: 8px;
       cursor: pointer;
       white-space: nowrap;
       text-decoration: none;
@@ -74,10 +75,8 @@
     }
     .admin-nav-tab:hover { color: #C0A8B8; background: #201520; }
     .admin-nav-tab.active { color: #C4325A; background: rgba(196,50,90,0.14); }
-    .admin-nav-tab svg {
-      display: none;
-    }
-    .admin-topbar-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .admin-nav-tab svg { display: none; }
+    .admin-topbar-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 
     /* ── Admin main ── */
     body.page { background: #100810; font-family: 'DM Sans', 'Inter', sans-serif; }
@@ -121,12 +120,19 @@
       .admin-nav { display: none; }
       .admin-bottom-nav { display: block; }
       #conteudo-principal { padding: 14px 14px 90px; }
-      /* Dashboard bento colapsa para coluna única */
       .dash-bento { grid-template-columns: 1fr !important; }
-      /* Métricas em 2 colunas no mobile */
       .metrics-grid { grid-template-columns: repeat(2,1fr) !important; gap: 10px !important; }
-      /* Formulários em coluna única */
       .form-row { grid-template-columns: 1fr !important; }
+      /* Hero KPI strip em 2x2 no mobile */
+      #conteudo-principal [style*="grid-template-columns:repeat(4,1fr)"] {
+        grid-template-columns: repeat(2,1fr) !important;
+        gap: 14px !important;
+      }
+      #conteudo-principal [style*="grid-template-columns:repeat(4,1fr)"] > div {
+        border-right: none !important;
+        border-bottom: 0.5px solid var(--border2) !important;
+        padding: 0 0 14px !important;
+      }
     }
   </style>
 </head>

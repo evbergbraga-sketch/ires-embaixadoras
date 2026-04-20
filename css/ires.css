@@ -730,7 +730,7 @@ body.page {
 /* ── Nav desktop ── */
 .nav-tabs-new {
   display: flex;
-  gap: 2px;
+  gap: 1px;
   flex: 1;
   justify-content: center;
   overflow-x: auto;
@@ -741,11 +741,11 @@ body.page {
 .nav-tab-new {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: 5px;
+  font-size: 12px;
   color: var(--nb-text-low);
   font-weight: 500;
-  padding: 7px 13px;
+  padding: 6px 10px;
   border-radius: 8px;
   cursor: pointer;
   white-space: nowrap;
@@ -762,7 +762,7 @@ body.page {
   background: var(--nb-burg-dim);
 }
 .nav-tab-new svg {
-  width: 14px; height: 14px;
+  width: 13px; height: 13px;
   stroke: currentColor; fill: none;
   stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
   flex-shrink: 0;

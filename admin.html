@@ -221,23 +221,41 @@
   <script src="js/auth.js"></script>
   <script src="js/admin.js"></script>
 
-  <!-- Addon inline: novas abas + irPara override -->
+  <!-- Addon inline: novas abas Criativos e Capacitação -->
   <script>
-  // ── Override irPara com novas abas ──
+  // Sincroniza tabs após irPara() do admin.js original
   window.addEventListener('load', function () {
     if (typeof irPara !== 'function') return;
     const _orig = irPara;
     window.irPara = function (pagina) {
-      _orig(pagina);
+      // Sincroniza nav desktop
       document.querySelectorAll('.admin-nav-tab').forEach(t => t.classList.remove('active'));
       const tab = document.getElementById('nav-' + pagina);
       if (tab) tab.classList.add('active');
+      // Sincroniza bottom nav mobile
       document.querySelectorAll('.admin-bnav-tab').forEach(t => t.classList.remove('active'));
       const bmap = { dashboard:0, pedidos:1, produtos:2, embaixadoras:3, comunicados:4 };
       if (bmap[pagina] !== undefined) {
         const btabs = document.querySelectorAll('.admin-bnav-tab');
         if (btabs[bmap[pagina]]) btabs[bmap[pagina]].classList.add('active');
       }
+      // Chama a função de render
+      const acoes = {
+        dashboard:    renderDashboard,
+        pedidos:      renderPedidos,
+        produtos:     renderProdutos,
+        categorias:   renderCategorias,
+        embaixadoras: renderEmbaixadoras,
+        comunicados:  renderComunicados,
+        depoimentos:  renderDepoimentosAdmin,
+        suporte:      renderSuporteAdmin,
+        criativos:    renderCriativosAdmin,
+        capacitacao:  renderCapacitacaoAdmin,
+      };
+      let paginaAtiva = pagina;
+      const main = document.getElementById('conteudo-principal');
+      main.innerHTML = '<div class="loading"><div class="spinner"></div> Carregando...</div>';
+      (acoes[pagina] || renderDashboard)();
     };
   });
 

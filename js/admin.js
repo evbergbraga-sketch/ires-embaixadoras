@@ -59,192 +59,185 @@ async function renderDashboard() {
     { data: ultimosPedidos },
     { data: suporteAberto },
     { data: pedidos7d },
+    { data: { session } },
   ] = await Promise.all([
     _supabase.from('profiles').select('*',{count:'exact',head:true}).eq('status','active').eq('role','reseller'),
     _supabase.from('orders').select('total,status').gte('created_at', hoje),
     _supabase.from('profiles').select('id,full_name,created_at,phone').eq('status','pending').eq('role','reseller').order('created_at',{ascending:false}).limit(5),
-    _supabase.from('orders').select('id,total,status,created_at,profiles(full_name)').order('created_at',{ascending:false}).limit(6),
+    _supabase.from('orders').select('id,total,status,created_at,profiles(full_name)').order('created_at',{ascending:false}).limit(5),
     _supabase.from('support_messages').select('id,subject,created_at,profiles(full_name)').eq('status','open').order('created_at',{ascending:false}).limit(4),
     _supabase.from('orders').select('total,status,created_at').gte('created_at', new Date(Date.now()-6*864e5).toISOString().slice(0,10)),
+    _supabase.auth.getSession(),
   ]);
 
-  const statusPagos      = ['paid','processing','shipped','delivered'];
-  const pedidosPagos     = (pedidosHoje||[]).filter(o=>statusPagos.includes(o.status));
-  const faturamentoHoje  = pedidosPagos.reduce((a,o)=>a+Number(o.total),0);
-  const totalPendHoje    = (pedidosHoje||[]).filter(o=>o.status==='pending').length;
+  // Saudação por horário
+  const hr = new Date().getHours();
+  const saud = hr < 12 ? 'Bom dia' : hr < 18 ? 'Boa tarde' : 'Boa noite';
+  const adminNome = session?.user?.user_metadata?.full_name?.split(' ')[0]
+    || session?.user?.email?.split('@')[0]
+    || 'Admin';
 
-  // Barras dos últimos 7 dias
+  const statusPagos    = ['paid','processing','shipped','delivered'];
+  const pedidosPagos   = (pedidosHoje||[]).filter(o=>statusPagos.includes(o.status));
+  const faturHoje      = pedidosPagos.reduce((a,o)=>a+Number(o.total),0);
+  const totalPendHoje  = (pedidosHoje||[]).filter(o=>o.status==='pending').length;
+  const ticketMedio    = ultimosPedidos?.length ? (ultimosPedidos.reduce((a,o)=>a+Number(o.total),0)/ultimosPedidos.length) : 0;
+
+  // Barras 7 dias (em px)
   const dias = Array.from({length:7},(_,i)=>{
-    const d = new Date(Date.now()-(6-i)*864e5);
-    return d.toISOString().slice(0,10);
+    return new Date(Date.now()-(6-i)*864e5).toISOString().slice(0,10);
   });
-  const faturPorDia = dias.map(dia => {
-    const dayOrders = (pedidos7d||[]).filter(o=>o.created_at.slice(0,10)===dia&&statusPagos.includes(o.status));
-    return dayOrders.reduce((a,o)=>a+Number(o.total),0);
-  });
-  const maxFatur = Math.max(...faturPorDia, 1);
   const diasAbrev = ['dom','seg','ter','qua','qui','sex','sáb'];
+  const faturPorDia = dias.map(dia =>
+    (pedidos7d||[]).filter(o=>o.created_at.slice(0,10)===dia&&statusPagos.includes(o.status))
+      .reduce((a,o)=>a+Number(o.total),0)
+  );
+  const maxFatur = Math.max(...faturPorDia,1);
+  const CHART_H = 52;
   const barras = faturPorDia.map((val,i) => {
     const isHoje = i===6;
-    // Altura mínima de 12% para barras com valor zero, proporcional para as com valor
-    const pct = val > 0 ? Math.max(Math.round((val/maxFatur)*100), 20) : 12;
+    const px = val>0 ? Math.max(Math.round((val/maxFatur)*CHART_H),14) : 5;
     const diaIdx = new Date(dias[i]).getDay();
     return `
-      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
-        <span style="font-size:9px;color:${isHoje?'var(--pink)':'var(--gray)'}">
-          ${val>0?'R$'+Math.round(val):''}
-        </span>
-        <div style="width:100%;height:${pct}%;border-radius:4px 4px 0 0;min-height:8px;
-          background:${isHoje?'var(--pink)':val>0?'rgba(240,63,170,.35)':'rgba(240,63,170,.10)'};
-          border:${isHoje?'none':val>0?'0.5px solid rgba(240,63,170,.4)':'0.5px solid rgba(240,63,170,.18)'}">
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;height:${CHART_H}px;width:100%">
+          <div style="width:100%;height:${px}px;border-radius:3px 3px 0 0;
+            background:${isHoje?'var(--pink)':val>0?'rgba(240,63,170,.38)':'rgba(240,63,170,.10)'};
+            border:${isHoje?'none':val>0?'0.5px solid rgba(240,63,170,.45)':'0.5px solid rgba(240,63,170,.18)'}">
+          </div>
         </div>
-        <span style="font-size:9px;color:${isHoje?'var(--pink)':'var(--gray)'}">
-          ${diasAbrev[diaIdx]}
-        </span>
+        <span style="font-size:9px;color:${isHoje?'var(--pink)':'var(--gray)'}">${diasAbrev[diaIdx]}</span>
       </div>`;
   }).join('');
 
-  const nPend   = (ultimosPedidos||[]).filter(o=>o.status==='pending').length;
-  const nPago   = (ultimosPedidos||[]).filter(o=>statusPagos.includes(o.status)).length;
-  const pctPend = ultimosPedidos?.length ? Math.round((nPend/ultimosPedidos.length)*100) : 0;
-  const pctPago = ultimosPedidos?.length ? Math.round((nPago/ultimosPedidos.length)*100) : 0;
+  // Feed de atividade — mistura pedidos + aprovações + suporte
+  const atividades = [
+    ...(ultimosPedidos||[]).slice(0,3).map(o=>({
+      tipo:'pedido', titulo:`Pedido ${o.status==='pending'?'pendente':'pago'} #${o.id.slice(-4).toUpperCase()}`,
+      sub: `${o.profiles?.full_name||'Embaixadora'} · ${formatBRL(o.total)}`,
+      cor: o.status==='pending'?'var(--amber)':'var(--green)',
+      ts: new Date(o.created_at),
+    })),
+    ...(pendentes||[]).slice(0,2).map(e=>({
+      tipo:'aprovacao', titulo:`${e.full_name||'Nova embaixadora'} se cadastrou`,
+      sub: `Aguardando aprovação`,
+      cor: 'var(--info, #5B8FD4)',
+      ts: new Date(e.created_at),
+    })),
+    ...(suporteAberto||[]).slice(0,2).map(s=>({
+      tipo:'suporte', titulo: s.subject||'Mensagem de suporte',
+      sub: `${s.profiles?.full_name||'Embaixadora'} · suporte aberto`,
+      cor: 'var(--info, #5B8FD4)',
+      ts: new Date(s.created_at),
+    })),
+  ].sort((a,b)=>b.ts-a.ts).slice(0,6);
+
+  const tempoRelativo = (ts) => {
+    const diff = Date.now() - ts.getTime();
+    const min  = Math.floor(diff/60000);
+    const hr   = Math.floor(diff/3600000);
+    const dia  = Math.floor(diff/86400000);
+    if (min<1)  return 'agora';
+    if (min<60) return `há ${min}min`;
+    if (hr<24)  return `há ${hr}h`;
+    return `há ${dia}d`;
+  };
 
   document.getElementById('conteudo-principal').innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <!-- Saudação -->
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px">
       <div>
-        <h2 style="font-size:20px;font-weight:800">Dashboard</h2>
-        <p style="font-size:13px;color:var(--gray);margin-top:2px">${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</p>
+        <h2 style="font-size:22px;font-weight:800;color:var(--white)">${saud}, ${adminNome}</h2>
+        <p style="font-size:13px;color:var(--gray);margin-top:3px">${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</p>
       </div>
     </div>
 
-    <!-- Métricas clicáveis -->
-    <div class="metrics-grid" style="margin-bottom:16px">
-      <div class="metric-card" style="border-top-color:var(--pink);cursor:pointer;transition:border-color .15s"
-        onclick="irPara('pedidos')"
-        onmouseover="this.style.borderColor='var(--pink)'" onmouseout="this.style.borderTopColor='var(--pink)';this.style.borderColor=''">
-        <div class="metric-icon" style="background:rgba(240,63,170,.1);border:0.5px solid rgba(240,63,170,.25)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-        </div>
-        <div class="metric-value">${pedidosPagos.length}</div>
-        <div class="metric-label">Pedidos pagos hoje</div>
+    <!-- Hero KPI strip -->
+    <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:18px 24px;margin-bottom:18px;display:grid;grid-template-columns:repeat(4,1fr);gap:0">
+      <div style="border-right:0.5px solid var(--border2);padding-right:20px;cursor:pointer" onclick="irPara('pedidos')">
+        <div style="font-size:28px;font-weight:900;color:var(--pink);letter-spacing:-1px">${formatBRL(faturHoje)}</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:3px">Faturamento hoje</div>
+        <div style="font-size:11px;font-weight:700;color:var(--green);margin-top:5px">↑ acumulado 7d: ${formatBRL(faturPorDia.reduce((a,v)=>a+v,0))}</div>
       </div>
-      <div class="metric-card" style="border-top-color:var(--pink);cursor:pointer;transition:border-color .15s"
-        onclick="irPara('pedidos')"
-        onmouseover="this.style.borderColor='var(--pink-deep)'" onmouseout="this.style.borderColor=''">
-        <div class="metric-icon" style="background:rgba(240,63,170,.1);border:0.5px solid rgba(240,63,170,.25)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        </div>
-        <div class="metric-value">${formatBRL(faturamentoHoje)}</div>
-        <div class="metric-label">Faturamento hoje</div>
+      <div style="border-right:0.5px solid var(--border2);padding:0 20px;cursor:pointer" onclick="irPara('pedidos')">
+        <div style="font-size:28px;font-weight:900;color:var(--white);letter-spacing:-1px">${(pedidosHoje||[]).length}</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:3px">Pedidos hoje</div>
+        <div style="font-size:11px;font-weight:700;color:var(--amber);margin-top:5px">${totalPendHoje} pendente${totalPendHoje!==1?'s':''}</div>
       </div>
-      <div class="metric-card" style="border-top-color:var(--green);cursor:pointer;transition:border-color .15s"
-        onclick="irPara('embaixadoras')"
-        onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor=''">
-        <div class="metric-icon" style="background:rgba(63,200,130,.1);border:0.5px solid rgba(63,200,130,.25)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        </div>
-        <div class="metric-value">${totalEmb||0}</div>
-        <div class="metric-label">Embaixadoras ativas</div>
+      <div style="border-right:0.5px solid var(--border2);padding:0 20px;cursor:pointer" onclick="irPara('embaixadoras')">
+        <div style="font-size:28px;font-weight:900;color:var(--white);letter-spacing:-1px">${totalEmb||0}</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:3px">Embaixadoras ativas</div>
+        <div style="font-size:11px;font-weight:700;color:${pendentes?.length?'var(--amber)':'var(--green)'};margin-top:5px">${pendentes?.length?`${pendentes.length} aguardando aprovação`:'Todas aprovadas'}</div>
       </div>
-      <div class="metric-card" style="border-top-color:var(--amber);cursor:pointer;transition:border-color .15s"
-        onclick="irPara('pedidos')"
-        onmouseover="this.style.borderColor='var(--amber)'" onmouseout="this.style.borderColor=''">
-        <div class="metric-icon" style="background:rgba(220,155,70,.1);border:0.5px solid rgba(220,155,70,.25)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        </div>
-        <div class="metric-value">${totalPendHoje}</div>
-        <div class="metric-label">Pagamentos pendentes</div>
+      <div style="padding-left:20px;cursor:pointer" onclick="irPara('pedidos')">
+        <div style="font-size:28px;font-weight:900;color:var(--white);letter-spacing:-1px">${formatBRL(ticketMedio)}</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:3px">Ticket médio</div>
+        <div style="font-size:11px;font-weight:700;color:var(--gray);margin-top:5px">últimos ${ultimosPedidos?.length||0} pedidos</div>
       </div>
     </div>
 
-    <!-- Bento principal — alinha pelo topo, sem forçar mesma altura -->
-    <div class="dash-bento" style="display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start">
+    <!-- 3 colunas -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;align-items:start" class="dash-bento">
 
-      <!-- Coluna esquerda -->
+      <!-- Col 1: Pedidos + mini gráfico -->
       <div style="display:flex;flex-direction:column;gap:16px">
-
-        <!-- Gráfico 7 dias -->
-        <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-            <div style="font-size:12px;font-weight:700;color:var(--gray-lighter)">Faturamento — últimos 7 dias</div>
-            <div style="font-size:12px;font-weight:700;color:var(--pink)">${formatBRL(faturPorDia.reduce((a,v)=>a+v,0))}</div>
-          </div>
-          <div style="display:flex;align-items:flex-end;gap:8px;height:80px;padding:0 4px">
-            ${barras}
-          </div>
-        </div>
-
-        <!-- Pedidos recentes -->
         <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
             <div style="font-size:12px;font-weight:700;color:var(--gray-lighter)">Pedidos recentes</div>
             <button class="btn btn-sm btn-outline" onclick="irPara('pedidos')">Ver todos</button>
           </div>
-          <div class="orders-list">
-            ${(ultimosPedidos||[]).map(o=>`
-              <div class="order-row" onclick="abrirPedido('${o.id}')">
-                <div>
-                  <div class="order-id">#${o.id.slice(-4).toUpperCase()}</div>
-                  <div class="order-date">${new Date(o.created_at).toLocaleDateString('pt-BR')}</div>
-                </div>
-                <div class="order-items-preview">${o.profiles?.full_name||'Embaixadora'}</div>
-                <div class="order-total">${formatBRL(o.total)}</div>
-                ${statusLabel(o.status)}
-              </div>`).join('')||'<p style="color:var(--gray);font-size:13px">Nenhum pedido ainda.</p>'}
-          </div>
-          <!-- Mini status -->
-          <div style="margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border2);display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div onclick="irPara('pedidos')" style="cursor:pointer">
-              <div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;margin-bottom:5px">
-                <span style="color:var(--gray)">Pendentes</span><span style="font-weight:700;color:var(--amber)">${nPend}</span>
+          ${(ultimosPedidos||[]).map(o=>`
+            <div class="order-row" onclick="abrirPedido('${o.id}')" style="padding:9px 12px">
+              <div>
+                <div class="order-id">#${o.id.slice(-4).toUpperCase()}</div>
+                <div class="order-date">${new Date(o.created_at).toLocaleDateString('pt-BR')}</div>
               </div>
-              <div style="height:3px;background:var(--border2);border-radius:3px;overflow:hidden"><div style="width:${pctPend}%;height:100%;background:var(--amber);border-radius:3px"></div></div>
-            </div>
-            <div onclick="irPara('pedidos')" style="cursor:pointer">
-              <div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;margin-bottom:5px">
-                <span style="color:var(--gray)">Pagos</span><span style="font-weight:700;color:var(--green)">${nPago}</span>
-              </div>
-              <div style="height:3px;background:var(--border2);border-radius:3px;overflow:hidden"><div style="width:${pctPago}%;height:100%;background:var(--green);border-radius:3px"></div></div>
+              <div class="order-items-preview">${o.profiles?.full_name||'Embaixadora'}</div>
+              <div class="order-total">${formatBRL(o.total)}</div>
+              ${statusLabel(o.status)}
+            </div>`).join('')||'<p style="color:var(--gray);font-size:13px">Nenhum pedido ainda.</p>'}
+          <!-- mini gráfico -->
+          <div style="margin-top:14px;padding-top:12px;border-top:0.5px solid var(--border2)">
+            <div style="font-size:11px;color:var(--gray);margin-bottom:8px">Últimos 7 dias</div>
+            <div style="display:flex;align-items:flex-end;gap:5px">
+              ${barras}
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Coluna direita — align-items:start garante que não estica -->
+      <!-- Col 2: Aprovação + Suporte -->
       <div style="display:flex;flex-direction:column;gap:16px">
-
-        <!-- Embaixadoras pendentes -->
         <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${pendentes?.length?'12':'8'}px">
-            <div style="display:flex;align-items:center;gap:8px">
+            <div style="display:flex;align-items:center;gap:7px">
               <div style="font-size:12px;font-weight:700;color:var(--gray-lighter)">Aguardando aprovação</div>
               ${pendentes?.length?`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(220,155,70,.12);border:0.5px solid rgba(220,155,70,.3);color:var(--amber)">${pendentes.length}</span>`:''}
             </div>
-            <button class="btn btn-sm btn-outline" onclick="irPara('embaixadoras')">Ver todas</button>
+            <button class="btn btn-sm btn-outline" onclick="irPara('embaixadoras')">Ver</button>
           </div>
           ${pendentes?.length ? pendentes.map(e=>`
             <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border2)">
               <div class="avatar" style="flex-shrink:0">${initials(e.full_name)}</div>
               <div style="flex:1;min-width:0">
-                <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.full_name||'Sem nome'}</div>
-                <div style="font-size:11px;color:var(--gray)">${e.phone||'Sem telefone'}</div>
+                <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.full_name||'Sem nome'}</div>
+                <div style="font-size:10px;color:var(--gray)">${e.phone||'Sem telefone'}</div>
               </div>
-              <button class="btn btn-sm btn-primary" style="width:auto;flex-shrink:0" onclick="aprovarEmb('${e.id}')">Aprovar</button>
+              <button class="btn btn-sm btn-primary" style="width:auto;flex-shrink:0;font-size:11px" onclick="aprovarEmb('${e.id}')">Aprovar</button>
             </div>`).join('')
           : `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;color:var(--gray);font-size:12px">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               Nenhuma pendente
             </div>`}
         </div>
 
-        <!-- Suporte aberto -->
         <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${suporteAberto?.length?'12':'8'}px">
-            <div style="display:flex;align-items:center;gap:8px">
+            <div style="display:flex;align-items:center;gap:7px">
               <div style="font-size:12px;font-weight:700;color:var(--gray-lighter)">Suporte aberto</div>
               ${suporteAberto?.length?`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(91,143,212,.1);border:0.5px solid rgba(91,143,212,.28);color:#5B8FD4">${suporteAberto.length}</span>`:''}
             </div>
-            <button class="btn btn-sm btn-outline" onclick="irPara('suporte')">Ver tudo</button>
+            <button class="btn btn-sm btn-outline" onclick="irPara('suporte')">Ver</button>
           </div>
           ${suporteAberto?.length ? suporteAberto.map(s=>`
             <div style="padding:9px 0;border-bottom:0.5px solid var(--border2);cursor:pointer" onclick="irPara('suporte')">
@@ -257,14 +250,33 @@ async function renderDashboard() {
               </div>
             </div>`).join('')
           : `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;color:var(--gray);font-size:12px">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               Nenhum ticket aberto
             </div>`}
         </div>
       </div>
+
+      <!-- Col 3: Feed de atividade -->
+      <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px">
+        <div style="font-size:12px;font-weight:700;color:var(--gray-lighter);margin-bottom:14px">Atividade recente</div>
+        ${atividades.length ? atividades.map(a=>`
+          <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border2)">
+            <div style="width:7px;height:7px;border-radius:50%;background:${a.cor};flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.titulo}</div>
+              <div style="font-size:11px;color:var(--gray);margin-top:1px">${a.sub}</div>
+            </div>
+            <div style="font-size:10px;color:var(--gray);flex-shrink:0;margin-top:1px">${tempoRelativo(a.ts)}</div>
+          </div>`).join('')
+        : `<div style="text-align:center;padding:20px 0;font-size:13px;color:var(--gray)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="display:block;margin:0 auto 8px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Nenhuma atividade ainda
+          </div>`}
+      </div>
     </div>
   `;
 }
+
 
 // ════════════════════════════════════════════
 // PEDIDOS

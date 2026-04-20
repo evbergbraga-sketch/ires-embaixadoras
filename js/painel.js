@@ -1,10 +1,10 @@
 // ============================================
 // IRES EMBAIXADORAS — painel.js
-// Início, meus pedidos, avisos e recompra
+// Todas as abas unificadas numa única SPA
 // ============================================
 
-let _perfil = null;
-let _abaAtiva = 'painel';
+let _perfil    = null;
+let _abaAtiva  = 'painel';
 
 // ── Inicialização ──
 (async () => {
@@ -13,35 +13,51 @@ let _abaAtiva = 'painel';
   _perfil = ctx.profile;
   await renderTopbar();
 
-  const hash = window.location.hash.replace('#','');
-  const abaValida = ['painel','vitrine','pedidos','avisos','perfil'].includes(hash);
+  const hash     = window.location.hash.replace('#', '');
+  const abaValida = ['painel','vitrine','pedidos','avisos','perfil','depoimentos','suporte'].includes(hash);
   irAba(abaValida ? hash : 'painel');
 })();
 
 // ── Navegação entre abas ──
 function irAba(aba) {
   _abaAtiva = aba;
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  const tab = document.getElementById(`tab-${aba}`);
+
+  // desktop tabs
+  document.querySelectorAll('.nav-tab-new').forEach(t => t.classList.remove('active'));
+  const tab = document.getElementById('tab-' + aba);
   if (tab) tab.classList.add('active');
+
+  // bottom nav mobile
+  document.querySelectorAll('.bnav-tab').forEach(t => t.classList.remove('active'));
+  const bmap = { painel:0, vitrine:1, pedidos:2, avisos:3, perfil:4 };
+  if (bmap[aba] !== undefined) {
+    const btabs = document.querySelectorAll('.bnav-tab');
+    if (btabs[bmap[aba]]) btabs[bmap[aba]].classList.add('active');
+  }
+
   history.replaceState(null, '', '#' + aba);
-  const acoes = { painel: renderInicio, vitrine: renderVitrine, pedidos: () => window.location.href='pedidos.html', avisos: renderAvisos, perfil: renderPerfil };
+
+  const acoes = {
+    painel:      renderInicio,
+    vitrine:     renderVitrine,
+    pedidos:     renderPedidos,
+    avisos:      renderAvisos,
+    perfil:      renderPerfil,
+    depoimentos: renderDepoimentos,
+    suporte:     renderSuporte,
+  };
   (acoes[aba] || renderInicio)();
 }
 
-// ============================================================
-// IRES — painel.js  (PATCH renderInicio)
-// Substitui APENAS a função renderInicio() existente.
-// Todo o resto do painel.js permanece inalterado.
-// ============================================================
-
+// ════════════════════════════════════════════
+// INÍCIO
+// ════════════════════════════════════════════
 async function renderInicio() {
   const nome = _perfil.full_name?.split(' ')[0] || 'Embaixadora';
 
-  // Busca paralela: pedidos, avisos, produtos
   const [
-    { data: pedidos },
-    { data: avisos  },
+    { data: pedidos  },
+    { data: avisos   },
     { data: produtos },
   ] = await Promise.all([
     _supabase.from('orders')
@@ -61,33 +77,30 @@ async function renderInicio() {
       .limit(6),
   ]);
 
-  const totalGasto  = (pedidos || []).reduce((a, o) => a + Number(o.total), 0);
-  const qtdPedidos  = (pedidos || []).length;
-  const pendentes   = (pedidos || []).filter(o => o.status === 'pending').length;
+  const totalGasto = (pedidos || []).reduce((a, o) => a + Number(o.total), 0);
+  const qtdPedidos = (pedidos || []).length;
+  const pendentes  = (pedidos || []).filter(o => o.status === 'pending').length;
 
-  // ── Tag de status nos pedidos (reutiliza lógica existente) ──
   function tagNova(status) {
     const map = {
-      pending:    { label: 'Pendente',    cls: 'pend' },
-      paid:       { label: 'Pago',        cls: 'ok'   },
-      processing: { label: 'Em processo', cls: 'ship' },
-      shipped:    { label: 'Enviado',     cls: 'ship' },
-      delivered:  { label: 'Entregue',    cls: 'ok'   },
-      cancelled:  { label: 'Cancelado',   cls: 'wait' },
+      pending:    { label:'Pendente',    cls:'pend' },
+      paid:       { label:'Pago',        cls:'ok'   },
+      processing: { label:'Em processo', cls:'ship' },
+      shipped:    { label:'Enviado',     cls:'ship' },
+      delivered:  { label:'Entregue',    cls:'ok'   },
+      cancelled:  { label:'Cancelado',   cls:'wait' },
     };
     const s = map[status] || { label: status, cls: 'wait' };
     return `<span class="tag-new ${s.cls}">${s.label}</span>`;
   }
 
-  // ── Cor do valor do pedido por status ──
   function corValor(status) {
     if (status === 'pending')   return 'var(--nb-amber)';
     if (status === 'delivered') return 'var(--nb-text-low)';
     return 'var(--nb-text-mid)';
   }
 
-  // ── Aviso: pega o mais recente (se existir) ──
-  const aviso = avisos?.[0];
+  const aviso    = avisos?.[0];
   const avisoHTML = aviso ? `
     <div class="aviso-card info">
       <div class="aviso-card-icon">
@@ -95,13 +108,12 @@ async function renderInicio() {
       </div>
       <div style="flex:1;min-width:0;">
         <div class="aviso-card-title">${aviso.subject || 'Aviso'}</div>
-        <div class="aviso-card-body">${aviso.body.slice(0, 140)}${aviso.body.length > 140 ? '…' : ''}</div>
+        <div class="aviso-card-body">${aviso.body.slice(0,140)}${aviso.body.length > 140 ? '…' : ''}</div>
       </div>
       <button onclick="irAba('avisos')" style="background:none;border:none;color:var(--nb-gold);font-size:18px;cursor:pointer;flex-shrink:0;line-height:1;padding:0 0 0 8px;">›</button>
     </div>
   ` : '';
 
-  // ── Produtos scroll ──
   const produtosHTML = (produtos || []).length ? `
     <div class="home-card home-vitrine">
       <div class="home-card-header">
@@ -113,7 +125,7 @@ async function renderInicio() {
       </div>
       <div class="produtos-scroll">
         ${(produtos || []).map(p => {
-          const img    = p.images?.[0] || '';
+          const img     = p.images?.[0] || '';
           const catNome = p.categories?.name || '';
           return `
             <div class="produto-chip" onclick="irAba('vitrine')">
@@ -141,7 +153,6 @@ async function renderInicio() {
     </div>
   ` : '';
 
-  // ── Métricas ──
   const metricsHTML = `
     <div class="metrics-home">
       <div class="metric-home-card">
@@ -151,7 +162,7 @@ async function renderInicio() {
         </div>
         <div class="metric-home-val" style="color:var(--nb-burg);">${qtdPedidos}</div>
         <div class="metric-home-bar">
-          <div class="metric-home-bar-fill" style="width:${Math.min(qtdPedidos * 10, 100)}%;background:var(--nb-burg);opacity:.45;"></div>
+          <div class="metric-home-bar-fill" style="width:${Math.min(qtdPedidos*10,100)}%;background:var(--nb-burg);opacity:.45;"></div>
         </div>
         <div class="metric-home-sub">
           ${pendentes > 0
@@ -169,48 +180,13 @@ async function renderInicio() {
           ${formatBRL(totalGasto)}
         </div>
         <div class="metric-home-bar">
-          <div class="metric-home-bar-fill" style="width:${Math.min(totalGasto / 10, 100)}%;background:var(--nb-gold);opacity:.45;"></div>
+          <div class="metric-home-bar-fill" style="width:${Math.min(totalGasto/10,100)}%;background:var(--nb-gold);opacity:.45;"></div>
         </div>
-        <div class="metric-home-sub" style="margin-top:6px;">
-          <span style="font-size:11px;">últimos ${qtdPedidos} pedidos</span>
-        </div>
+        <div class="metric-home-sub"><span>últimos ${qtdPedidos} pedidos</span></div>
       </div>
     </div>
   `;
 
-  // ── Últimos pedidos ──
-  const pedidosHTML = `
-    <div class="home-card home-pedidos">
-      <div class="home-card-header">
-        <div class="home-card-label">
-          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          Últimos pedidos
-        </div>
-        <a href="pedidos.html" class="home-card-link">Ver todos →</a>
-      </div>
-      ${(pedidos || []).length ? pedidos.map(o => `
-        <div class="order-row-new">
-          <div>
-            <div class="order-id-new">#${o.id.slice(-6).toUpperCase()}</div>
-            <div class="order-date-new">${new Date(o.created_at).toLocaleDateString('pt-BR')}</div>
-          </div>
-          <div class="order-right-new">
-            <span class="order-val-new" style="color:${corValor(o.status)};">${formatBRL(o.total)}</span>
-            ${tagNova(o.status)}
-          </div>
-        </div>
-      `).join('') : `
-        <div style="padding:20px 0;text-align:center;">
-          <p style="font-size:13px;color:var(--nb-text-low);">Nenhum pedido ainda.</p>
-          <a href="#" onclick="irAba('vitrine'); return false" class="btn-primary-new" style="margin-top:12px;font-size:12px;padding:8px 16px;">
-            Fazer primeiro pedido →
-          </a>
-        </div>
-      `}
-    </div>
-  `;
-
-  // ── Capacitação (placeholder — integrar com tabela futura) ──
   const capHTML = `
     <div class="home-card home-cap">
       <div class="home-card-header">
@@ -235,15 +211,43 @@ async function renderInicio() {
     </div>
   `;
 
-  // ── Monta tudo ──
+  const pedidosHTML = `
+    <div class="home-card home-pedidos">
+      <div class="home-card-header">
+        <div class="home-card-label">
+          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Últimos pedidos
+        </div>
+        <a href="#" onclick="irAba('pedidos'); return false" class="home-card-link">Ver todos →</a>
+      </div>
+      ${(pedidos || []).length ? pedidos.map(o => `
+        <div class="order-row-new">
+          <div>
+            <div class="order-id-new">#${o.id.slice(-6).toUpperCase()}</div>
+            <div class="order-date-new">${new Date(o.created_at).toLocaleDateString('pt-BR')}</div>
+          </div>
+          <div class="order-right-new">
+            <span class="order-val-new" style="color:${corValor(o.status)};">${formatBRL(o.total)}</span>
+            ${tagNova(o.status)}
+          </div>
+        </div>
+      `).join('') : `
+        <div style="padding:20px 0;text-align:center;">
+          <p style="font-size:13px;color:var(--nb-text-low);">Nenhum pedido ainda.</p>
+          <a href="#" onclick="irAba('vitrine'); return false" class="btn-primary-new" style="margin-top:12px;font-size:12px;padding:8px 16px;">
+            Fazer primeiro pedido →
+          </a>
+        </div>
+      `}
+    </div>
+  `;
+
   const avatarContent = _perfil.avatar_url
     ? `<img src="${_perfil.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`
     : `<span style="font-size:14px;font-weight:700;color:var(--nb-burg);">${initials(_perfil.full_name)}</span>`;
 
   document.getElementById('conteudo').innerHTML = `
     <div class="home-bento">
-
-      <!-- Hero -->
       <div class="hero-card">
         <div style="display:flex;align-items:center;gap:14px;">
           <div onclick="irAba('perfil')" style="width:46px;height:46px;border-radius:50%;background:var(--nb-card);border:1.5px solid var(--nb-burg-bdr);overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
@@ -251,38 +255,22 @@ async function renderInicio() {
           </div>
           <div>
             <div class="hero-card-name">Olá, ${nome} 👋</div>
-            <div class="hero-card-sub">
-              <span class="hero-status-dot"></span>
-              Embaixadora ativa
-            </div>
+            <div class="hero-card-sub"><span class="hero-status-dot"></span>Embaixadora ativa</div>
           </div>
         </div>
         <button onclick="irAba('vitrine')" class="btn-primary-new">Ver vitrine →</button>
       </div>
-
-      <!-- Aviso (só renderiza se existir) -->
       ${avisoHTML}
-
-      <!-- Vitrine preview -->
       ${produtosHTML}
-
-      <!-- Métricas -->
       ${metricsHTML}
-
-      <!-- Capacitação -->
       ${capHTML}
-
-      <!-- Últimos pedidos -->
       ${pedidosHTML}
-
     </div>
   `;
 
-  // Cache de produtos para addToCart funcionar
   window._produtosPainel = produtos || [];
 }
 
-// ── Adiciona produto ao carrinho direto da home ──
 function _addProdutoHome(id) {
   const p = (window._produtosPainel || []).find(x => x.id === id);
   if (!p) return;
@@ -290,99 +278,194 @@ function _addProdutoHome(id) {
 }
 
 // ════════════════════════════════════════════
-// MEUS PEDIDOS
+// PEDIDOS (absorvido do pedidos.html)
 // ════════════════════════════════════════════
+let _todosPedidos = [];
+
 async function renderPedidos() {
-  const { data } = await _supabase
+  document.getElementById('conteudo').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h2 style="font-size:20px;font-weight:700;color:var(--nb-text-hi)">Meus pedidos</h2>
+      <a href="#" onclick="irAba('vitrine'); return false" class="btn-primary-new" style="font-size:12px;padding:8px 14px;">+ Novo pedido</a>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <div class="filter-pill active" onclick="filtrarPedidos(this,'')">Todos</div>
+      <div class="filter-pill" onclick="filtrarPedidos(this,'pending')">Pendente</div>
+      <div class="filter-pill" onclick="filtrarPedidos(this,'paid')">Pago</div>
+      <div class="filter-pill" onclick="filtrarPedidos(this,'processing')">Em processo</div>
+      <div class="filter-pill" onclick="filtrarPedidos(this,'shipped')">Enviado</div>
+      <div class="filter-pill" onclick="filtrarPedidos(this,'delivered')">Entregue</div>
+    </div>
+
+    <div id="loading-pedidos" class="loading"><div class="spinner"></div> Carregando...</div>
+    <div class="orders-list" id="lista-pedidos" style="display:none"></div>
+    <div class="empty-state" id="empty-pedidos" style="display:none">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--gray)" stroke-width="1.5">
+        <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <path d="M16 10a4 4 0 01-8 0"/>
+      </svg>
+      <p>Nenhum pedido encontrado.</p>
+      <a href="#" onclick="irAba('vitrine'); return false" class="btn btn-primary btn-sm" style="width:auto;margin-top:16px">Fazer primeiro pedido</a>
+    </div>
+  `;
+
+  _garantirModalPedido();
+
+  const { data, error } = await _supabase
     .from('orders')
-    .select('*, order_items(quantity, unit_price, subtotal, products(name, images))')
+    .select('id,status,total,notes,payment_url,payment_ref,created_at,order_items(quantity,unit_price,subtotal,products(name,images,min_quantity,price))')
     .eq('reseller_id', _perfil.id)
     .order('created_at', { ascending: false });
 
-  document.getElementById('conteudo').innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-      <h2 style="font-size:20px;font-weight:800">Meus pedidos</h2>
-      <span class="pill pill-gray">${data?.length || 0} pedidos</span>
-    </div>
+  document.getElementById('loading-pedidos').style.display = 'none';
 
-    <div class="orders-list">
-      ${(data || []).length ? data.map(o => pedidoCard(o, true)).join('')
-        : `<div class="empty-state"><p>Você ainda não fez nenhum pedido.</p>
-           <a href="vitrine.html" class="btn btn-primary btn-sm" style="width:auto;margin-top:12px">Ver vitrine</a></div>`}
-    </div>
-  `;
+  if (error || !data?.length) {
+    document.getElementById('empty-pedidos').style.display = 'block';
+    return;
+  }
+
+  _todosPedidos = data;
+  _renderListaPedidos(data);
 }
 
-function pedidoCard(o, expandido = false) {
-  const itens = o.order_items || [];
-  const preview = itens.slice(0,2).map(i => i.products?.name).filter(Boolean).join(', ');
+function _garantirModalPedido() {
+  if (!document.getElementById('modal-pedido')) {
+    const m = document.createElement('div');
+    m.id = 'modal-pedido';
+    m.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto';
+    m.innerHTML = '<div id="modal-pedido-body" class="card" style="max-width:480px;width:100%;position:relative;margin:auto"></div>';
+    m.onclick = (e) => { if (e.target === m) _fecharModalPedido(); };
+    document.body.appendChild(m);
+  }
+}
 
-  return `
-    <div class="order-row" style="flex-direction:column;align-items:stretch;gap:0;cursor:default">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div>
+function _fecharModalPedido() {
+  const m = document.getElementById('modal-pedido');
+  if (m) m.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function _renderListaPedidos(lista) {
+  const el    = document.getElementById('lista-pedidos');
+  const empty = document.getElementById('empty-pedidos');
+  if (!lista.length) { el.style.display='none'; empty.style.display='block'; return; }
+  empty.style.display = 'none';
+  el.style.display    = 'flex';
+  el.innerHTML = lista.map(o => {
+    const itens   = o.order_items || [];
+    const preview = itens.slice(0,2).map(i => i.products?.name).filter(Boolean).join(', ');
+    const img     = itens[0]?.products?.images?.[0] || '';
+    return `
+      <div class="order-row" onclick="abrirDetalhePedido('${o.id}')" style="cursor:pointer">
+        <div style="width:44px;height:44px;border-radius:var(--radius-md);background:var(--pink-faint);border:0.5px solid var(--pink-deep);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          ${img
+            ? `<img src="${img}" style="width:100%;height:100%;object-fit:cover"/>`
+            : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>`
+          }
+        </div>
+        <div style="flex:1;min-width:0">
           <div class="order-id">#${o.id.slice(-6).toUpperCase()}</div>
-          <div class="order-date">${new Date(o.created_at).toLocaleDateString('pt-BR')}</div>
+          <div class="order-date">${new Date(o.created_at).toLocaleDateString('pt-BR')} · ${itens.length} item${itens.length>1?'s':''}</div>
+          <div class="order-items-preview" style="margin-top:2px">${preview}</div>
         </div>
-        <div class="order-items-preview" style="flex:1">${preview || 'Pedido'}</div>
-        <div class="order-total">${formatBRL(o.total)}</div>
-        ${statusLabel(o.status)}
+        <div style="text-align:right">
+          <div class="order-total">${formatBRL(o.total)}</div>
+          <div style="margin-top:4px">${statusLabel(o.status)}</div>
+        </div>
       </div>
-
-      ${expandido && itens.length ? `
-        <div style="border-top:0.5px solid var(--border2);margin-top:12px;padding-top:12px;display:flex;flex-direction:column;gap:8px">
-          ${itens.map(i => {
-            const img = i.products?.images?.[0] || '';
-            return `
-              <div style="display:flex;align-items:center;gap:10px">
-                <div style="width:40px;height:40px;border-radius:6px;background:var(--pink-faint);border:0.5px solid var(--pink-deep);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
-                  ${img ? `<img src="${img}" style="width:100%;height:100%;object-fit:cover"/>` : ''}
-                </div>
-                <div style="flex:1;min-width:0">
-                  <div style="font-size:12px;font-weight:600;color:var(--white)">${i.products?.name || 'Produto'}</div>
-                  <div style="font-size:11px;color:var(--gray)">${i.quantity} un. × ${formatBRL(i.unit_price)}</div>
-                </div>
-                <div style="font-size:13px;font-weight:700;color:var(--white)">${formatBRL(i.subtotal)}</div>
-              </div>
-            `;
-          }).join('')}
-
-          <div style="display:flex;gap:8px;margin-top:4px">
-            ${o.status === 'pending' ? (o.payment_url
-              ? `<a href="${o.payment_url}" target="_blank" class="btn btn-primary btn-sm" style="flex:1">Efetuar pagamento ↗</a>`
-              : `<button class="btn btn-primary btn-sm" id="btn-pagar-${o.id}" onclick="gerarLinkPainel('${o.id}',${o.total})" style="flex:1">Gerar link de pagamento</button>`
-            ) : ''}
-            <button class="btn btn-sm btn-outline" onclick="recomprar('${o.id}')" style="flex:1">
-              Recomprar →
-            </button>
-          </div>
-        </div>
-      ` : ''}
-    </div>
-  `;
+    `;
+  }).join('');
 }
 
-// ── Recompra rápida ──
-async function recomprar(orderId) {
-  const { data } = await _supabase
-    .from('order_items')
-    .select('quantity, unit_price, products(*)')
-    .eq('order_id', orderId);
+function filtrarPedidos(el, status) {
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  const filtrados = status ? _todosPedidos.filter(o => o.status === status) : _todosPedidos;
+  _renderListaPedidos(filtrados);
+}
 
-  if (!data?.length) { showToast('Erro ao carregar pedido.', 'error'); return; }
+async function abrirDetalhePedido(id) {
+  const o = _todosPedidos.find(x => x.id === id);
+  if (!o) return;
+  const itens = o.order_items || [];
 
-  data.forEach(item => {
-    if (!item.products) return;
-    const produto = {
-      ...item.products,
-      price:        Number(item.unit_price) || Number(item.products.price) || 0,
-      min_quantity: Number(item.products.min_quantity) || 1,
-    };
-    addToCart(produto, item.quantity);
+  document.getElementById('modal-pedido-body').innerHTML = `
+    <button onclick="_fecharModalPedido()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:4px">Pedido #${o.id.slice(-6).toUpperCase()}</h3>
+    <p style="font-size:12px;color:var(--gray);margin-bottom:16px">${new Date(o.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</p>
+    <div style="margin-bottom:16px">
+      ${itens.map(i => {
+        const img = i.products?.images?.[0] || '';
+        return `
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--border2)">
+            <div style="width:48px;height:48px;border-radius:var(--radius-md);background:var(--pink-faint);border:0.5px solid var(--pink-deep);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+              ${img ? `<img src="${img}" style="width:100%;height:100%;object-fit:cover"/>` : ''}
+            </div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:600">${i.products?.name||'Produto'}</div>
+              <div style="font-size:11px;color:var(--gray)">${i.quantity} un. × ${formatBRL(i.unit_price)}</div>
+            </div>
+            <div style="font-size:13px;font-weight:700">${formatBRL(i.subtotal)}</div>
+          </div>
+        `;
+      }).join('')}
+      <div style="display:flex;justify-content:space-between;padding:12px 0;font-weight:800;font-size:15px">
+        <span>Total</span><span style="color:var(--pink)">${formatBRL(o.total)}</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <span style="font-size:13px;color:var(--gray)">Status</span>
+      ${statusLabel(o.status)}
+    </div>
+    ${o.notes ? `<div class="info-box" style="margin-bottom:16px"><div class="info-box-dot"></div><p>${o.notes}</p></div>` : ''}
+    ${o.status === 'pending' ? (o.payment_url
+      ? `<a href="${o.payment_url}" target="_blank" class="btn btn-primary" style="margin-bottom:10px">Finalizar pagamento agora ↗</a>`
+      : `<button class="btn btn-primary" style="margin-bottom:10px" id="btn-gerar-${o.id}" onclick="gerarCobrancaPainel('${o.id}',${o.total})">Gerar link de pagamento</button>`
+    ) : ''}
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline" style="flex:1" onclick="recomprarPainel('${o.id}')">Recomprar →</button>
+      <button class="btn btn-outline" style="flex:1" onclick="_fecharModalPedido()">Fechar</button>
+    </div>
+  `;
+  document.getElementById('modal-pedido').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+async function recomprarPainel(orderId) {
+  const o = _todosPedidos.find(x => x.id === orderId);
+  if (!o) return;
+  (o.order_items || []).forEach(i => {
+    if (!i.products) return;
+    addToCart({ ...i.products, price: Number(i.unit_price)||Number(i.products.price)||0, min_quantity: Number(i.products.min_quantity)||1 }, i.quantity);
   });
-
   showToast('Itens adicionados ao carrinho!', 'success');
   setTimeout(() => window.location.href = 'carrinho.html', 1000);
+}
+
+async function gerarCobrancaPainel(orderId, total) {
+  const btn = document.getElementById(`btn-gerar-${orderId}`);
+  if (btn) { btn.disabled=true; btn.innerHTML='<div class="spinner" style="margin:0 auto;width:14px;height:14px"></div>'; }
+  try {
+    const resp   = await fetch('https://webhook.ruahsystems.com.br/webhook/asaas-buscar-cobranca', {
+      method: 'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ pedido_id: orderId }),
+    });
+    const result = await resp.json();
+    if (result.ok && result.link) {
+      const o = _todosPedidos.find(x => x.id === orderId);
+      if (o) o.payment_url = result.link;
+      if (btn) btn.outerHTML = `<a href="${result.link}" target="_blank" class="btn btn-primary" style="margin-bottom:10px">Efetuar pagamento ↗</a>`;
+      showToast('Link encontrado!', 'success');
+    } else {
+      showToast('Não foi possível recuperar o link.', 'error');
+      if (btn) { btn.disabled=false; btn.textContent='Gerar link de pagamento'; }
+    }
+  } catch(e) {
+    showToast('Erro: '+e.message, 'error');
+    if (btn) { btn.disabled=false; btn.textContent='Gerar link de pagamento'; }
+  }
 }
 
 // ════════════════════════════════════════════
@@ -390,21 +473,17 @@ async function recomprar(orderId) {
 // ════════════════════════════════════════════
 async function renderAvisos() {
   const { data } = await _supabase
-    .from('messages')
-    .select('*')
-    .eq('is_broadcast', true)
-    .order('created_at', { ascending: false });
+    .from('messages').select('*').eq('is_broadcast', true).order('created_at', { ascending: false });
 
   document.getElementById('conteudo').innerHTML = `
     <div style="margin-bottom:20px">
-      <h2 style="font-size:20px;font-weight:800">Avisos da IRES</h2>
+      <h2 style="font-size:20px;font-weight:700;color:var(--nb-text-hi)">Avisos da IRES</h2>
       <p style="font-size:13px;color:var(--gray);margin-top:4px">Comunicados enviados para todas as embaixadoras</p>
     </div>
-
-    ${(data || []).length ? data.map(a => `
+    ${(data||[]).length ? data.map(a => `
       <div class="card" style="margin-bottom:12px">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;gap:12px">
-          <div style="font-size:14px;font-weight:700">${a.subject || 'Aviso'}</div>
+          <div style="font-size:14px;font-weight:700">${a.subject||'Aviso'}</div>
           <div style="font-size:11px;color:var(--gray);white-space:nowrap">${new Date(a.created_at).toLocaleDateString('pt-BR')}</div>
         </div>
         <p style="font-size:13px;color:var(--gray-lighter);line-height:1.7">${a.body}</p>
@@ -421,31 +500,272 @@ async function renderAvisos() {
   `;
 }
 
-// ── Gera link de pagamento para pedido pendente ──
-async function gerarLinkPainel(orderId, total) {
-  const btn = document.getElementById(`btn-pagar-${orderId}`);
-  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner" style="margin:0 auto;width:14px;height:14px"></div>'; }
+// ════════════════════════════════════════════
+// DEPOIMENTOS (absorvido do comunidade.html)
+// ════════════════════════════════════════════
+async function renderDepoimentos() {
+  const [{ data: todos }, { data: meus }] = await Promise.all([
+    _supabase.from('testimonials').select('*, profiles(full_name)').eq('status','approved').order('created_at',{ascending:false}),
+    _supabase.from('testimonials').select('*').eq('reseller_id',_perfil.id).order('created_at',{ascending:false}),
+  ]);
 
-  try {
-    const resp = await fetch('https://webhook.ruahsystems.com.br/webhook/asaas-buscar-cobranca', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pedido_id: orderId }),
-    });
+  _garantirModalComunidade();
 
-    const result = await resp.json();
+  document.getElementById('conteudo').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <h2 style="font-size:20px;font-weight:700;color:var(--nb-text-hi)">Depoimentos</h2>
+        <p style="font-size:12px;color:var(--gray);margin-top:3px">O que as embaixadoras estão dizendo</p>
+      </div>
+      <button class="btn btn-primary btn-sm" style="width:auto" onclick="abrirFormDepoimento()">+ Meu depoimento</button>
+    </div>
+    ${(meus||[]).filter(m=>m.status==='pending').length ? `
+      <div class="info-box" style="margin-bottom:20px">
+        <div class="info-box-dot"></div>
+        <p>Você tem <strong>${meus.filter(m=>m.status==='pending').length} depoimento(s)</strong> aguardando aprovação.</p>
+      </div>
+    ` : ''}
+    <div style="display:flex;flex-direction:column;gap:14px">
+      ${(todos||[]).length ? todos.map(t => _depoimentoCard(t)).join('') : `
+        <div class="empty-state">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--gray)" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <p>Nenhum depoimento ainda. Seja a primeira!</p>
+        </div>
+      `}
+    </div>
+  `;
+}
 
-    if (result.ok && result.link) {
-      showToast('Link encontrado!', 'success');
-      if (btn) btn.outerHTML = `<a href="${result.link}" target="_blank" class="btn btn-primary btn-sm" style="flex:1">Efetuar pagamento ↗</a>`;
-    } else {
-      showToast('Nenhuma cobrança encontrada para este pedido.', 'error');
-      if (btn) { btn.disabled = false; btn.textContent = 'Gerar link de pagamento'; }
-    }
-  } catch(e) {
-    showToast('Erro: ' + e.message, 'error');
-    if (btn) { btn.disabled = false; btn.textContent = 'Gerar link de pagamento'; }
+function _depoimentoCard(t) {
+  const nome    = t.profiles?.full_name || 'Embaixadora';
+  const inicial = nome.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  return `
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div class="avatar">${inicial}</div>
+        <div>
+          <div style="font-size:13px;font-weight:700">${nome}</div>
+          <div style="font-size:11px;color:var(--gray)">${new Date(t.created_at).toLocaleDateString('pt-BR')}</div>
+        </div>
+        <span class="pill pill-pink" style="margin-left:auto">Embaixadora</span>
+      </div>
+      ${t.image_url ? `
+        <div onclick="abrirLightboxDep('${t.image_url}')"
+          style="border-radius:var(--radius-md);overflow:hidden;margin-bottom:12px;height:180px;cursor:zoom-in;position:relative;background:var(--black)">
+          <img src="${t.image_url}" style="width:100%;height:100%;object-fit:cover;display:block"/>
+          <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);border-radius:6px;padding:4px 8px;font-size:10px;color:#fff">Clique para ampliar</div>
+        </div>
+      ` : ''}
+      <p style="font-size:13px;color:var(--gray-lighter);line-height:1.7">${t.body}</p>
+    </div>
+  `;
+}
+
+function abrirLightboxDep(url) {
+  let lb = document.getElementById('lightbox-dep');
+  if (!lb) {
+    lb = document.createElement('div');
+    lb.id = 'lightbox-dep';
+    lb.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;cursor:zoom-out';
+    document.body.appendChild(lb);
   }
+  lb.innerHTML = `
+    <div style="position:relative;max-width:90vw;max-height:90vh">
+      <img src="${url}" style="max-width:100%;max-height:90vh;border-radius:var(--radius-lg);display:block;object-fit:contain"/>
+      <button onclick="document.getElementById('lightbox-dep').remove();document.body.style.overflow=''"
+        style="position:absolute;top:-14px;right:-14px;width:30px;height:30px;border-radius:50%;background:#f03faa;border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700">✕</button>
+    </div>
+  `;
+  lb.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  lb.onclick = (e) => { if (e.target === lb) { lb.remove(); document.body.style.overflow=''; } };
+}
+
+function _garantirModalComunidade() {
+  if (!document.getElementById('modal-comunidade')) {
+    const m = document.createElement('div');
+    m.id = 'modal-comunidade';
+    m.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto';
+    m.innerHTML = '<div id="modal-comunidade-body" class="card" style="max-width:480px;width:100%;position:relative;margin:auto"></div>';
+    m.onclick = (e) => { if (e.target === m) _fecharModalComunidade(); };
+    document.body.appendChild(m);
+  }
+}
+
+function _fecharModalComunidade() {
+  const m = document.getElementById('modal-comunidade');
+  if (m) m.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function abrirFormDepoimento() {
+  _garantirModalComunidade();
+  document.getElementById('modal-comunidade-body').innerHTML = `
+    <button onclick="_fecharModalComunidade()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:6px">Compartilhar depoimento</h3>
+    <p style="font-size:12px;color:var(--gray);margin-bottom:16px">Será analisado e publicado após aprovação da IRES.</p>
+    <div class="form-group">
+      <label>Seu depoimento *</label>
+      <textarea id="dep-texto" rows="5" placeholder="Conte sua experiência..." style="resize:vertical"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Foto (opcional)</label>
+      <div onclick="document.getElementById('dep-foto').click()"
+        style="border:0.5px dashed var(--border);border-radius:var(--radius-md);padding:20px;text-align:center;cursor:pointer;background:var(--black)"
+        onmouseover="this.style.borderColor='var(--pink)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div id="dep-foto-preview">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gray)" stroke-width="1.5" style="margin-bottom:6px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <div style="font-size:12px;color:var(--gray)">Clique para adicionar uma foto</div>
+        </div>
+        <div id="dep-upload-progress" style="display:none;margin-top:8px">
+          <div style="height:3px;background:var(--border);border-radius:2px;overflow:hidden">
+            <div id="dep-upload-bar" style="height:100%;width:0%;background:var(--pink);transition:width 0.3s"></div>
+          </div>
+        </div>
+      </div>
+      <input type="file" id="dep-foto" accept="image/*" style="display:none" onchange="uploadFotoDepoimento(this.files[0])"/>
+      <input type="hidden" id="dep-foto-url"/>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-outline" style="flex:1" onclick="_fecharModalComunidade()">Cancelar</button>
+      <button class="btn btn-primary" style="flex:1" id="btn-dep" onclick="enviarDepoimento()">Enviar depoimento</button>
+    </div>
+  `;
+  document.getElementById('modal-comunidade').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+async function uploadFotoDepoimento(file) {
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('Selecione uma imagem.','error'); return; }
+  if (file.size > 5*1024*1024) { showToast('Imagem máximo 5MB.','error'); return; }
+  document.getElementById('dep-upload-progress').style.display = 'block';
+  document.getElementById('dep-upload-bar').style.width = '40%';
+  document.getElementById('btn-dep').disabled = true;
+  const ext  = file.name.split('.').pop();
+  const name = `dep_${Date.now()}.${ext}`;
+  const { error } = await _supabase.storage.from('depoimentos').upload(name, file, { cacheControl:'3600', upsert:false });
+  if (error) { showToast('Erro no upload.','error'); return; }
+  document.getElementById('dep-upload-bar').style.width = '100%';
+  const { data: { publicUrl } } = _supabase.storage.from('depoimentos').getPublicUrl(name);
+  document.getElementById('dep-foto-url').value = publicUrl;
+  document.getElementById('dep-foto-preview').innerHTML = `
+    <img src="${publicUrl}" style="max-height:120px;border-radius:8px;margin:0 auto;display:block"/>
+    <div style="font-size:11px;color:var(--green);margin-top:6px">Foto adicionada!</div>`;
+  setTimeout(() => { document.getElementById('dep-upload-progress').style.display='none'; document.getElementById('btn-dep').disabled=false; }, 500);
+}
+
+async function enviarDepoimento() {
+  const body = document.getElementById('dep-texto').value.trim();
+  const img  = document.getElementById('dep-foto-url').value;
+  if (!body) { showToast('Escreva seu depoimento.','error'); return; }
+  const btn = document.getElementById('btn-dep');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
+  const { error } = await _supabase.from('testimonials').insert({ reseller_id:_perfil.id, body, image_url:img||null, status:'pending' });
+  if (error) { showToast('Erro ao enviar.','error'); btn.disabled=false; btn.textContent='Enviar depoimento'; return; }
+  showToast('Depoimento enviado! Aguardando aprovação.','success');
+  _fecharModalComunidade();
+  renderDepoimentos();
+}
+
+// ════════════════════════════════════════════
+// SUPORTE (absorvido do comunidade.html)
+// ════════════════════════════════════════════
+async function renderSuporte() {
+  const { data } = await _supabase
+    .from('support_messages').select('*').eq('reseller_id',_perfil.id).order('created_at',{ascending:false});
+
+  _garantirModalComunidade();
+
+  document.getElementById('conteudo').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <h2 style="font-size:20px;font-weight:700;color:var(--nb-text-hi)">Fale com a IRES</h2>
+        <p style="font-size:12px;color:var(--gray);margin-top:3px">Tire dúvidas ou envie sugestões</p>
+      </div>
+      <button class="btn btn-primary btn-sm" style="width:auto" onclick="abrirFormSuporte()">+ Nova mensagem</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${(data||[]).length ? data.map(m => _suporteCard(m)).join('') : `
+        <div class="empty-state">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--gray)" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <p>Nenhuma mensagem ainda.</p>
+          <button class="btn btn-primary btn-sm" style="width:auto;margin-top:14px" onclick="abrirFormSuporte()">Enviar primeira mensagem</button>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function _suporteCard(m) {
+  const statusMap = {
+    open:     { label:'Aguardando', cls:'pill-amber' },
+    answered: { label:'Respondido', cls:'pill-green' },
+    closed:   { label:'Encerrado',  cls:'pill-gray'  },
+  };
+  const st = statusMap[m.status] || statusMap.open;
+  return `
+    <div class="card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:700">${m.subject}</div>
+        <span class="pill ${st.cls}" style="flex-shrink:0">${st.label}</span>
+      </div>
+      <p style="font-size:12px;color:var(--gray);line-height:1.6;margin-bottom:8px">${m.body.slice(0,100)}${m.body.length>100?'...':''}</p>
+      <div style="font-size:11px;color:var(--gray)">${new Date(m.created_at).toLocaleDateString('pt-BR')}</div>
+      ${m.reply ? `
+        <div style="border-top:0.5px solid var(--border);margin-top:10px;padding-top:10px">
+          <div style="font-size:10px;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">Resposta da IRES</div>
+          <p style="font-size:12px;color:var(--gray-lighter);line-height:1.6">${m.reply}</p>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function abrirFormSuporte() {
+  _garantirModalComunidade();
+  document.getElementById('modal-comunidade-body').innerHTML = `
+    <button onclick="_fecharModalComunidade()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:6px">Nova mensagem</h3>
+    <p style="font-size:12px;color:var(--gray);margin-bottom:16px">A equipe IRES responderá em breve.</p>
+    <div class="form-group">
+      <label>Assunto *</label>
+      <select id="sup-assunto">
+        <option value="" disabled selected>Selecione</option>
+        <option>Dúvida sobre pedido</option>
+        <option>Problema com produto</option>
+        <option>Dúvida sobre pagamento</option>
+        <option>Sugestão</option>
+        <option>Outro</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Mensagem *</label>
+      <textarea id="sup-body" rows="5" placeholder="Descreva sua dúvida..." style="resize:vertical"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-outline" style="flex:1" onclick="_fecharModalComunidade()">Cancelar</button>
+      <button class="btn btn-primary" style="flex:1" id="btn-sup" onclick="enviarSuporte()">Enviar mensagem</button>
+    </div>
+  `;
+  document.getElementById('modal-comunidade').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+async function enviarSuporte() {
+  const subject = document.getElementById('sup-assunto').value;
+  const body    = document.getElementById('sup-body').value.trim();
+  if (!subject) { showToast('Selecione o assunto.','error'); return; }
+  if (!body)    { showToast('Escreva sua mensagem.','error'); return; }
+  const btn = document.getElementById('btn-sup');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
+  const { error } = await _supabase.from('support_messages').insert({ reseller_id:_perfil.id, subject, body, status:'open' });
+  if (error) { showToast('Erro ao enviar.','error'); btn.disabled=false; btn.textContent='Enviar mensagem'; return; }
+  showToast('Mensagem enviada! A IRES responderá em breve.','success');
+  _fecharModalComunidade();
+  renderSuporte();
 }
 
 // ════════════════════════════════════════════
@@ -458,7 +778,7 @@ async function renderVitrine() {
   document.getElementById('conteudo').innerHTML = `
     <div class="vitrine-hero" style="margin-bottom:16px">
       <div>
-        <h2>Bem-vinda, <span style="color:var(--pink)">${_perfil.full_name?.split(' ')[0] || 'Embaixadora'}</span></h2>
+        <h2>Bem-vinda, <span style="color:var(--pink)">${_perfil.full_name?.split(' ')[0]||'Embaixadora'}</span></h2>
         <p style="font-size:13px;color:var(--gray)">Produtos exclusivos para embaixadoras IRES</p>
       </div>
       <div class="vitrine-hero-badge">
@@ -466,7 +786,6 @@ async function renderVitrine() {
         <div class="lbl">produtos</div>
       </div>
     </div>
-
     <div class="filters" style="margin-bottom:16px">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <div class="filter-pill active" id="filtro-todos" onclick="setFiltroCatPainel(this,'')">Todos</div>
@@ -476,12 +795,9 @@ async function renderVitrine() {
         style="background:var(--black);border:0.5px solid var(--border);border-radius:20px;padding:7px 16px;font-size:13px;color:var(--white);outline:none;width:200px"
         oninput="filtrarProdutosPainel()"/>
     </div>
-
     <div id="loading-vitrine" class="loading"><div class="spinner"></div> Carregando...</div>
     <div class="products-grid" id="grid-vitrine" style="display:none"></div>
-    <div class="empty-state" id="empty-vitrine" style="display:none">
-      <p>Nenhum produto encontrado.</p>
-    </div>
+    <div class="empty-state" id="empty-vitrine" style="display:none"><p>Nenhum produto encontrado.</p></div>
   `;
 
   if (!document.getElementById('modal-produto')) {
@@ -494,7 +810,7 @@ async function renderVitrine() {
 
   const [{ data: cats }, { data: prods }] = await Promise.all([
     _supabase.from('categories').select('id,name').order('name'),
-    _supabase.from('products').select('*, categories(name)').eq('is_active', true).order('created_at', { ascending: false }),
+    _supabase.from('products').select('*, categories(name)').eq('is_active',true).order('created_at',{ascending:false}),
   ]);
 
   _todosProdutos = prods || [];
@@ -502,7 +818,7 @@ async function renderVitrine() {
   document.getElementById('total-produtos').textContent = _todosProdutos.length;
 
   const filtrosCat = document.getElementById('filtros-cat');
-  (cats || []).forEach(c => {
+  (cats||[]).forEach(c => {
     const el = document.createElement('div');
     el.className = 'filter-pill';
     el.textContent = c.name;
@@ -525,7 +841,7 @@ async function renderVitrine() {
   filtrarProdutosPainel();
 }
 
-function setFiltroPainel(el, filtro) {
+function setFiltroCatPainel(el, filtro) {
   _categoriaAtiva = '';
   document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
@@ -533,22 +849,19 @@ function setFiltroPainel(el, filtro) {
 }
 
 function filtrarProdutosPainel() {
-  const busca = (document.getElementById('busca-vitrine')?.value || '').toLowerCase().trim();
-  let lista = _todosProdutos.filter(p => {
+  const busca = (document.getElementById('busca-vitrine')?.value||'').toLowerCase().trim();
+  const lista = _todosProdutos.filter(p => {
     const matchCat   = !_categoriaAtiva || p.category_id === _categoriaAtiva;
     const matchBusca = !busca || p.name.toLowerCase().includes(busca) || (p.description||'').toLowerCase().includes(busca);
     return matchCat && matchBusca;
   });
-
   const grid  = document.getElementById('grid-vitrine');
   const empty = document.getElementById('empty-vitrine');
-
   if (!lista.length) { grid.style.display='none'; empty.style.display='block'; return; }
-  grid.style.display = 'grid'; empty.style.display = 'none';
-
+  grid.style.display='grid'; empty.style.display='none';
   grid.innerHTML = lista.map(p => {
-    const img     = p.images?.[0] || '';
-    const catNome = p.categories?.name || '';
+    const img     = p.images?.[0]||'';
+    const catNome = p.categories?.name||'';
     return `
       <div class="product-card" onclick="abrirProdutoPainel('${p.id}')">
         <div class="product-img">
@@ -557,7 +870,7 @@ function filtrarProdutosPainel() {
         </div>
         <div class="product-info">
           <div class="product-name">${p.name}</div>
-          <div class="product-desc">${p.description || ''}</div>
+          <div class="product-desc">${p.description||''}</div>
           <div class="product-bottom">
             <div>
               <div class="product-price">${formatBRL(p.price)}</div>
@@ -576,22 +889,22 @@ function abrirProdutoPainel(id) {
   if (!p) return;
   const modal = document.getElementById('modal-produto');
   const imgs  = Array.isArray(p.images) && p.images.length ? p.images : [];
-
   modal.innerHTML = `
     <div class="card" style="max-width:420px;width:100%;position:relative">
-      <button onclick="document.getElementById('modal-produto').style.display='none';document.body.style.overflow=''" style="position:absolute;top:12px;right:12px;z-index:10;background:rgba(0,0,0,0.5);border:none;color:#fff;cursor:pointer;font-size:18px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center">✕</button>
+      <button onclick="document.getElementById('modal-produto').style.display='none';document.body.style.overflow=''"
+        style="position:absolute;top:12px;right:12px;z-index:10;background:rgba(0,0,0,0.5);border:none;color:#fff;cursor:pointer;font-size:18px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center">✕</button>
       <div style="background:var(--black);border-radius:var(--radius-md);margin-bottom:16px;overflow:hidden">
         ${imgs.length ? `
           <div id="carousel-track" style="display:flex;transition:transform 0.3s ease">
             ${imgs.map(url=>`<div style="min-width:100%;flex-shrink:0"><img src="${url}" style="width:100%;height:auto;display:block;max-height:320px;object-fit:contain"/></div>`).join('')}
           </div>
-          ${imgs.length > 1 ? `
+          ${imgs.length>1 ? `
             <button onclick="moverCarrosselPainel(-1)" style="position:absolute;left:8px;top:40%;background:rgba(0,0,0,0.6);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">‹</button>
             <button onclick="moverCarrosselPainel(1)" style="position:absolute;right:8px;top:40%;background:rgba(0,0,0,0.6);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">›</button>
           ` : ''}
         ` : `<div style="height:200px;display:flex;align-items:center;justify-content:center"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>`}
       </div>
-      ${imgs.length > 1 ? `<div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto">${imgs.map((url,i)=>`<img src="${url}" onclick="moverParaSlidePainel(${i})" id="pthumb-${i}" style="width:52px;height:52px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid ${i===0?'var(--pink)':'transparent'};flex-shrink:0"/>`).join('')}</div>` : ''}
+      ${imgs.length>1 ? `<div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto">${imgs.map((url,i)=>`<img src="${url}" onclick="moverParaSlidePainel(${i})" id="pthumb-${i}" style="width:52px;height:52px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid ${i===0?'var(--pink)':'transparent'};flex-shrink:0"/>`).join('')}</div>` : ''}
       <h3 style="font-size:16px;font-weight:800;margin-bottom:6px">${p.name}</h3>
       <p style="font-size:13px;color:var(--gray);margin-bottom:16px;line-height:1.6">${p.description||''}</p>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -608,18 +921,17 @@ function abrirProdutoPainel(id) {
       <button class="btn btn-primary" onclick="adicionarDoModalPainel('${p.id}')">Adicionar ao carrinho</button>
     </div>
   `;
-  window._carouselIdxP = 0;
+  window._carouselIdxP  = 0;
   window._carouselTotalP = imgs.length;
-  modal.style.display = 'flex';
+  modal.style.display   = 'flex';
   document.body.style.overflow = 'hidden';
 }
 
 function moverCarrosselPainel(dir) {
-  const total = window._carouselTotalP || 1;
-  window._carouselIdxP = ((window._carouselIdxP||0) + dir + total) % total;
+  const total = window._carouselTotalP||1;
+  window._carouselIdxP = ((window._carouselIdxP||0)+dir+total)%total;
   moverParaSlidePainel(window._carouselIdxP);
 }
-
 function moverParaSlidePainel(idx) {
   const track = document.getElementById('carousel-track');
   if (track) track.style.transform = `translateX(-${idx*100}%)`;
@@ -629,20 +941,18 @@ function moverParaSlidePainel(idx) {
     if (t) t.style.borderColor = i===idx ? 'var(--pink)' : 'transparent';
   }
 }
-
 function ajustarQtyPainel(delta, min) {
   const el  = document.getElementById('pmodal-qty');
   const sub = document.getElementById('pmodal-sub');
   if (!el) return;
-  let qty = parseInt(el.textContent) + delta;
+  let qty = parseInt(el.textContent)+delta;
   if (qty < min) qty = min;
   el.textContent = qty;
   const btn = document.querySelector('[onclick^="adicionarDoModalPainel"]');
   const id  = btn?.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
   const p   = _todosProdutos.find(x => x.id === id);
-  if (p && sub) sub.textContent = formatBRL(p.price * qty);
+  if (p && sub) sub.textContent = formatBRL(p.price*qty);
 }
-
 function adicionarDoModalPainel(id) {
   const p   = _todosProdutos.find(x => x.id === id);
   const qty = parseInt(document.getElementById('pmodal-qty').textContent);
@@ -656,33 +966,24 @@ function adicionarDoModalPainel(id) {
 // PERFIL
 // ════════════════════════════════════════════
 async function renderPerfil() {
-  const { data: p } = await _supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', _perfil.id)
-    .single();
-
+  const { data: p } = await _supabase.from('profiles').select('*').eq('id',_perfil.id).single();
   const addr = p.address || {};
-  const ini  = initials(p.full_name);
 
   document.getElementById('conteudo').innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-      <h2 style="font-size:20px;font-weight:800">Meu perfil</h2>
+      <h2 style="font-size:20px;font-weight:700;color:var(--nb-text-hi)">Meu perfil</h2>
     </div>
-
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
       <div style="position:relative">
         <div id="avatar-preview" style="width:72px;height:72px;border-radius:50%;background:var(--pink-faint);border:2px solid var(--pink);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:var(--pink);cursor:pointer" onclick="document.getElementById('avatar-file').click()">
-          ${p.avatar_url
-            ? `<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover"/>`
-            : ini}
+          ${p.avatar_url ? `<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover"/>` : initials(p.full_name)}
         </div>
         <div onclick="document.getElementById('avatar-file').click()" style="position:absolute;bottom:0;right:0;width:22px;height:22px;border-radius:50%;background:var(--pink);display:flex;align-items:center;justify-content:center;cursor:pointer">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </div>
       </div>
       <div>
-        <div style="font-size:15px;font-weight:700">${p.full_name || ''}</div>
+        <div style="font-size:15px;font-weight:700">${p.full_name||''}</div>
         <div style="font-size:12px;color:var(--gray);margin-top:2px">Clique na foto para alterar</div>
         <div id="avatar-progress" style="display:none;margin-top:6px">
           <div style="height:3px;background:var(--border);border-radius:2px;width:120px;overflow:hidden">
@@ -692,68 +993,36 @@ async function renderPerfil() {
       </div>
       <input type="file" id="avatar-file" accept="image/*" style="display:none" onchange="uploadAvatar(this.files[0])"/>
     </div>
-
     <div class="card" style="margin-bottom:16px">
       <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px">Dados pessoais</div>
-      <div class="form-group">
-        <label>Nome completo *</label>
-        <input type="text" id="pf-nome" value="${p.full_name || ''}"/>
-      </div>
+      <div class="form-group"><label>Nome completo *</label><input type="text" id="pf-nome" value="${p.full_name||''}"/></div>
       <div class="form-row">
-        <div class="form-group">
-          <label>WhatsApp *</label>
-          <input type="tel" id="pf-phone" value="${p.phone || ''}" placeholder="(21) 99999-9999" oninput="mascaraTel(this)"/>
-        </div>
-        <div class="form-group">
-          <label>E-mail *</label>
-          <input type="email" id="pf-email" value="${p.email || ''}"/>
-        </div>
+        <div class="form-group"><label>WhatsApp *</label><input type="tel" id="pf-phone" value="${p.phone||''}" placeholder="(21) 99999-9999" oninput="mascaraTel(this)"/></div>
+        <div class="form-group"><label>E-mail *</label><input type="email" id="pf-email" value="${p.email||''}"/></div>
       </div>
     </div>
-
     <div class="card" style="margin-bottom:16px">
       <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px">Endereço de entrega</div>
       <div class="form-row">
         <div class="form-group">
           <label>CEP</label>
           <div style="position:relative">
-            <input type="text" id="pf-cep" value="${addr.cep || ''}" placeholder="00000-000" maxlength="9" oninput="mascaraCEP(this)" onblur="buscarCEP(this.value)"/>
-            <div id="cep-loading" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%)">
-              <div class="spinner" style="width:14px;height:14px"></div>
-            </div>
+            <input type="text" id="pf-cep" value="${addr.cep||''}" placeholder="00000-000" maxlength="9" oninput="mascaraCEP(this)" onblur="buscarCEP(this.value)"/>
+            <div id="cep-loading" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%)"><div class="spinner" style="width:14px;height:14px"></div></div>
           </div>
         </div>
-        <div class="form-group">
-          <label>Estado</label>
-          <input type="text" id="pf-estado" value="${addr.estado || ''}" placeholder="RJ" maxlength="2"/>
-        </div>
+        <div class="form-group"><label>Estado</label><input type="text" id="pf-estado" value="${addr.estado||''}" placeholder="RJ" maxlength="2"/></div>
       </div>
-      <div class="form-group">
-        <label>Rua / Logradouro</label>
-        <input type="text" id="pf-rua" value="${addr.rua || ''}" placeholder="Rua das Flores"/>
+      <div class="form-group"><label>Rua / Logradouro</label><input type="text" id="pf-rua" value="${addr.rua||''}" placeholder="Rua das Flores"/></div>
+      <div class="form-row">
+        <div class="form-group"><label>Número</label><input type="text" id="pf-numero" value="${addr.numero||''}" placeholder="123"/></div>
+        <div class="form-group"><label>Complemento</label><input type="text" id="pf-complemento" value="${addr.complemento||''}" placeholder="Apto 4"/></div>
       </div>
       <div class="form-row">
-        <div class="form-group">
-          <label>Número</label>
-          <input type="text" id="pf-numero" value="${addr.numero || ''}" placeholder="123"/>
-        </div>
-        <div class="form-group">
-          <label>Complemento</label>
-          <input type="text" id="pf-complemento" value="${addr.complemento || ''}" placeholder="Apto 4"/>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Bairro</label>
-          <input type="text" id="pf-bairro" value="${addr.bairro || ''}" placeholder="Centro"/>
-        </div>
-        <div class="form-group">
-          <label>Cidade</label>
-          <input type="text" id="pf-cidade" value="${addr.cidade || ''}" placeholder="Rio de Janeiro"/>
-        </div>
+        <div class="form-group"><label>Bairro</label><input type="text" id="pf-bairro" value="${addr.bairro||''}" placeholder="Centro"/></div>
+        <div class="form-group"><label>Cidade</label><input type="text" id="pf-cidade" value="${addr.cidade||''}" placeholder="Rio de Janeiro"/></div>
       </div>
     </div>
-
     <button class="btn btn-primary" id="btn-salvar-perfil" onclick="salvarPerfil()">Salvar alterações</button>
   `;
 }
@@ -762,83 +1031,63 @@ async function uploadAvatar(file) {
   if (!file) return;
   if (!file.type.startsWith('image/')) { showToast('Selecione uma imagem.','error'); return; }
   if (file.size > 3*1024*1024) { showToast('Máximo 3MB.','error'); return; }
-
   document.getElementById('avatar-progress').style.display = 'block';
   document.getElementById('avatar-bar').style.width = '40%';
-
   const ext  = file.name.split('.').pop();
   const name = `avatar_${_perfil.id}.${ext}`;
-
-  const { error } = await _supabase.storage.from('depoimentos').upload(name, file, { upsert: true, cacheControl: '3600' });
+  const { error } = await _supabase.storage.from('depoimentos').upload(name, file, { upsert:true, cacheControl:'3600' });
   if (error) { showToast('Erro no upload.','error'); return; }
-
   document.getElementById('avatar-bar').style.width = '100%';
-
   const { data: { publicUrl } } = _supabase.storage.from('depoimentos').getPublicUrl(name);
-
   await _supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', _perfil.id);
   _perfil.avatar_url = publicUrl;
-
-  const prev = document.getElementById('avatar-preview');
-  prev.innerHTML = `<img src="${publicUrl}" style="width:100%;height:100%;object-fit:cover"/>`;
-
-  setTimeout(() => { document.getElementById('avatar-progress').style.display = 'none'; }, 500);
+  document.getElementById('avatar-preview').innerHTML = `<img src="${publicUrl}" style="width:100%;height:100%;object-fit:cover"/>`;
+  setTimeout(() => { document.getElementById('avatar-progress').style.display='none'; }, 500);
   showToast('Foto atualizada!', 'success');
 }
 
 function mascaraTel(input) {
   let v = input.value.replace(/\D/g,'').slice(0,11);
-  if (v.length > 6) v = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
-  else if (v.length > 2) v = `(${v.slice(0,2)}) ${v.slice(2)}`;
-  else if (v.length > 0) v = `(${v}`;
+  if (v.length>6) v=`(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
+  else if (v.length>2) v=`(${v.slice(0,2)}) ${v.slice(2)}`;
+  else if (v.length>0) v=`(${v}`;
   input.value = v;
 }
 
 function mascaraCEP(input) {
   let v = input.value.replace(/\D/g,'').slice(0,8);
-  if (v.length > 5) v = `${v.slice(0,5)}-${v.slice(5)}`;
+  if (v.length>5) v=`${v.slice(0,5)}-${v.slice(5)}`;
   input.value = v;
 }
 
 async function buscarCEP(cep) {
   const digits = cep.replace(/\D/g,'');
   if (digits.length !== 8) return;
-
   document.getElementById('cep-loading').style.display = 'flex';
-
   try {
     const resp = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
     const data = await resp.json();
-
     if (data.erro) { showToast('CEP não encontrado.','error'); return; }
-
-    document.getElementById('pf-rua').value    = data.logradouro || '';
-    document.getElementById('pf-bairro').value = data.bairro || '';
-    document.getElementById('pf-cidade').value = data.localidade || '';
-    document.getElementById('pf-estado').value = data.uf || '';
-
+    document.getElementById('pf-rua').value    = data.logradouro||'';
+    document.getElementById('pf-bairro').value = data.bairro||'';
+    document.getElementById('pf-cidade').value = data.localidade||'';
+    document.getElementById('pf-estado').value = data.uf||'';
     document.getElementById('pf-numero').focus();
     showToast('Endereço preenchido!', 'success');
-  } catch {
-    showToast('Erro ao buscar CEP.','error');
-  } finally {
-    document.getElementById('cep-loading').style.display = 'none';
-  }
+  } catch { showToast('Erro ao buscar CEP.','error'); }
+  finally  { document.getElementById('cep-loading').style.display = 'none'; }
 }
 
 async function salvarPerfil() {
   const nome  = document.getElementById('pf-nome').value.trim();
   const phone = document.getElementById('pf-phone').value.trim();
   const email = document.getElementById('pf-email').value.trim();
-
   if (!nome)  { showToast('Informe o nome.','error'); return; }
   if (!phone) { showToast('Informe o WhatsApp.','error'); return; }
   if (!email) { showToast('Informe o e-mail.','error'); return; }
-
   const btn = document.getElementById('btn-salvar-perfil');
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
-
   const address = {
     cep:         document.getElementById('pf-cep').value.trim(),
     rua:         document.getElementById('pf-rua').value.trim(),
@@ -848,25 +1097,9 @@ async function salvarPerfil() {
     cidade:      document.getElementById('pf-cidade').value.trim(),
     estado:      document.getElementById('pf-estado').value.trim(),
   };
-
-  const { error } = await _supabase.from('profiles').update({
-    full_name: nome,
-    phone,
-    email,
-    address,
-  }).eq('id', _perfil.id);
-
-  if (error) {
-    showToast('Erro ao salvar: ' + error.message, 'error');
-    btn.disabled = false; btn.textContent = 'Salvar alterações';
-    return;
-  }
-
-  _perfil.full_name = nome;
-  _perfil.phone     = phone;
-  _perfil.email     = email;
-  _perfil.address   = address;
-
+  const { error } = await _supabase.from('profiles').update({ full_name:nome, phone, email, address }).eq('id',_perfil.id);
+  if (error) { showToast('Erro: '+error.message,'error'); btn.disabled=false; btn.textContent='Salvar alterações'; return; }
+  _perfil.full_name=nome; _perfil.phone=phone; _perfil.email=email; _perfil.address=address;
   showToast('Perfil atualizado!', 'success');
-  btn.disabled = false; btn.textContent = 'Salvar alterações';
+  btn.disabled=false; btn.textContent='Salvar alterações';
 }

@@ -29,136 +29,264 @@ function irAba(aba) {
   (acoes[aba] || renderInicio)();
 }
 
-// ════════════════════════════════════════════
-// INÍCIO
-// ════════════════════════════════════════════
+// ============================================================
+// IRES — painel.js  (PATCH renderInicio)
+// Substitui APENAS a função renderInicio() existente.
+// Todo o resto do painel.js permanece inalterado.
+// ============================================================
+
 async function renderInicio() {
   const nome = _perfil.full_name?.split(' ')[0] || 'Embaixadora';
 
-  const [{ data: pedidos }, { data: avisos }, { data: produtos }] = await Promise.all([
-    _supabase.from('orders').select('id,total,status,created_at').eq('reseller_id', _perfil.id).order('created_at', { ascending: false }).limit(3),
-    _supabase.from('messages').select('id,subject,body,created_at').eq('is_broadcast', true).order('created_at', { ascending: false }).limit(2),
-    _supabase.from('products').select('id,name,price,min_quantity,images,categories(name)').eq('is_active', true).order('created_at', { ascending: false }).limit(4),
+  // Busca paralela: pedidos, avisos, produtos
+  const [
+    { data: pedidos },
+    { data: avisos  },
+    { data: produtos },
+  ] = await Promise.all([
+    _supabase.from('orders')
+      .select('id,total,status,created_at')
+      .eq('reseller_id', _perfil.id)
+      .order('created_at', { ascending: false })
+      .limit(3),
+    _supabase.from('messages')
+      .select('id,subject,body,created_at')
+      .eq('is_broadcast', true)
+      .order('created_at', { ascending: false })
+      .limit(1),
+    _supabase.from('products')
+      .select('id,name,price,min_quantity,images,categories(name)')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(6),
   ]);
 
-  const totalGasto = (pedidos || []).reduce((a, o) => a + Number(o.total), 0);
-  const emTransito = (pedidos || []).filter(o => o.status === 'shipped' || o.status === 'processing').length;
+  const totalGasto  = (pedidos || []).reduce((a, o) => a + Number(o.total), 0);
+  const qtdPedidos  = (pedidos || []).length;
+  const pendentes   = (pedidos || []).filter(o => o.status === 'pending').length;
 
-  document.getElementById('conteudo').innerHTML = `
+  // ── Tag de status nos pedidos (reutiliza lógica existente) ──
+  function tagNova(status) {
+    const map = {
+      pending:    { label: 'Pendente',    cls: 'pend' },
+      paid:       { label: 'Pago',        cls: 'ok'   },
+      processing: { label: 'Em processo', cls: 'ship' },
+      shipped:    { label: 'Enviado',     cls: 'ship' },
+      delivered:  { label: 'Entregue',    cls: 'ok'   },
+      cancelled:  { label: 'Cancelado',   cls: 'wait' },
+    };
+    const s = map[status] || { label: status, cls: 'wait' };
+    return `<span class="tag-new ${s.cls}">${s.label}</span>`;
+  }
 
-    <!-- Saudação -->
-    <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px">
-      <div style="display:flex;align-items:center;gap:14px">
-        <div class="avatar" style="width:48px;height:48px;font-size:16px;cursor:pointer;${_perfil.avatar_url ? 'padding:0;overflow:hidden' : ''}" onclick="irAba('perfil')">
-          ${_perfil.avatar_url
-            ? `<img src="${_perfil.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`
-            : initials(_perfil.full_name)
-          }
-        </div>
-        <div>
-          <div style="font-size:18px;font-weight:800">Olá, ${nome}! 👋</div>
-          <div style="font-size:12px;color:var(--gray);margin-top:2px">Embaixadora ativa</div>
-        </div>
+  // ── Cor do valor do pedido por status ──
+  function corValor(status) {
+    if (status === 'pending')   return 'var(--nb-amber)';
+    if (status === 'delivered') return 'var(--nb-text-low)';
+    return 'var(--nb-text-mid)';
+  }
+
+  // ── Aviso: pega o mais recente (se existir) ──
+  const aviso = avisos?.[0];
+  const avisoHTML = aviso ? `
+    <div class="aviso-card info">
+      <div class="aviso-card-icon">
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       </div>
-      <button onclick="irAba('vitrine')" class="btn btn-primary btn-sm" style="width:auto;white-space:nowrap">Ver vitrine →</button>
+      <div style="flex:1;min-width:0;">
+        <div class="aviso-card-title">${aviso.subject || 'Aviso'}</div>
+        <div class="aviso-card-body">${aviso.body.slice(0, 140)}${aviso.body.length > 140 ? '…' : ''}</div>
+      </div>
+      <button onclick="irAba('avisos')" style="background:none;border:none;color:var(--nb-gold);font-size:18px;cursor:pointer;flex-shrink:0;line-height:1;padding:0 0 0 8px;">›</button>
     </div>
+  ` : '';
 
-    <!-- Métricas -->
-    <div class="metrics-grid" style="margin-bottom:20px">
-      <div class="metric-card">
-        <div class="metric-value">${(pedidos || []).length}</div>
-        <div class="metric-label">Pedidos feitos</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-value">${formatBRL(totalGasto)}</div>
-        <div class="metric-label">Total comprado</div>
-      </div>
-      <div class="metric-card" style="border-top-color:var(--blue)">
-        <div class="metric-value">${emTransito}</div>
-        <div class="metric-label">Em trânsito</div>
-      </div>
-    </div>
-
-    <!-- Novidades — produtos recentes -->
-    ${(produtos || []).length ? `
-      <div style="margin-bottom:24px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div class="section-title">Novidades na vitrine</div>
-          <a href="vitrine.html" class="btn btn-sm btn-outline">Ver tudo</a>
+  // ── Produtos scroll ──
+  const produtosHTML = (produtos || []).length ? `
+    <div class="home-card home-vitrine">
+      <div class="home-card-header">
+        <div class="home-card-label">
+          <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          Vitrine
         </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px">
-          ${produtos.map(p => {
-            const img = p.images?.[0] || '';
-            return `
-              <div class="product-card" onclick="window.location.href='vitrine.html'">
-                <div class="product-img">
-                  ${img
-                    ? `<img src="${img}" alt="${p.name}" loading="lazy"/>`
-                    : `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>`
-                  }
-                  ${p.categories?.name ? `<div class="product-tag"><span class="pill pill-pink">${p.categories.name}</span></div>` : ''}
-                </div>
-                <div class="product-info">
-                  <div class="product-name">${p.name}</div>
-                  <div class="product-bottom">
-                    <div>
-                      <div class="product-price">${formatBRL(p.price)}</div>
-                      <div class="product-min">mín. ${p.min_quantity} un.</div>
-                    </div>
-                    <button class="btn-add" onclick="event.stopPropagation(); adicionarProduto('${p.id}')">+</button>
-                  </div>
+        <a href="#" onclick="irAba('vitrine'); return false" class="home-card-link">Ver tudo →</a>
+      </div>
+      <div class="produtos-scroll">
+        ${(produtos || []).map(p => {
+          const img    = p.images?.[0] || '';
+          const catNome = p.categories?.name || '';
+          return `
+            <div class="produto-chip" onclick="irAba('vitrine')">
+              <div class="produto-chip-img">
+                ${img
+                  ? `<img src="${img}" alt="${p.name}" loading="lazy"/>`
+                  : `<div class="produto-chip-img-placeholder"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>`
+                }
+                ${catNome ? `<div class="produto-chip-cat">${catNome}</div>` : ''}
+              </div>
+              <div class="produto-chip-body">
+                <div class="produto-chip-name">${p.name}</div>
+                <div class="produto-chip-price">${formatBRL(p.price)}</div>
+                <div class="produto-chip-min">mín. ${p.min_quantity} un.</div>
+                <div class="produto-chip-footer">
+                  <button class="produto-chip-add" onclick="event.stopPropagation(); _addProdutoHome('${p.id}')" aria-label="Adicionar ao carrinho">
+                    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
                 </div>
               </div>
-            `;
-          }).join('')}
-        </div>
-      </div>
-    ` : ''}
-
-    <!-- Últimos pedidos -->
-    <div style="margin-bottom:20px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div class="section-title">Últimos pedidos</div>
-        <button class="btn btn-sm btn-outline" onclick="window.location.href='pedidos.html'">Ver todos</button>
-      </div>
-      <div class="orders-list">
-        ${(pedidos || []).length ? pedidos.map(o => pedidoCard(o)).join('') : `
-          <div class="empty-state" style="padding:24px">
-            <p>Você ainda não fez nenhum pedido.</p>
-            <a href="vitrine.html" class="btn btn-primary btn-sm" style="width:auto;margin-top:12px">Fazer primeiro pedido</a>
-          </div>
-        `}
+            </div>
+          `;
+        }).join('')}
       </div>
     </div>
+  ` : '';
 
-    <!-- Avisos recentes -->
-    ${(avisos || []).length ? `
-      <div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div class="section-title">Avisos da IRES</div>
-          <button class="btn btn-sm btn-outline" onclick="irAba('avisos')">Ver todos</button>
+  // ── Métricas ──
+  const metricsHTML = `
+    <div class="metrics-home">
+      <div class="metric-home-card">
+        <div class="metric-home-label">
+          <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          Pedidos
         </div>
-        ${avisos.map(a => `
-          <div class="card" style="margin-bottom:10px">
-            <div style="font-size:13px;font-weight:700;margin-bottom:6px">${a.subject || 'Aviso'}</div>
-            <p style="font-size:12px;color:var(--gray-lighter);line-height:1.6">${a.body.slice(0, 120)}${a.body.length > 120 ? '...' : ''}</p>
-            <div style="font-size:11px;color:var(--gray);margin-top:8px">${new Date(a.created_at).toLocaleDateString('pt-BR')}</div>
-          </div>
-        `).join('')}
+        <div class="metric-home-val" style="color:var(--nb-burg);">${qtdPedidos}</div>
+        <div class="metric-home-bar">
+          <div class="metric-home-bar-fill" style="width:${Math.min(qtdPedidos * 10, 100)}%;background:var(--nb-burg);opacity:.45;"></div>
+        </div>
+        <div class="metric-home-sub">
+          ${pendentes > 0
+            ? `<span class="metric-home-badge pend">${pendentes} pendente${pendentes > 1 ? 's' : ''}</span>`
+            : `<span class="metric-home-badge empty">Em dia ✓</span>`
+          }
+        </div>
       </div>
-    ` : ''}
+      <div class="metric-home-card">
+        <div class="metric-home-label">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Total comprado
+        </div>
+        <div class="metric-home-val" style="font-size:${totalGasto >= 1000 ? '18px' : '24px'};color:var(--nb-gold);">
+          ${formatBRL(totalGasto)}
+        </div>
+        <div class="metric-home-bar">
+          <div class="metric-home-bar-fill" style="width:${Math.min(totalGasto / 10, 100)}%;background:var(--nb-gold);opacity:.45;"></div>
+        </div>
+        <div class="metric-home-sub" style="margin-top:6px;">
+          <span style="font-size:11px;">últimos ${qtdPedidos} pedidos</span>
+        </div>
+      </div>
+    </div>
   `;
 
-  // carrega lista de produtos para o addToCart funcionar
+  // ── Últimos pedidos ──
+  const pedidosHTML = `
+    <div class="home-card home-pedidos">
+      <div class="home-card-header">
+        <div class="home-card-label">
+          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Últimos pedidos
+        </div>
+        <a href="pedidos.html" class="home-card-link">Ver todos →</a>
+      </div>
+      ${(pedidos || []).length ? pedidos.map(o => `
+        <div class="order-row-new">
+          <div>
+            <div class="order-id-new">#${o.id.slice(-6).toUpperCase()}</div>
+            <div class="order-date-new">${new Date(o.created_at).toLocaleDateString('pt-BR')}</div>
+          </div>
+          <div class="order-right-new">
+            <span class="order-val-new" style="color:${corValor(o.status)};">${formatBRL(o.total)}</span>
+            ${tagNova(o.status)}
+          </div>
+        </div>
+      `).join('') : `
+        <div style="padding:20px 0;text-align:center;">
+          <p style="font-size:13px;color:var(--nb-text-low);">Nenhum pedido ainda.</p>
+          <a href="#" onclick="irAba('vitrine'); return false" class="btn-primary-new" style="margin-top:12px;font-size:12px;padding:8px 16px;">
+            Fazer primeiro pedido →
+          </a>
+        </div>
+      `}
+    </div>
+  `;
+
+  // ── Capacitação (placeholder — integrar com tabela futura) ──
+  const capHTML = `
+    <div class="home-card home-cap">
+      <div class="home-card-header">
+        <div class="home-card-label">
+          <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          Capacitação
+        </div>
+        <span class="home-card-link" style="cursor:default;opacity:.5;">Em breve</span>
+      </div>
+      <div class="aula-row-new">
+        <button class="play-btn-new">
+          <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </button>
+        <div style="flex:1;min-width:0;">
+          <div class="aula-title-new">Como vender mais</div>
+          <div class="aula-meta-new">Módulo 1 · 12 min</div>
+        </div>
+        <span class="aula-badge-new">Em breve</span>
+      </div>
+      <div class="prog-track-new"><div class="prog-fill-new" style="width:0%;"></div></div>
+      <div class="prog-row-new"><span>0 de 8 aulas</span><span>0%</span></div>
+    </div>
+  `;
+
+  // ── Monta tudo ──
+  const avatarContent = _perfil.avatar_url
+    ? `<img src="${_perfil.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`
+    : `<span style="font-size:14px;font-weight:700;color:var(--nb-burg);">${initials(_perfil.full_name)}</span>`;
+
+  document.getElementById('conteudo').innerHTML = `
+    <div class="home-bento">
+
+      <!-- Hero -->
+      <div class="hero-card">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div onclick="irAba('perfil')" style="width:46px;height:46px;border-radius:50%;background:var(--nb-card);border:1.5px solid var(--nb-burg-bdr);overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
+            ${avatarContent}
+          </div>
+          <div>
+            <div class="hero-card-name">Olá, ${nome} 👋</div>
+            <div class="hero-card-sub">
+              <span class="hero-status-dot"></span>
+              Embaixadora ativa
+            </div>
+          </div>
+        </div>
+        <button onclick="irAba('vitrine')" class="btn-primary-new">Ver vitrine →</button>
+      </div>
+
+      <!-- Aviso (só renderiza se existir) -->
+      ${avisoHTML}
+
+      <!-- Vitrine preview -->
+      ${produtosHTML}
+
+      <!-- Métricas -->
+      ${metricsHTML}
+
+      <!-- Capacitação -->
+      ${capHTML}
+
+      <!-- Últimos pedidos -->
+      ${pedidosHTML}
+
+    </div>
+  `;
+
+  // Cache de produtos para addToCart funcionar
   window._produtosPainel = produtos || [];
 }
 
-// ── Adiciona produto ao carrinho direto do painel ──
-function adicionarProduto(id) {
+// ── Adiciona produto ao carrinho direto da home ──
+function _addProdutoHome(id) {
   const p = (window._produtosPainel || []).find(x => x.id === id);
   if (!p) return;
   addToCart(p);
-  showToast(`${p.name} adicionado ao carrinho!`, 'success');
 }
 
 // ════════════════════════════════════════════
@@ -299,7 +427,6 @@ async function gerarLinkPainel(orderId, total) {
   if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner" style="margin:0 auto;width:14px;height:14px"></div>'; }
 
   try {
-    // primeiro tenta buscar cobrança existente no Asaas
     const resp = await fetch('https://webhook.ruahsystems.com.br/webhook/asaas-buscar-cobranca', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -340,7 +467,6 @@ async function renderVitrine() {
       </div>
     </div>
 
-    <!-- Filtros -->
     <div class="filters" style="margin-bottom:16px">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <div class="filter-pill active" id="filtro-todos" onclick="setFiltroCatPainel(this,'')">Todos</div>
@@ -358,7 +484,6 @@ async function renderVitrine() {
     </div>
   `;
 
-  // cria modal de produto se não existir
   if (!document.getElementById('modal-produto')) {
     const m = document.createElement('div');
     m.id = 'modal-produto';
@@ -376,7 +501,6 @@ async function renderVitrine() {
   document.getElementById('loading-vitrine').style.display = 'none';
   document.getElementById('total-produtos').textContent = _todosProdutos.length;
 
-  // adiciona categorias nos filtros
   const filtrosCat = document.getElementById('filtros-cat');
   (cats || []).forEach(c => {
     const el = document.createElement('div');
@@ -391,7 +515,6 @@ async function renderVitrine() {
     filtrosCat.appendChild(el);
   });
 
-  // clique em "Todos" reseta categoria
   document.getElementById('filtro-todos').onclick = () => {
     _categoriaAtiva = '';
     document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
@@ -528,6 +651,10 @@ function adicionarDoModalPainel(id) {
   document.getElementById('modal-produto').style.display = 'none';
   document.body.style.overflow = '';
 }
+
+// ════════════════════════════════════════════
+// PERFIL
+// ════════════════════════════════════════════
 async function renderPerfil() {
   const { data: p } = await _supabase
     .from('profiles')
@@ -543,7 +670,6 @@ async function renderPerfil() {
       <h2 style="font-size:20px;font-weight:800">Meu perfil</h2>
     </div>
 
-    <!-- Avatar -->
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
       <div style="position:relative">
         <div id="avatar-preview" style="width:72px;height:72px;border-radius:50%;background:var(--pink-faint);border:2px solid var(--pink);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:var(--pink);cursor:pointer" onclick="document.getElementById('avatar-file').click()">
@@ -567,7 +693,6 @@ async function renderPerfil() {
       <input type="file" id="avatar-file" accept="image/*" style="display:none" onchange="uploadAvatar(this.files[0])"/>
     </div>
 
-    <!-- Dados pessoais -->
     <div class="card" style="margin-bottom:16px">
       <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px">Dados pessoais</div>
       <div class="form-group">
@@ -586,7 +711,6 @@ async function renderPerfil() {
       </div>
     </div>
 
-    <!-- Endereço -->
     <div class="card" style="margin-bottom:16px">
       <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px">Endereço de entrega</div>
       <div class="form-row">
@@ -634,7 +758,6 @@ async function renderPerfil() {
   `;
 }
 
-// ── Upload avatar ──
 async function uploadAvatar(file) {
   if (!file) return;
   if (!file.type.startsWith('image/')) { showToast('Selecione uma imagem.','error'); return; }
@@ -646,7 +769,6 @@ async function uploadAvatar(file) {
   const ext  = file.name.split('.').pop();
   const name = `avatar_${_perfil.id}.${ext}`;
 
-  // faz upload para bucket 'depoimentos' (já existe e é público)
   const { error } = await _supabase.storage.from('depoimentos').upload(name, file, { upsert: true, cacheControl: '3600' });
   if (error) { showToast('Erro no upload.','error'); return; }
 
@@ -654,11 +776,9 @@ async function uploadAvatar(file) {
 
   const { data: { publicUrl } } = _supabase.storage.from('depoimentos').getPublicUrl(name);
 
-  // salva no perfil
   await _supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', _perfil.id);
   _perfil.avatar_url = publicUrl;
 
-  // atualiza preview
   const prev = document.getElementById('avatar-preview');
   prev.innerHTML = `<img src="${publicUrl}" style="width:100%;height:100%;object-fit:cover"/>`;
 
@@ -666,7 +786,6 @@ async function uploadAvatar(file) {
   showToast('Foto atualizada!', 'success');
 }
 
-// ── Máscaras ──
 function mascaraTel(input) {
   let v = input.value.replace(/\D/g,'').slice(0,11);
   if (v.length > 6) v = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
@@ -681,7 +800,6 @@ function mascaraCEP(input) {
   input.value = v;
 }
 
-// ── Busca CEP ──
 async function buscarCEP(cep) {
   const digits = cep.replace(/\D/g,'');
   if (digits.length !== 8) return;
@@ -699,7 +817,6 @@ async function buscarCEP(cep) {
     document.getElementById('pf-cidade').value = data.localidade || '';
     document.getElementById('pf-estado').value = data.uf || '';
 
-    // foca no campo número
     document.getElementById('pf-numero').focus();
     showToast('Endereço preenchido!', 'success');
   } catch {
@@ -709,7 +826,6 @@ async function buscarCEP(cep) {
   }
 }
 
-// ── Salva perfil ──
 async function salvarPerfil() {
   const nome  = document.getElementById('pf-nome').value.trim();
   const phone = document.getElementById('pf-phone').value.trim();
@@ -746,7 +862,6 @@ async function salvarPerfil() {
     return;
   }
 
-  // atualiza cache local
   _perfil.full_name = nome;
   _perfil.phone     = phone;
   _perfil.email     = email;

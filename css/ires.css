@@ -527,6 +527,12 @@ select option { background: var(--card); }
   padding: 14px 16px;
   border-top: 2px solid var(--pink);
 }
+.metric-icon {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 10px;
+}
 .metric-value { font-size: 22px; font-weight: 900; color: var(--white); }
 .metric-label { font-size: 11px; color: var(--gray); margin-top: 2px; }
 

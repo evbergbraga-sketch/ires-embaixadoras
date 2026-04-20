@@ -129,7 +129,7 @@ a:hover { opacity: 0.85; }
 
 .main-content {
   padding: 24px;
-  max-width: 1280px;
+  max-width: none;
   margin: 0 auto;
 }
 
@@ -795,8 +795,9 @@ body.page {
 /* ── Main content ── */
 .main-content {
   padding: 20px 16px 100px;
-  max-width: 1280px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
+  width: 100%;
 }
 
 /* ── Card hero da home ── */
@@ -1202,23 +1203,24 @@ body.page {
 /* Desktop: mostra nav-tabs-new, esconde bottom nav */
 @media (min-width: 768px) {
   .main-content {
-    padding: 32px 48px 48px !important;
-    max-width: 1280px !important;
-    width: 100%;
+    padding: 32px clamp(32px, 5vw, 80px) 48px !important;
+    max-width: none !important;
+    width: 100% !important;
+    box-sizing: border-box;
   }
   .nav-tabs-new { display: flex; }
   .bottom-nav-new { display: none !important; }
 
   /* Topbar mais alta no desktop */
-  .topbar { height: 62px; padding: 0 28px; }
+  .topbar { height: 62px; padding: 0 clamp(20px, 3vw, 48px); }
 
-  /* Bento grid na home */
+  /* Bento grid na home — ocupa 100% da largura disponível */
   .home-bento {
     display: grid !important;
     grid-template-columns: minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) !important;
     gap: 20px !important;
+    width: 100% !important;
     margin-bottom: 0;
-    width: 100%;
   }
   .home-bento .hero-card     { grid-column: 1 / -1; grid-row: 1; margin-bottom: 0; }
   .home-bento .aviso-card    { grid-column: 1 / -1; grid-row: 2; margin-bottom: 0; }
@@ -1228,44 +1230,45 @@ body.page {
   .home-bento .home-pedidos  { grid-column: 2 / 4;  grid-row: 4; margin-bottom: 0; }
 
   /* Hero */
-  .hero-card { padding: 24px 28px !important; border-radius: 18px; }
-  .hero-card-name { font-size: 26px !important; letter-spacing: -0.5px; }
+  .hero-card { padding: 26px 32px !important; border-radius: 18px; }
+  .hero-card-name { font-size: 28px !important; letter-spacing: -0.5px; }
   .hero-card-sub { font-size: 14px; margin-top: 5px; }
-  .btn-primary-new { padding: 12px 22px; font-size: 14px; border-radius: 11px; }
+  .btn-primary-new { padding: 13px 24px; font-size: 14px; border-radius: 11px; }
 
   /* Aviso */
-  .aviso-card { padding: 18px 22px !important; border-radius: 16px; margin-bottom: 0; }
+  .aviso-card { padding: 18px 24px !important; border-radius: 16px; margin-bottom: 0; }
   .aviso-card-title { font-size: 14px; }
   .aviso-card-body  { font-size: 13px; }
-  .aviso-card-icon  { width: 38px; height: 38px; }
+  .aviso-card-icon  { width: 40px; height: 40px; }
 
   /* Cards genéricos */
-  .home-card { padding: 22px !important; border-radius: 16px; margin-bottom: 0 !important; }
-  .home-card-label { font-size: 12px; margin-bottom: 16px; }
+  .home-card { padding: 22px 24px !important; border-radius: 16px; margin-bottom: 0 !important; }
+  .home-card-header { margin-bottom: 16px; }
+  .home-card-label { font-size: 12px; }
   .home-card-label svg { width: 13px; height: 13px; }
   .home-card-link { font-size: 13px; }
 
   /* Métricas */
   .metrics-home { gap: 20px !important; margin-bottom: 0 !important; }
-  .metric-home-card { padding: 22px !important; border-radius: 16px; border-top: 0.5px solid var(--nb-border-s) !important; }
+  .metric-home-card { padding: 24px !important; border-radius: 16px; border-top: 0.5px solid var(--nb-border-s) !important; }
   .metric-home-label { font-size: 12px; margin-bottom: 12px; }
-  .metric-home-val { font-size: 36px !important; letter-spacing: -1.5px; }
+  .metric-home-val { font-size: 38px !important; letter-spacing: -1.5px; }
   .metric-home-bar { height: 4px; margin-top: 14px; }
   .metric-home-bar-fill { height: 4px; }
   .metric-home-sub { font-size: 12px; margin-top: 8px; }
   .metric-home-badge { font-size: 11px; padding: 3px 10px; }
 
-  /* Produtos scroll — chips maiores */
-  .produto-chip { width: 160px !important; border-radius: 12px; }
-  .produto-chip-img { height: 110px !important; }
-  .produto-chip-body { padding: 10px 12px 12px; }
+  /* Produtos scroll */
+  .produto-chip { width: 165px !important; border-radius: 12px; }
+  .produto-chip-img { height: 114px !important; }
+  .produto-chip-body { padding: 11px 12px 12px; }
   .produto-chip-name { font-size: 13px; }
   .produto-chip-price { font-size: 13px; margin-top: 3px; }
-  .produto-chip-min { font-size: 11px; margin-top: 2px; }
+  .produto-chip-min { font-size: 11px; }
   .produto-chip-add { width: 28px; height: 28px; border-radius: 7px; }
 
   /* Capacitação */
-  .aula-row-new { padding: 13px 15px; border-radius: 12px; }
+  .aula-row-new { padding: 14px 16px; border-radius: 12px; }
   .play-btn-new { width: 38px; height: 38px; }
   .aula-title-new { font-size: 14px; }
   .aula-meta-new  { font-size: 12px; margin-top: 3px; }
@@ -1275,7 +1278,7 @@ body.page {
   .order-date-new { font-size: 12px; margin-top: 3px; }
   .order-val-new  { font-size: 14px; }
   .tag-new { font-size: 11px; padding: 4px 11px; }
-  .order-row-new { padding: 11px 0; }
+  .order-row-new { padding: 12px 0; }
 }
 
 /* Mobile: esconde nav-tabs-new, mostra bottom nav */

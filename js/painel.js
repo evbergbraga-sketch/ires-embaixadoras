@@ -58,9 +58,11 @@ async function renderInicio() {
   const nome = _perfil.full_name?.split(' ')[0] || 'Embaixadora';
 
   const [
-    { data: pedidos  },
-    { data: avisos   },
-    { data: produtos },
+    { data: pedidos   },
+    { data: avisos    },
+    { data: produtos  },
+    { data: modulos   },
+    { data: progresso },
   ] = await Promise.all([
     _supabase.from('orders')
       .select('id,total,status,created_at')
@@ -68,20 +70,37 @@ async function renderInicio() {
       .order('created_at', { ascending: false })
       .limit(3),
     _supabase.from('messages')
-      .select('id,subject,body,created_at')
+      .select('id,subject,body,created_at,type')
       .eq('is_broadcast', true)
       .order('created_at', { ascending: false })
-      .limit(1),
+      .limit(3),
     _supabase.from('products')
       .select('id,name,price,min_quantity,images,categories(name)')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(6),
+    _supabase.from('modules')
+      .select('id, lessons(id,title,duration_seconds,"order")')
+      .eq('is_active', true)
+      .order('"order"', { ascending: true })
+      .limit(3),
+    _supabase.from('lesson_progress')
+      .select('lesson_id')
+      .eq('reseller_id', _perfil.id),
   ]);
 
   const totalGasto = (pedidos || []).reduce((a, o) => a + Number(o.total), 0);
   const qtdPedidos = (pedidos || []).length;
   const pendentes  = (pedidos || []).filter(o => o.status === 'pending').length;
+
+  // Capacitação — dados reais
+  const todasAulas   = (modulos || []).flatMap(m => m.lessons || []);
+  const totalAulas   = todasAulas.length;
+  const concluidas   = new Set((progresso || []).map(p => p.lesson_id));
+  const totalConc    = concluidas.size;
+  const pctCap       = totalAulas ? Math.round((totalConc / totalAulas) * 100) : 0;
+  const primeiraAula = todasAulas.sort((a,b) => a.order - b.order)[0];
+  const durMin       = primeiraAula?.duration_seconds ? Math.ceil(primeiraAula.duration_seconds / 60) : null;
 
   function tagNova(status) {
     const map = {
@@ -102,19 +121,28 @@ async function renderInicio() {
     return 'var(--nb-text-mid)';
   }
 
-  const aviso    = avisos?.[0];
-  const avisoHTML = aviso ? `
-    <div class="aviso-card info">
-      <div class="aviso-card-icon">
-        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      </div>
-      <div style="flex:1;min-width:0;">
-        <div class="aviso-card-title">${aviso.subject || 'Aviso'}</div>
-        <div class="aviso-card-body">${aviso.body.slice(0,140)}${aviso.body.length > 140 ? '…' : ''}</div>
-      </div>
-      <button onclick="irAba('avisos')" style="background:none;border:none;color:var(--nb-gold);font-size:18px;cursor:pointer;flex-shrink:0;line-height:1;padding:0 0 0 8px;">›</button>
-    </div>
-  ` : '';
+  // Avisos — últimos 3, cores por tipo
+  const tipoAviso = (msg) => {
+    const t = msg.type || '';
+    if (t === 'video')   return { cls:'gold', icon:'<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>' };
+    if (t === 'produto') return { cls:'info', icon:'<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>' };
+    return { cls:'info', icon:'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>' };
+  };
+
+  const avisosHTML = (avisos || []).map(aviso => {
+    const { cls, icon } = tipoAviso(aviso);
+    return `
+      <div class="aviso-card ${cls}">
+        <div class="aviso-card-icon">
+          <svg viewBox="0 0 24 24">${icon}</svg>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div class="aviso-card-title">${aviso.subject || 'Aviso'}</div>
+          <div class="aviso-card-body">${(aviso.body||'').slice(0,120)}${(aviso.body||'').length > 120 ? '…' : ''}</div>
+        </div>
+        <button onclick="irAba('avisos')" style="background:none;border:none;color:var(--nb-gold);font-size:18px;cursor:pointer;flex-shrink:0;line-height:1;padding:0 0 0 8px;">›</button>
+      </div>`;
+  }).join('');
 
   const produtosHTML = (produtos || []).length ? `
     <div class="home-card home-vitrine">
@@ -189,7 +217,37 @@ async function renderInicio() {
     </div>
   `;
 
-  const capHTML = `
+  // Capacitação com dados reais
+  const capHTML = totalAulas > 0 ? `
+    <div class="home-card home-cap" onclick="irAba('capacitacao')" style="cursor:pointer">
+      <div class="home-card-header">
+        <div class="home-card-label">
+          <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          Capacitação
+        </div>
+        <span class="home-card-link">Ver tudo →</span>
+      </div>
+      ${primeiraAula ? `
+        <div class="aula-row-new">
+          <button class="play-btn-new">
+            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </button>
+          <div style="flex:1;min-width:0;">
+            <div class="aula-title-new">${primeiraAula.title}</div>
+            <div class="aula-meta-new">Módulo 1${durMin ? ' · ' + durMin + ' min' : ''}</div>
+          </div>
+          ${concluidas.has(primeiraAula.id)
+            ? `<span class="aula-badge-new" style="background:var(--nb-green-dim);color:var(--nb-green);border-color:var(--nb-green-bdr)">Concluída</span>`
+            : `<span class="aula-badge-new">Assistir</span>`}
+        </div>
+      ` : ''}
+      <div class="prog-track-new"><div class="prog-fill-new" style="width:${pctCap}%;"></div></div>
+      <div class="prog-row-new">
+        <span>${totalConc} de ${totalAulas} aulas</span>
+        <span style="color:${pctCap>0?'var(--nb-burg)':'var(--nb-text-low)'}">${pctCap}%</span>
+      </div>
+    </div>
+  ` : `
     <div class="home-card home-cap">
       <div class="home-card-header">
         <div class="home-card-label">
@@ -198,18 +256,7 @@ async function renderInicio() {
         </div>
         <span class="home-card-link" style="cursor:default;opacity:.5;">Em breve</span>
       </div>
-      <div class="aula-row-new">
-        <button class="play-btn-new">
-          <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        </button>
-        <div style="flex:1;min-width:0;">
-          <div class="aula-title-new">Como vender mais</div>
-          <div class="aula-meta-new">Módulo 1 · 12 min</div>
-        </div>
-        <span class="aula-badge-new">Em breve</span>
-      </div>
-      <div class="prog-track-new"><div class="prog-fill-new" style="width:0%;"></div></div>
-      <div class="prog-row-new"><span>0 de 8 aulas</span><span>0%</span></div>
+      <div style="font-size:13px;color:var(--nb-text-low);padding:8px 0">Treinamentos em preparação.</div>
     </div>
   `;
 
@@ -262,7 +309,7 @@ async function renderInicio() {
         </div>
         <button onclick="irAba('vitrine')" class="btn-primary-new">Ver vitrine →</button>
       </div>
-      ${avisoHTML}
+      ${avisosHTML}
       ${produtosHTML}
       ${metricsHTML}
       ${capHTML}

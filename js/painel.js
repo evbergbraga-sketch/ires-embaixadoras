@@ -14,7 +14,7 @@ let _abaAtiva  = 'painel';
   await renderTopbar();
 
   const hash     = window.location.hash.replace('#', '');
-  const abaValida = ['painel','vitrine','pedidos','avisos','perfil','depoimentos','suporte'].includes(hash);
+  const abaValida = ['painel','vitrine','pedidos','avisos','perfil','depoimentos','suporte','criativos','capacitacao'].includes(hash);
   irAba(abaValida ? hash : 'painel');
 })();
 
@@ -45,6 +45,8 @@ function irAba(aba) {
     perfil:      renderPerfil,
     depoimentos: renderDepoimentos,
     suporte:     renderSuporte,
+    criativos:   renderCriativos,
+    capacitacao: renderCapacitacao,
   };
   (acoes[aba] || renderInicio)();
 }
@@ -1102,4 +1104,402 @@ async function salvarPerfil() {
   _perfil.full_name=nome; _perfil.phone=phone; _perfil.email=email; _perfil.address=address;
   showToast('Perfil atualizado!', 'success');
   btn.disabled=false; btn.textContent='Salvar alterações';
+}
+// ============================================
+// IRES — painel.js PATCH
+// Adicionar estas duas funções ao painel.js
+// existente, antes do último fechamento.
+// Também atualizar irAba() para incluir
+// 'criativos' e 'capacitacao' no mapa de ações.
+// ============================================
+
+// ── Atualização necessária no irAba() existente ──
+// Substituir a linha do objeto `acoes` por:
+//
+// const acoes = {
+//   painel:      renderInicio,
+//   vitrine:     renderVitrine,
+//   pedidos:     renderPedidos,
+//   avisos:      renderAvisos,
+//   perfil:      renderPerfil,
+//   depoimentos: renderDepoimentos,
+//   suporte:     renderSuporte,
+//   criativos:   renderCriativos,       // <-- novo
+//   capacitacao: renderCapacitacao,     // <-- novo
+// };
+//
+// E no hash de inicialização, adicionar ao array de abas válidas:
+// ['painel','vitrine','pedidos','avisos','perfil','depoimentos','suporte','criativos','capacitacao']
+
+// ════════════════════════════════════════════
+// CRIATIVOS
+// ════════════════════════════════════════════
+async function renderCriativos() {
+  document.getElementById('conteudo').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+      <div>
+        <h2 style="font-size:20px;font-weight:700;color:var(--nb-text-hi)">Criativos</h2>
+        <p style="font-size:13px;color:var(--nb-text-low);margin-top:3px">Materiais prontos para usar nas suas redes sociais</p>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+      <div class="filter-pill active" onclick="filtrarCriativos(this,'')">Todos</div>
+      <div class="filter-pill" onclick="filtrarCriativos(this,'story')">Story</div>
+      <div class="filter-pill" onclick="filtrarCriativos(this,'feed')">Feed</div>
+      <div class="filter-pill" onclick="filtrarCriativos(this,'reels')">Reels</div>
+      <div class="filter-pill" onclick="filtrarCriativos(this,'outro')">Outros</div>
+    </div>
+
+    <div id="loading-criativos" class="loading"><div class="spinner"></div> Carregando...</div>
+    <div id="grid-criativos" style="display:none;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px"></div>
+    <div id="empty-criativos" style="display:none" class="empty-state">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--gray)" stroke-width="1.5">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <polyline points="21 15 16 10 5 21"/>
+      </svg>
+      <p>Nenhum criativo disponível ainda.</p>
+    </div>
+  `;
+
+  const { data } = await _supabase
+    .from('creatives')
+    .select('*')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+
+  window._todosCriativos = data || [];
+  _renderGridCriativos(data || []);
+}
+
+function _renderGridCriativos(lista) {
+  document.getElementById('loading-criativos').style.display = 'none';
+  const grid  = document.getElementById('grid-criativos');
+  const empty = document.getElementById('empty-criativos');
+
+  if (!lista.length) {
+    grid.style.display  = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+
+  empty.style.display = 'none';
+  grid.style.display  = 'grid';
+
+  const fmtColor = {
+    story:  { bg: 'var(--nb-burg-dim)',  border: 'var(--nb-burg-bdr)',  text: 'var(--nb-burg)'  },
+    feed:   { bg: 'var(--nb-green-dim)', border: 'var(--nb-green-bdr)', text: 'var(--nb-green)' },
+    reels:  { bg: 'var(--nb-gold-dim)',  border: 'var(--nb-gold-bdr)',  text: 'var(--nb-gold)'  },
+    outro:  { bg: 'var(--nb-info-dim)',  border: 'var(--nb-info-bdr)',  text: 'var(--nb-info)'  },
+  };
+
+  grid.innerHTML = lista.map(c => {
+    const fmt   = fmtColor[c.format] || fmtColor.outro;
+    const isVid = c.file_type === 'video';
+    const thumb = c.thumbnail_url || c.file_url;
+
+    return `
+      <div style="background:var(--nb-card);border:0.5px solid var(--nb-border-s);border-radius:14px;overflow:hidden;transition:border-color .15s;"
+        onmouseover="this.style.borderColor='var(--nb-border-s)'"
+        onmouseout="this.style.borderColor='var(--nb-border-s)'">
+
+        <!-- Thumb -->
+        <div style="position:relative;height:180px;background:var(--nb-inset);overflow:hidden;cursor:pointer"
+          onclick="_abrirPreviewCriativo('${c.id}')">
+          ${thumb
+            ? `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s"
+                onmouseover="this.style.transform='scale(1.04)'"
+                onmouseout="this.style.transform='scale(1)'"/>`
+            : `<div style="display:flex;align-items:center;justify-content:center;height:100%">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--nb-border-s)" stroke-width="1.2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+              </div>`
+          }
+          <!-- Badge formato -->
+          <div style="position:absolute;top:8px;left:8px;
+            background:${fmt.bg};border:0.5px solid ${fmt.border};color:${fmt.text};
+            font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.3px">
+            ${c.format.toUpperCase()}
+          </div>
+          ${isVid ? `
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+              <div style="width:44px;height:44px;background:rgba(0,0,0,0.55);border-radius:50%;display:flex;align-items:center;justify-content:center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- Info -->
+        <div style="padding:12px 14px">
+          <div style="font-size:13px;font-weight:600;color:var(--nb-text-hi);margin-bottom:4px;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.title}</div>
+          ${c.description ? `<div style="font-size:11px;color:var(--nb-text-low);margin-bottom:10px;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.description}</div>` : ''}
+          <a href="${c.file_url}" download target="_blank"
+            style="display:flex;align-items:center;justify-content:center;gap:6px;
+              width:100%;padding:8px;border-radius:8px;
+              background:var(--nb-burg);color:#fff;
+              font-size:12px;font-weight:600;text-decoration:none;
+              transition:opacity .15s"
+            onmouseover="this.style.opacity='.85'"
+            onmouseout="this.style.opacity='1'">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Baixar
+          </a>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function filtrarCriativos(el, formato) {
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  const lista = formato
+    ? (window._todosCriativos || []).filter(c => c.format === formato)
+    : (window._todosCriativos || []);
+  _renderGridCriativos(lista);
+}
+
+function _abrirPreviewCriativo(id) {
+  const c = (window._todosCriativos || []).find(x => x.id === id);
+  if (!c) return;
+
+  let lb = document.getElementById('lightbox-criativo');
+  if (!lb) {
+    lb = document.createElement('div');
+    lb.id = 'lightbox-criativo';
+    lb.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+    document.body.appendChild(lb);
+  }
+
+  const isVid = c.file_type === 'video';
+
+  lb.innerHTML = `
+    <div style="position:relative;max-width:90vw;max-height:90vh;display:flex;flex-direction:column;gap:12px">
+      <button onclick="document.getElementById('lightbox-criativo').remove();document.body.style.overflow=''"
+        style="position:absolute;top:-14px;right:-14px;width:30px;height:30px;border-radius:50%;
+          background:var(--nb-burg);border:none;color:#fff;font-size:16px;cursor:pointer;
+          display:flex;align-items:center;justify-content:center;font-weight:700;z-index:1">✕</button>
+
+      ${isVid
+        ? `<video src="${c.file_url}" controls autoplay
+            style="max-width:100%;max-height:80vh;border-radius:12px;display:block;background:#000"></video>`
+        : `<img src="${c.file_url}"
+            style="max-width:100%;max-height:80vh;border-radius:12px;display:block;object-fit:contain"/>`
+      }
+
+      <a href="${c.file_url}" download target="_blank"
+        style="display:flex;align-items:center;justify-content:center;gap:8px;
+          padding:10px 24px;background:var(--nb-burg);color:#fff;border-radius:10px;
+          font-size:13px;font-weight:600;text-decoration:none;align-self:center">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Baixar arquivo
+      </a>
+    </div>
+  `;
+
+  lb.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  lb.onclick = (e) => { if (e.target === lb) { lb.remove(); document.body.style.overflow = ''; } };
+}
+
+// ════════════════════════════════════════════
+// CAPACITAÇÃO
+// ════════════════════════════════════════════
+async function renderCapacitacao() {
+  document.getElementById('conteudo').innerHTML = `
+    <div style="margin-bottom:24px">
+      <h2 style="font-size:20px;font-weight:700;color:var(--nb-text-hi)">Capacitação</h2>
+      <p style="font-size:13px;color:var(--nb-text-low);margin-top:3px">Aprenda a vender mais com os treinamentos IRES</p>
+    </div>
+    <div id="loading-cap" class="loading"><div class="spinner"></div> Carregando...</div>
+    <div id="conteudo-cap"></div>
+  `;
+
+  // Busca módulos + aulas + progresso da embaixadora
+  const [
+    { data: modulos },
+    { data: progresso },
+  ] = await Promise.all([
+    _supabase
+      .from('modules')
+      .select('*, lessons(id,title,description,video_url,duration_seconds,"order") ')
+      .eq('is_active', true)
+      .order('"order"', { ascending: true }),
+    _supabase
+      .from('lesson_progress')
+      .select('lesson_id')
+      .eq('reseller_id', _perfil.id),
+  ]);
+
+  document.getElementById('loading-cap').style.display = 'none';
+
+  const concluidas = new Set((progresso || []).map(p => p.lesson_id));
+  const totalAulas = (modulos || []).reduce((a, m) => a + (m.lessons?.length || 0), 0);
+  const totalConc  = concluidas.size;
+  const pct        = totalAulas ? Math.round((totalConc / totalAulas) * 100) : 0;
+
+  if (!modulos?.length) {
+    document.getElementById('conteudo-cap').innerHTML = `
+      <div class="empty-state">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--gray)" stroke-width="1.5">
+          <polygon points="23 7 16 12 23 17 23 7"/>
+          <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+        </svg>
+        <p>Nenhum treinamento disponível ainda.<br>Em breve!</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Progresso geral
+  let html = `
+    <div style="background:var(--nb-card);border:0.5px solid var(--nb-border-s);border-radius:14px;padding:18px 20px;margin-bottom:24px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:14px;font-weight:600;color:var(--nb-text-hi)">Seu progresso geral</div>
+        <div style="font-size:13px;font-weight:700;color:var(--nb-burg)">${totalConc} de ${totalAulas} aulas</div>
+      </div>
+      <div style="height:6px;background:var(--nb-inset);border-radius:6px;overflow:hidden">
+        <div style="height:6px;background:var(--nb-burg);border-radius:6px;width:${pct}%;transition:width .4s"></div>
+      </div>
+      <div style="font-size:12px;color:var(--nb-text-low);margin-top:6px">${pct}% concluído</div>
+    </div>
+  `;
+
+  // Módulos
+  modulos.forEach((mod, mi) => {
+    const aulas = (mod.lessons || []).sort((a, b) => a.order - b.order);
+    const modConc = aulas.filter(a => concluidas.has(a.id)).length;
+    const modPct  = aulas.length ? Math.round((modConc / aulas.length) * 100) : 0;
+
+    html += `
+      <div style="margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div>
+            <div style="font-size:15px;font-weight:600;color:var(--nb-text-hi)">
+              Módulo ${mi + 1} — ${mod.title}
+            </div>
+            ${mod.description ? `<div style="font-size:12px;color:var(--nb-text-low);margin-top:2px">${mod.description}</div>` : ''}
+          </div>
+          <div style="font-size:12px;color:var(--nb-text-low);white-space:nowrap;margin-left:16px">
+            ${modConc}/${aulas.length} · ${modPct}%
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px">
+          ${aulas.map((aula, ai) => {
+            const feita    = concluidas.has(aula.id);
+            const durMin   = aula.duration_seconds ? Math.ceil(aula.duration_seconds / 60) : null;
+            return `
+              <div style="background:var(--nb-card);border:0.5px solid ${feita ? 'rgba(76,175,122,0.3)' : 'var(--nb-border-s)'};
+                border-radius:12px;overflow:hidden;transition:border-color .15s"
+                id="aula-card-${aula.id}">
+
+                <!-- Header da aula -->
+                <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer"
+                  onclick="_toggleAula('${aula.id}')">
+
+                  <!-- Ícone status -->
+                  <div style="width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+                    background:${feita ? 'var(--nb-green-dim)' : 'var(--nb-inset)'};
+                    border:0.5px solid ${feita ? 'var(--nb-green-bdr)' : 'var(--nb-border-s)'}">
+                    ${feita
+                      ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--nb-green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+                      : `<svg width="12" height="12" viewBox="0 0 24 24" fill="var(--nb-text-low)" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>`
+                    }
+                  </div>
+
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:13px;font-weight:600;color:var(--nb-text-hi)">
+                      ${ai + 1}. ${aula.title}
+                    </div>
+                    ${durMin ? `<div style="font-size:11px;color:var(--nb-text-low);margin-top:2px">${durMin} min</div>` : ''}
+                  </div>
+
+                  <svg id="chevron-${aula.id}" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="var(--nb-text-low)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="flex-shrink:0;transition:transform .2s">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </div>
+
+                <!-- Player (expandível) -->
+                <div id="player-${aula.id}" style="display:none;padding:0 16px 16px">
+                  ${aula.description ? `<p style="font-size:13px;color:var(--nb-text-mid);margin-bottom:12px;line-height:1.6">${aula.description}</p>` : ''}
+
+                  <div style="position:relative;padding-bottom:56.25%;height:0;border-radius:10px;overflow:hidden;background:#000">
+                    <iframe
+                      src="${_youtubeEmbedUrl(aula.video_url)}"
+                      style="position:absolute;top:0;left:0;width:100%;height:100%;border:none"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowfullscreen
+                      loading="lazy">
+                    </iframe>
+                  </div>
+
+                  ${!feita ? `
+                    <button onclick="_marcarConcluida('${aula.id}')"
+                      style="margin-top:12px;width:100%;padding:10px;border-radius:9px;
+                        background:var(--nb-green-dim);border:0.5px solid var(--nb-green-bdr);
+                        color:var(--nb-green);font-size:13px;font-weight:600;cursor:pointer;
+                        font-family:'DM Sans',sans-serif;transition:opacity .15s"
+                      onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+                      ✓ Marcar como concluída
+                    </button>
+                  ` : `
+                    <div style="margin-top:12px;text-align:center;font-size:12px;color:var(--nb-green)">
+                      ✓ Aula concluída
+                    </div>
+                  `}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  });
+
+  document.getElementById('conteudo-cap').innerHTML = html;
+}
+
+function _youtubeEmbedUrl(url) {
+  if (!url) return '';
+  // Aceita: youtu.be/ID, youtube.com/watch?v=ID, youtube.com/embed/ID
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/);
+  if (match) return `https://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1`;
+  return url; // fallback — retorna a URL original
+}
+
+function _toggleAula(id) {
+  const player  = document.getElementById(`player-${id}`);
+  const chevron = document.getElementById(`chevron-${id}`);
+  if (!player) return;
+  const aberto = player.style.display !== 'none';
+  player.style.display  = aberto ? 'none' : 'block';
+  if (chevron) chevron.style.transform = aberto ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+
+async function _marcarConcluida(lessonId) {
+  const { error } = await _supabase
+    .from('lesson_progress')
+    .upsert({ reseller_id: _perfil.id, lesson_id: lessonId }, { onConflict: 'reseller_id,lesson_id' });
+
+  if (error) { showToast('Erro ao salvar progresso.', 'error'); return; }
+  showToast('Aula concluída! 🎉', 'success');
+  renderCapacitacao(); // re-renderiza com progresso atualizado
 }

@@ -65,7 +65,7 @@
   <!-- ── Bottom nav (mobile, visível em <768px) ── -->
   <nav class="bottom-nav-new" aria-label="Navegação mobile">
     <div class="bottom-nav-inner">
-      <a class="bnav-tab active" onclick="irAba('painel');  return false" href="#">
+      <a class="bnav-tab active" onclick="irAba('painel'); return false" href="#">
         <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         <span>Início</span>
       </a>
@@ -73,53 +73,100 @@
         <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
         <span>Vitrine</span>
       </a>
-      <a class="bnav-tab" href="pedidos.html">
+      <a class="bnav-tab" onclick="irAba('pedidos'); return false" href="#">
         <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         <span>Pedidos</span>
       </a>
-      <a class="bnav-tab" onclick="irAba('avisos');  return false" href="#">
-        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        <span>Avisos</span>
+      <a class="bnav-tab" onclick="irAba('criativos'); return false" href="#">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <span>Criativos</span>
       </a>
-      <a class="bnav-tab" onclick="irAba('perfil');  return false" href="#">
-        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <span>Perfil</span>
+      <a class="bnav-tab" onclick="irAba('capacitacao'); return false" href="#">
+        <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        <span>Aprenda</span>
+      </a>
+      <a class="bnav-tab" onclick="_abrirDrawerNav(); return false" href="#" id="bnav-mais">
+        <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+        <span>Mais</span>
       </a>
     </div>
   </nav>
+
+  <!-- ── Drawer "Mais" (mobile) ── -->
+  <div id="drawer-overlay"
+    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0);z-index:190;transition:background .25s;"
+    onclick="_fecharDrawerNav()">
+  </div>
+  <div id="drawer-nav"
+    style="display:none;position:fixed;bottom:-280px;left:0;right:0;
+      background:#0e0810;border-top:0.5px solid #3E2A3C;border-radius:20px 20px 0 0;
+      padding:0 0 env(safe-area-inset-bottom,24px);z-index:200;
+      transition:bottom .3s cubic-bezier(.32,.72,0,1);">
+    <div style="width:36px;height:4px;background:#3E2A3C;border-radius:2px;margin:10px auto 16px;"></div>
+    <div style="font-size:11px;font-weight:600;color:#705868;text-transform:uppercase;letter-spacing:.8px;padding:0 20px;margin-bottom:12px;">Mais opções</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px 8px;">
+      <div onclick="irAba('avisos');  _fecharDrawerNav()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#201520;border:0.5px solid #3E2A3C;border-radius:12px;cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0A8B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span style="font-size:13px;font-weight:500;color:#C0A8B8;">Avisos</span>
+      </div>
+      <div onclick="irAba('perfil');  _fecharDrawerNav()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#201520;border:0.5px solid #3E2A3C;border-radius:12px;cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0A8B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span style="font-size:13px;font-weight:500;color:#C0A8B8;">Perfil</span>
+      </div>
+      <div onclick="irAba('depoimentos'); _fecharDrawerNav()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#201520;border:0.5px solid #3E2A3C;border-radius:12px;cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0A8B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 0 1-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        <span style="font-size:13px;font-weight:500;color:#C0A8B8;">Depoimentos</span>
+      </div>
+      <div onclick="irAba('suporte'); _fecharDrawerNav()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#201520;border:0.5px solid #3E2A3C;border-radius:12px;cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0A8B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span style="font-size:13px;font-weight:500;color:#C0A8B8;">Suporte</span>
+      </div>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/painel.js"></script>
 
-  <!-- Sincroniza aba ativa com bottom nav -->
+  <!-- Sincroniza aba ativa + drawer -->
   <script>
-    (function () {
-      const _irAbaOrig = typeof irAba === 'function' ? irAba : null;
-      function _syncBottomNav(aba) {
-        document.querySelectorAll('.bnav-tab').forEach(t => t.classList.remove('active'));
-        const map = { painel: 0, vitrine: 1, pedidos: 2, avisos: 3, perfil: 4 };
-        const idx = map[aba];
-        if (idx !== undefined) {
-          const tabs = document.querySelectorAll('.bnav-tab');
-          if (tabs[idx]) tabs[idx].classList.add('active');
-        }
+    function _abrirDrawerNav() {
+      const d = document.getElementById('drawer-nav');
+      const o = document.getElementById('drawer-overlay');
+      d.style.display  = 'block';
+      o.style.display  = 'block';
+      requestAnimationFrame(() => {
+        d.style.bottom   = '0';
+        o.style.background = 'rgba(0,0,0,0.6)';
+      });
+    }
+    function _fecharDrawerNav() {
+      const d = document.getElementById('drawer-nav');
+      const o = document.getElementById('drawer-overlay');
+      d.style.bottom     = '-280px';
+      o.style.background = 'rgba(0,0,0,0)';
+      setTimeout(() => { d.style.display='none'; o.style.display='none'; }, 300);
+    }
+
+    window.addEventListener('load', function () {
+      if (typeof irAba !== 'function') return;
+      const orig = irAba;
+      window.irAba = function (aba) {
+        orig(aba);
+        // desktop tabs
         document.querySelectorAll('.nav-tab-new').forEach(t => t.classList.remove('active'));
         const desktopTab = document.getElementById('tab-' + aba);
         if (desktopTab) desktopTab.classList.add('active');
-      }
-      // sobrescreve irAba para sincronizar a nav após carregamento do painel.js
-      window.addEventListener('load', function () {
-        if (typeof irAba === 'function') {
-          const orig = irAba;
-          window.irAba = function (aba) {
-            orig(aba);
-            _syncBottomNav(aba);
-          };
+        // bottom nav
+        document.querySelectorAll('.bnav-tab').forEach(t => t.classList.remove('active'));
+        const bmap = { painel:0, vitrine:1, pedidos:2, criativos:3, capacitacao:4 };
+        if (bmap[aba] !== undefined) {
+          const btabs = document.querySelectorAll('.bnav-tab');
+          if (btabs[bmap[aba]]) btabs[bmap[aba]].classList.add('active');
         }
-      });
-    })();
+      };
+    });
   </script>
 </body>
 </html>

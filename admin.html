@@ -3,50 +3,238 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>IRES — Painel Admin</title>
+  <title>ires. — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="css/ires.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css"/>
+  <style>
+    /* ── Admin nav override ── */
+    .admin-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #0e0810;
+      border-bottom: 0.5px solid #2E1E2D;
+      height: 56px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .admin-logo {
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-size: 20px;
+      font-weight: 400;
+      color: #F5EEF0;
+      letter-spacing: 0.3px;
+      text-decoration: none;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .admin-logo em { color: #C4325A; font-style: normal; }
+    .admin-logo-badge {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      color: #705868;
+      letter-spacing: 0.5px;
+      padding: 2px 8px;
+      background: #201520;
+      border: 0.5px solid #3E2A3C;
+      border-radius: 20px;
+    }
+    .admin-nav {
+      display: flex;
+      gap: 2px;
+      flex: 1;
+      justify-content: center;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .admin-nav::-webkit-scrollbar { display: none; }
+    .admin-nav-tab {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      color: #705868;
+      font-weight: 500;
+      padding: 6px 11px;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      text-decoration: none;
+      transition: color .15s, background .15s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .admin-nav-tab:hover { color: #C0A8B8; background: #201520; }
+    .admin-nav-tab.active { color: #C4325A; background: rgba(196,50,90,0.14); }
+    .admin-nav-tab svg {
+      width: 13px; height: 13px;
+      stroke: currentColor; fill: none;
+      stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .admin-topbar-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+    /* ── Admin main ── */
+    body.page { background: #100810; font-family: 'DM Sans', 'Inter', sans-serif; }
+    #conteudo-principal {
+      padding: 24px 20px 40px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* ── Mobile nav admin ── */
+    .admin-bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: #0e0810;
+      border-top: 0.5px solid #3E2A3C;
+      padding: 10px 0 env(safe-area-inset-bottom, 16px);
+      z-index: 200;
+    }
+    .admin-bnav-inner { display: flex; max-width: 500px; margin: 0 auto; }
+    .admin-bnav-tab {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; gap: 4px; cursor: pointer; padding: 4px 0;
+      text-decoration: none;
+    }
+    .admin-bnav-tab svg {
+      width: 20px; height: 20px;
+      stroke: #705868; fill: none;
+      stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .admin-bnav-tab span { font-size: 10px; color: #705868; font-weight: 500; }
+    .admin-bnav-tab.active svg { stroke: #C4325A; }
+    .admin-bnav-tab.active span { color: #C4325A; }
+
+    @media (min-width: 768px) {
+      .admin-nav { display: flex; }
+      .admin-bottom-nav { display: none !important; }
+      #conteudo-principal { padding: 28px 32px 40px; }
+    }
+    @media (max-width: 767px) {
+      .admin-nav { display: none; }
+      .admin-bottom-nav { display: block; }
+      #conteudo-principal { padding: 14px 14px 90px; }
+    }
+  </style>
 </head>
 <body class="page">
 
-<!-- Topbar -->
-<header class="topbar">
-  <div class="topbar-brand">
-    <div class="brand-logo">
-      <span>ires</span>
-      <span>emb.</span>
+  <!-- ── Topbar admin ── -->
+  <header class="admin-topbar">
+    <a href="#" class="admin-logo" onclick="irPara('dashboard'); return false">
+      ires<em>.</em>
+      <span class="admin-logo-badge">admin</span>
+    </a>
+
+    <nav class="admin-nav" aria-label="Navegação admin">
+      <a class="admin-nav-tab active" id="nav-dashboard" onclick="irPara('dashboard'); return false" href="#">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a class="admin-nav-tab" id="nav-pedidos" onclick="irPara('pedidos'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Pedidos
+      </a>
+      <a class="admin-nav-tab" id="nav-produtos" onclick="irPara('produtos'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        Produtos
+      </a>
+      <a class="admin-nav-tab" id="nav-embaixadoras" onclick="irPara('embaixadoras'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Embaixadoras
+      </a>
+      <a class="admin-nav-tab" id="nav-categorias" onclick="irPara('categorias'); return false" href="#">
+        <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Categorias
+      </a>
+      <a class="admin-nav-tab" id="nav-comunicados" onclick="irPara('comunicados'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Comunicados
+      </a>
+      <a class="admin-nav-tab" id="nav-depoimentos" onclick="irPara('depoimentos'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 0 1-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        Depoimentos
+      </a>
+      <a class="admin-nav-tab" id="nav-suporte" onclick="irPara('suporte'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Suporte
+      </a>
+    </nav>
+
+    <div class="admin-topbar-right" id="topbar-right"></div>
+  </header>
+
+  <!-- ── Conteúdo principal ── -->
+  <main id="conteudo-principal">
+    <div class="loading"><div class="spinner"></div> Carregando...</div>
+  </main>
+
+  <!-- ── Bottom nav mobile ── -->
+  <nav class="admin-bottom-nav" aria-label="Navegação admin mobile">
+    <div class="admin-bnav-inner">
+      <a class="admin-bnav-tab active" onclick="irPara('dashboard'); return false" href="#">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>Dashboard</span>
+      </a>
+      <a class="admin-bnav-tab" onclick="irPara('pedidos'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span>Pedidos</span>
+      </a>
+      <a class="admin-bnav-tab" onclick="irPara('produtos'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span>Produtos</span>
+      </a>
+      <a class="admin-bnav-tab" onclick="irPara('embaixadoras'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <span>Embaixadoras</span>
+      </a>
+      <a class="admin-bnav-tab" onclick="irPara('comunicados'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span>Mais</span>
+      </a>
     </div>
-    <span class="brand-name">ires<span>.</span> <span style="font-size:11px;color:var(--gray);font-weight:400">admin</span></span>
+  </nav>
+
+  <!-- ── Modal genérico ── -->
+  <div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;align-items:center;justify-content:center;padding:16px;overflow-y:auto">
+    <div id="modal-body" class="card" style="max-width:480px;width:100%;position:relative;margin:auto"></div>
   </div>
-  <div class="topbar-right" id="topbar-right"></div>
-</header>
 
-<!-- Nav tabs igual ao painel da embaixadora -->
-<nav class="nav-tabs">
-  <a class="nav-tab active" id="nav-dashboard"     onclick="irPara('dashboard')">Dashboard</a>
-  <a class="nav-tab"        id="nav-pedidos"        onclick="irPara('pedidos')">Pedidos</a>
-  <a class="nav-tab"        id="nav-produtos"       onclick="irPara('produtos')">Produtos</a>
-  <a class="nav-tab"        id="nav-embaixadoras"   onclick="irPara('embaixadoras')">Embaixadoras</a>
-  <a class="nav-tab"        id="nav-categorias"     onclick="irPara('categorias')">Categorias</a>
-  <a class="nav-tab"        id="nav-comunicados"    onclick="irPara('comunicados')">Comunicados</a>
-  <a class="nav-tab"        id="nav-depoimentos"    onclick="irPara('depoimentos')">Depoimentos</a>
-  <a class="nav-tab"        id="nav-suporte"        onclick="irPara('suporte')">Suporte</a>
-</nav>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/admin.js"></script>
 
-<!-- Conteúdo principal -->
-<main class="main-content" id="conteudo-principal">
-  <div class="loading"><div class="spinner"></div> Carregando...</div>
-</main>
-
-<!-- Modal genérico -->
-<div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;align-items:center;justify-content:center;padding:16px;overflow-y:auto">
-  <div id="modal-body" class="card" style="max-width:480px;width:100%;position:relative;margin:auto"></div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css"/>
-<script src="js/config.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/admin.js"></script>
+  <!-- Sincroniza bottom nav mobile com irPara() -->
+  <script>
+    window.addEventListener('load', function () {
+      if (typeof irPara !== 'function') return;
+      const _orig = irPara;
+      window.irPara = function (pagina) {
+        _orig(pagina);
+        // desktop tabs
+        document.querySelectorAll('.admin-nav-tab').forEach(t => t.classList.remove('active'));
+        const tab = document.getElementById('nav-' + pagina);
+        if (tab) tab.classList.add('active');
+        // mobile tabs
+        document.querySelectorAll('.admin-bnav-tab').forEach(t => t.classList.remove('active'));
+        const bmap = { dashboard:0, pedidos:1, produtos:2, embaixadoras:3, comunicados:4 };
+        if (bmap[pagina] !== undefined) {
+          const btabs = document.querySelectorAll('.admin-bnav-tab');
+          if (btabs[bmap[pagina]]) btabs[bmap[pagina]].classList.add('active');
+        }
+      };
+    });
+  </script>
 </body>
 </html>

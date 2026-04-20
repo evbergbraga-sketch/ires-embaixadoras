@@ -487,7 +487,9 @@ async function salvarProduto(id) {
   const { error } = id ? await _supabase.from('products').update(payload).eq('id',id) : await _supabase.from('products').insert({...payload,is_active:true});
   if (error) { showToast('Erro ao salvar produto.','error'); return; }
   showToast(id?'Produto atualizado!':'Produto criado!','success');
-  fecharModal(); renderProdutos();
+  fecharModal();
+  renderProdutos();
+  if (!id) _perguntarAviso('produto', payload.name);
 }
 
 async function toggleProduto(id, ativo) {
@@ -650,10 +652,71 @@ async function enviarComunicado() {
   const body    = document.getElementById('com-corpo').value.trim();
   if (!body) { showToast('Escreva a mensagem.','error'); return; }
   const { data: { session } } = await _supabase.auth.getSession();
-  const { error } = await _supabase.from('messages').insert({ sender_id:session.user.id, recipient_id:null, subject, body, is_broadcast:true });
+  const { error } = await _supabase.from('messages').insert({
+    sender_id: session.user.id,
+    recipient_id: null,
+    subject,
+    body,
+    is_broadcast: true,
+    type: 'comunicado',
+  });
   if (error) { showToast('Erro ao enviar.','error'); return; }
   showToast('Comunicado enviado!','success');
   fecharModal(); renderComunicados();
+}
+
+// ── Pergunta se quer criar aviso após salvar vídeo/produto ──
+function _perguntarAviso(tipo, titulo) {
+  const tipoLabel = tipo === 'video' ? 'aula' : 'produto';
+  const emoji     = tipo === 'video' ? '🎬' : '🛍️';
+  const subjectPadrao = tipo === 'video'
+    ? `Nova aula disponível: ${titulo}`
+    : `Novo produto na vitrine: ${titulo}`;
+  const bodyPadrao = tipo === 'video'
+    ? `Uma nova aula foi adicionada à plataforma de capacitação: "${titulo}". Acesse agora e continue aprendendo!`
+    : `Novo produto disponível na vitrine: "${titulo}". Acesse a vitrine e confira!`;
+
+  abrirModal(`
+    <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-size:28px;margin-bottom:6px">${emoji}</div>
+      <h3 style="font-size:15px;font-weight:800">${tipo==='video'?'Aula criada':'Produto criado'}!</h3>
+      <p style="font-size:13px;color:var(--gray);margin-top:4px">Quer criar um aviso para as embaixadoras?</p>
+    </div>
+    <div class="form-group">
+      <label>Título do aviso</label>
+      <input type="text" id="aviso-subject" value="${subjectPadrao}"/>
+    </div>
+    <div class="form-group">
+      <label>Mensagem</label>
+      <textarea id="aviso-body" rows="3" style="resize:vertical">${bodyPadrao}</textarea>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-outline" style="flex:1" onclick="fecharModal()">Não, obrigado</button>
+      <button class="btn btn-primary" style="flex:1" id="btn-pub-aviso" onclick="_publicarAviso('${tipo}')">Publicar aviso</button>
+    </div>
+  `);
+}
+
+async function _publicarAviso(tipo) {
+  const subject = document.getElementById('aviso-subject').value.trim();
+  const body    = document.getElementById('aviso-body').value.trim();
+  if (!subject || !body) { showToast('Preencha título e mensagem.','error'); return; }
+  const btn = document.getElementById('btn-pub-aviso');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
+  const { data: { session } } = await _supabase.auth.getSession();
+  const { error } = await _supabase.from('messages').insert({
+    sender_id:    session.user.id,
+    recipient_id: null,
+    subject,
+    body,
+    is_broadcast: true,
+    type:         tipo,
+  });
+  if (error) { showToast('Erro ao publicar aviso.','error'); btn.disabled=false; btn.textContent='Publicar aviso'; return; }
+  showToast('Aviso publicado para as embaixadoras!','success');
+  fecharModal();
 }
 
 // ════════════════════════════════════════════
@@ -1356,7 +1419,9 @@ async function salvarAula(aulaId,moduloId) {
   const{error}=aulaId?await _supabase.from('lessons').update(payload).eq('id',aulaId):await _supabase.from('lessons').insert({...payload,is_active:true});
   if(error){showToast('Erro: '+error.message,'error');btn.disabled=false;btn.textContent='Salvar aula';return;}
   showToast(aulaId?'Aula atualizada!':'Aula criada!','success');
-  fecharModal();renderCapacitacaoAdmin();
+  fecharModal();
+  renderCapacitacaoAdmin();
+  if (!aulaId) _perguntarAviso('video', titulo);
 }
 
 async function deletarAula(id) {

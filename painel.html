@@ -3,39 +3,111 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>IRES Embaixadoras — Meu Painel</title>
+  <title>ires. — Meu Painel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="css/ires.css"/>
 </head>
 <body class="page">
 
-<!-- Topbar -->
-<header class="topbar">
-  <div class="topbar-brand">
-    <div class="brand-logo">
-      <span>ires</span>
-      <span>emb.</span>
+  <!-- ── Topbar ── -->
+  <header class="topbar">
+    <a href="painel.html" class="brand-name-new">ires<em>.</em></a>
+
+    <!-- Nav desktop (visível em ≥768px) -->
+    <nav class="nav-tabs-new" aria-label="Navegação principal">
+      <a class="nav-tab-new active" id="tab-painel"  onclick="irAba('painel');  return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Início
+      </a>
+      <a class="nav-tab-new" id="tab-vitrine" onclick="irAba('vitrine'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        Vitrine
+      </a>
+      <a class="nav-tab-new" href="pedidos.html">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Pedidos
+      </a>
+      <a class="nav-tab-new" id="tab-avisos" onclick="irAba('avisos');  return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Avisos
+      </a>
+      <a class="nav-tab-new" id="tab-perfil"  onclick="irAba('perfil');  return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Perfil
+      </a>
+      <a class="nav-tab-new" href="comunidade.html">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Suporte
+      </a>
+    </nav>
+
+    <!-- Ações direita — populadas pelo auth.js via #topbar-right -->
+    <div class="topbar-right" id="topbar-right"></div>
+  </header>
+
+  <!-- ── Conteúdo principal — populado pelo painel.js ── -->
+  <main class="main-content" id="conteudo"></main>
+
+  <!-- ── Bottom nav (mobile, visível em <768px) ── -->
+  <nav class="bottom-nav-new" aria-label="Navegação mobile">
+    <div class="bottom-nav-inner">
+      <a class="bnav-tab active" onclick="irAba('painel');  return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Início</span>
+      </a>
+      <a class="bnav-tab" onclick="irAba('vitrine'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span>Vitrine</span>
+      </a>
+      <a class="bnav-tab" href="pedidos.html">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span>Pedidos</span>
+      </a>
+      <a class="bnav-tab" onclick="irAba('avisos');  return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span>Avisos</span>
+      </a>
+      <a class="bnav-tab" onclick="irAba('perfil');  return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Perfil</span>
+      </a>
     </div>
-    <span class="brand-name">ires<span>.</span></span>
-  </div>
-  <div class="topbar-right" id="topbar-right"></div>
-</header>
+  </nav>
 
-<!-- Nav -->
-<nav class="nav-tabs">
-  <a class="nav-tab active" id="tab-painel"   onclick="irAba('painel')">Início</a>
-  <a class="nav-tab"        id="tab-vitrine"  onclick="irAba('vitrine')">Vitrine</a>
-  <a class="nav-tab"        href="pedidos.html">Meus pedidos</a>
-  <a class="nav-tab"        id="tab-avisos"   onclick="irAba('avisos')">Avisos</a>
-  <a class="nav-tab"        id="tab-perfil"   onclick="irAba('perfil')">Meu perfil</a>
-  <a class="nav-tab" href="comunidade.html">Depoimentos</a>
-  <a class="nav-tab" href="comunidade.html#suporte">Suporte</a>
-</nav>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/painel.js"></script>
 
-<div class="main-content" id="conteudo"></div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/painel.js"></script>
+  <!-- Sincroniza aba ativa com bottom nav -->
+  <script>
+    (function () {
+      const _irAbaOrig = typeof irAba === 'function' ? irAba : null;
+      function _syncBottomNav(aba) {
+        document.querySelectorAll('.bnav-tab').forEach(t => t.classList.remove('active'));
+        const map = { painel: 0, vitrine: 1, pedidos: 2, avisos: 3, perfil: 4 };
+        const idx = map[aba];
+        if (idx !== undefined) {
+          const tabs = document.querySelectorAll('.bnav-tab');
+          if (tabs[idx]) tabs[idx].classList.add('active');
+        }
+        document.querySelectorAll('.nav-tab-new').forEach(t => t.classList.remove('active'));
+        const desktopTab = document.getElementById('tab-' + aba);
+        if (desktopTab) desktopTab.classList.add('active');
+      }
+      // sobrescreve irAba para sincronizar a nav após carregamento do painel.js
+      window.addEventListener('load', function () {
+        if (typeof irAba === 'function') {
+          const orig = irAba;
+          window.irAba = function (aba) {
+            orig(aba);
+            _syncBottomNav(aba);
+          };
+        }
+      });
+    })();
+  </script>
 </body>
 </html>

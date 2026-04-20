@@ -121,6 +121,12 @@
       .admin-nav { display: none; }
       .admin-bottom-nav { display: block; }
       #conteudo-principal { padding: 14px 14px 90px; }
+      /* Dashboard bento colapsa para coluna única */
+      .dash-bento { grid-template-columns: 1fr !important; }
+      /* Métricas em 2 colunas no mobile */
+      .metrics-grid { grid-template-columns: repeat(2,1fr) !important; gap: 10px !important; }
+      /* Formulários em coluna única */
+      .form-row { grid-template-columns: 1fr !important; }
     }
   </style>
 </head>
@@ -187,28 +193,68 @@
   <!-- ── Bottom nav mobile ── -->
   <nav class="admin-bottom-nav" aria-label="Navegação admin mobile">
     <div class="admin-bnav-inner">
-      <a class="admin-bnav-tab active" onclick="irPara('dashboard'); return false" href="#">
+      <a class="admin-bnav-tab active" id="admin-bnav-0" onclick="irPara('dashboard'); return false" href="#">
         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         <span>Dashboard</span>
       </a>
-      <a class="admin-bnav-tab" onclick="irPara('pedidos'); return false" href="#">
+      <a class="admin-bnav-tab" id="admin-bnav-1" onclick="irPara('pedidos'); return false" href="#">
         <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         <span>Pedidos</span>
       </a>
-      <a class="admin-bnav-tab" onclick="irPara('produtos'); return false" href="#">
+      <a class="admin-bnav-tab" id="admin-bnav-2" onclick="irPara('produtos'); return false" href="#">
         <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
         <span>Produtos</span>
       </a>
-      <a class="admin-bnav-tab" onclick="irPara('embaixadoras'); return false" href="#">
+      <a class="admin-bnav-tab" id="admin-bnav-3" onclick="irPara('embaixadoras'); return false" href="#">
         <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
         <span>Embaixadoras</span>
       </a>
-      <a class="admin-bnav-tab" onclick="irPara('comunicados'); return false" href="#">
-        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <a class="admin-bnav-tab" id="admin-bnav-mais" onclick="_abrirDrawerAdmin(); return false" href="#">
+        <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
         <span>Mais</span>
       </a>
     </div>
   </nav>
+
+  <!-- ── Drawer mobile admin ── -->
+  <div id="admin-drawer-overlay"
+    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0);z-index:190;transition:background .25s;"
+    onclick="_fecharDrawerAdmin()">
+  </div>
+  <div id="admin-drawer"
+    style="display:none;position:fixed;bottom:-320px;left:0;right:0;
+      background:#0e0810;border-top:0.5px solid #3E2A3C;border-radius:20px 20px 0 0;
+      padding:0 0 env(safe-area-inset-bottom,24px);z-index:200;
+      transition:bottom .3s cubic-bezier(.32,.72,0,1);">
+    <div style="width:36px;height:4px;background:#3E2A3C;border-radius:2px;margin:10px auto 16px;"></div>
+    <div style="font-size:11px;font-weight:600;color:#705868;text-transform:uppercase;letter-spacing:.8px;padding:0 20px;margin-bottom:12px;">Mais opções</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px 8px;">
+      <div onclick="irPara('categorias'); _fecharDrawerAdmin()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#201520;border:0.5px solid #3E2A3C;border-radius:12px;cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0A8B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span style="font-size:13px;font-weight:500;color:#C0A8B8;">Categorias</span>
+      </div>
+      <div onclick="irPara('comunicados'); _fecharDrawerAdmin()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#201520;border:0.5px solid #3E2A3C;border-radius:12px;cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0A8B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span style="font-size:13px;font-weight:500;color:#C0A8B8;">Comunicados</span>
+      </div>
+      <div onclick="irPara('depoimentos'); _fecharDrawerAdmin()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#201520;border:0.5px solid #3E2A3C;border-radius:12px;cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0A8B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 0 1-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        <span style="font-size:13px;font-weight:500;color:#C0A8B8;">Depoimentos</span>
+      </div>
+      <div onclick="irPara('suporte'); _fecharDrawerAdmin()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#201520;border:0.5px solid #3E2A3C;border-radius:12px;cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0A8B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span style="font-size:13px;font-weight:500;color:#C0A8B8;">Suporte</span>
+      </div>
+      <div onclick="irPara('criativos'); _fecharDrawerAdmin()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#201520;border:0.5px solid #3E2A3C;border-radius:12px;cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0A8B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <span style="font-size:13px;font-weight:500;color:#C0A8B8;">Criativos</span>
+      </div>
+      <div onclick="irPara('capacitacao'); _fecharDrawerAdmin()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#201520;border:0.5px solid #3E2A3C;border-radius:12px;cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0A8B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        <span style="font-size:13px;font-weight:500;color:#C0A8B8;">Capacitação</span>
+      </div>
+    </div>
+  </div>
 
   <!-- ── Modal genérico ── -->
   <div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;align-items:center;justify-content:center;padding:16px;overflow-y:auto">
@@ -220,5 +266,35 @@
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/admin.js"></script>
+  <script>
+  function _abrirDrawerAdmin() {
+    const d=document.getElementById('admin-drawer');
+    const o=document.getElementById('admin-drawer-overlay');
+    d.style.display='block'; o.style.display='block';
+    requestAnimationFrame(()=>{ d.style.bottom='0'; o.style.background='rgba(0,0,0,0.6)'; });
+  }
+  function _fecharDrawerAdmin() {
+    const d=document.getElementById('admin-drawer');
+    const o=document.getElementById('admin-drawer-overlay');
+    d.style.bottom='-320px'; o.style.background='rgba(0,0,0,0)';
+    setTimeout(()=>{ d.style.display='none'; o.style.display='none'; },300);
+  }
+  window.addEventListener('load', function() {
+    if (typeof irPara !== 'function') return;
+    const _orig = irPara;
+    window.irPara = function(pagina) {
+      _orig(pagina);
+      document.querySelectorAll('.admin-nav-tab').forEach(t=>t.classList.remove('active'));
+      const tab=document.getElementById('nav-'+pagina);
+      if(tab) tab.classList.add('active');
+      document.querySelectorAll('.admin-bnav-tab').forEach(t=>t.classList.remove('active'));
+      const bmap={dashboard:0,pedidos:1,produtos:2,embaixadoras:3};
+      if(bmap[pagina]!==undefined){
+        const tabs=document.querySelectorAll('.admin-bnav-tab');
+        if(tabs[bmap[pagina]]) tabs[bmap[pagina]].classList.add('active');
+      }
+    };
+  });
+  </script>
 </body>
 </html>

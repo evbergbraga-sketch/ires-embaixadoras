@@ -3,134 +3,166 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>IRES Embaixadoras — Carrinho</title>
+  <title>ires. — Carrinho</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="css/ires.css"/>
 </head>
 <body class="page">
 
-<!-- Topbar -->
-<header class="topbar">
-  <div class="topbar-brand">
-    <a href="painel.html#vitrine" style="display:flex;align-items:center;gap:10px;text-decoration:none">
-      <div class="brand-logo">
-        <span>ires</span>
-        <span>emb.</span>
-      </div>
-      <span class="brand-name">ires<span>.</span></span>
-    </a>
-  </div>
-  <div class="topbar-right" id="topbar-right"></div>
-</header>
+  <!-- ── Topbar ── -->
+  <header class="topbar">
+    <a href="painel.html#vitrine" class="brand-name-new">ires<em>.</em></a>
 
-<!-- Nav -->
-<nav class="nav-tabs">
-  <a class="nav-tab" href="painel.html">Início</a>
-  <a class="nav-tab" href="pedidos.html">Meus pedidos</a>
-  <a class="nav-tab" href="painel.html#vitrine">Vitrine</a>
-  <a class="nav-tab active">Carrinho</a>
-  <a class="nav-tab" href="painel.html#perfil">Meu perfil</a>
-  <a class="nav-tab" href="comunidade.html">Depoimentos</a>
-</nav>
-
-<div class="main-content" style="max-width:680px">
-
-  <!-- Header -->
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
-    <a href="painel.html#vitrine" style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--gray)">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-      Continuar comprando
-    </a>
-    <h2 style="font-size:20px;font-weight:800">Meu carrinho</h2>
-    <span class="pill pill-pink" id="badge-itens">0 itens</span>
-  </div>
-
-  <!-- Lista de itens -->
-  <div id="lista-carrinho"></div>
-
-  <!-- Aviso quantidade mínima -->
-  <div id="aviso-minimo" style="display:none" class="info-box" style="border-color:var(--red)">
-    <div class="info-box-dot" style="background:var(--red)"></div>
-    <p id="texto-aviso" style="color:var(--gray-lighter)"></p>
-  </div>
-
-  <!-- Resumo -->
-  <div id="resumo-pedido" style="display:none;margin-top:16px">
-    <div class="order-summary order-summary-top">
-      <div class="summary-row">
-        <span style="color:var(--gray)">Subtotal</span>
-        <span id="val-subtotal" class="val">R$ 0,00</span>
-      </div>
-      <div class="summary-row total">
-        <span>Total</span>
-        <span id="val-total" class="val">R$ 0,00</span>
-      </div>
-    </div>
-
-    <div class="form-group" style="margin-top:16px">
-      <label>Forma de pagamento</label>
-      <select id="forma-pagamento">
-        <option value="PIX">PIX</option>
-        <option value="BOLETO">Boleto bancário</option>
-        <option value="CREDIT_CARD">Cartão de crédito</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label>Observação (opcional)</label>
-      <input type="text" id="obs-pedido" placeholder="Ex: Preciso para dia 20"/>
-    </div>
-
-    <button class="btn btn-primary" id="btn-finalizar" onclick="finalizarPedido()" style="margin-top:4px">
-      Finalizar pedido →
-    </button>
-  </div>
-
-  <!-- Carrinho vazio -->
-  <div id="carrinho-vazio" style="display:none" class="empty-state">
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gray)" stroke-width="1.5">
-      <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-      <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/>
-    </svg>
-    <p>Seu carrinho está vazio.</p>
-    <a href="painel.html#vitrine" class="btn btn-outline btn-sm" style="width:auto;margin-top:16px">Ver produtos</a>
-  </div>
-
-</div>
-
-<!-- Modal de pagamento -->
-<div id="modal-sucesso" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:999;align-items:center;justify-content:center;padding:16px">
-  <div style="background:#161616;border:0.5px solid #2a2a2a;border-radius:20px;width:100%;max-width:440px;overflow:hidden">
-
-    <!-- Header -->
-    <div style="padding:16px 20px;border-bottom:0.5px solid #222;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-size:15px;font-weight:800;color:#fff">Pedido confirmado! 🎉</div>
-        <div style="font-size:12px;color:#666;margin-top:2px">Nº <span id="num-pedido" style="color:#f03faa;font-weight:700"></span></div>
-      </div>
-      <button onclick="fecharModalPagamento()" style="background:none;border:none;color:#666;cursor:pointer;font-size:22px">✕</button>
-    </div>
-
-    <!-- Conteúdo do pagamento -->
-    <div id="pagamento-conteudo" style="padding:20px"></div>
-
-    <!-- Footer -->
-    <div style="padding:14px 20px;border-top:0.5px solid #222;display:flex;gap:10px">
-      <a id="link-asaas-externo" href="#" target="_blank"
-        style="flex:1;padding:10px;background:#f03faa;border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;text-align:center;text-decoration:none">
-        Finalizar pagamento agora ↗
+    <nav class="nav-tabs-new" aria-label="Navegação principal">
+      <a class="nav-tab-new" href="painel.html#painel">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Início
       </a>
-      <button onclick="pagarDepois()"
-        style="flex:1;padding:10px;background:transparent;border:0.5px solid #2a2a2a;border-radius:10px;color:#999;font-size:13px;cursor:pointer">
-        Pagar depois
+      <a class="nav-tab-new" href="painel.html#vitrine">
+        <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        Vitrine
+      </a>
+      <a class="nav-tab-new" href="painel.html#pedidos">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Pedidos
+      </a>
+      <a class="nav-tab-new active">
+        <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        Carrinho
+      </a>
+      <a class="nav-tab-new" href="painel.html#perfil">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Perfil
+      </a>
+      <a class="nav-tab-new" href="painel.html#depoimentos">
+        <svg viewBox="0 0 24 24"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 0 1-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        Depoimentos
+      </a>
+      <a class="nav-tab-new" href="painel.html#suporte">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Suporte
+      </a>
+    </nav>
+
+    <div class="topbar-right" id="topbar-right"></div>
+  </header>
+
+  <!-- ── Conteúdo ── -->
+  <div class="main-content" style="max-width:680px">
+
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+      <a href="painel.html#vitrine" style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--gray)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Continuar comprando
+      </a>
+      <h2 style="font-size:20px;font-weight:700;color:var(--nb-text-hi)">Meu carrinho</h2>
+      <span class="pill pill-pink" id="badge-itens">0 itens</span>
+    </div>
+
+    <div id="lista-carrinho"></div>
+
+    <div id="aviso-minimo" style="display:none" class="info-box">
+      <div class="info-box-dot" style="background:var(--red)"></div>
+      <p id="texto-aviso" style="color:var(--gray-lighter)"></p>
+    </div>
+
+    <div id="resumo-pedido" style="display:none;margin-top:16px">
+      <div class="order-summary order-summary-top">
+        <div class="summary-row">
+          <span style="color:var(--gray)">Subtotal</span>
+          <span id="val-subtotal" class="val">R$ 0,00</span>
+        </div>
+        <div class="summary-row total">
+          <span>Total</span>
+          <span id="val-total" class="val">R$ 0,00</span>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:16px">
+        <label>Forma de pagamento</label>
+        <select id="forma-pagamento">
+          <option value="PIX">PIX</option>
+          <option value="BOLETO">Boleto bancário</option>
+          <option value="CREDIT_CARD">Cartão de crédito</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Observação (opcional)</label>
+        <input type="text" id="obs-pedido" placeholder="Ex: Preciso para dia 20"/>
+      </div>
+
+      <button class="btn btn-primary" id="btn-finalizar" onclick="finalizarPedido()" style="margin-top:4px">
+        Finalizar pedido →
       </button>
     </div>
 
-  </div>
-</div>
+    <div id="carrinho-vazio" style="display:none" class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gray)" stroke-width="1.5">
+        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+        <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/>
+      </svg>
+      <p>Seu carrinho está vazio.</p>
+      <a href="painel.html#vitrine" class="btn btn-outline btn-sm" style="width:auto;margin-top:16px">Ver produtos</a>
+    </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/carrinho.js"></script>
+  </div>
+
+  <!-- ── Bottom nav mobile ── -->
+  <nav class="bottom-nav-new" aria-label="Navegação mobile">
+    <div class="bottom-nav-inner">
+      <a class="bnav-tab" href="painel.html#painel">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Início</span>
+      </a>
+      <a class="bnav-tab" href="painel.html#vitrine">
+        <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span>Vitrine</span>
+      </a>
+      <a class="bnav-tab" href="painel.html#pedidos">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span>Pedidos</span>
+      </a>
+      <a class="bnav-tab active">
+        <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        <span>Carrinho</span>
+      </a>
+      <a class="bnav-tab" href="painel.html#perfil">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Perfil</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Modal de pagamento -->
+  <div id="modal-sucesso" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:999;align-items:center;justify-content:center;padding:16px">
+    <div style="background:#180F17;border:0.5px solid #3E2A3C;border-radius:20px;width:100%;max-width:440px;overflow:hidden">
+      <div style="padding:16px 20px;border-bottom:0.5px solid #2E1E2D;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--nb-text-hi)">Pedido confirmado! 🎉</div>
+          <div style="font-size:12px;color:var(--nb-text-low);margin-top:2px">Nº <span id="num-pedido" style="color:var(--nb-burg);font-weight:700"></span></div>
+        </div>
+        <button onclick="fecharModalPagamento()" style="background:none;border:none;color:var(--nb-text-low);cursor:pointer;font-size:22px">✕</button>
+      </div>
+      <div id="pagamento-conteudo" style="padding:20px"></div>
+      <div style="padding:14px 20px;border-top:0.5px solid #2E1E2D;display:flex;gap:10px">
+        <a id="link-asaas-externo" href="#" target="_blank"
+          style="flex:1;padding:10px;background:var(--nb-burg);border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;text-align:center;text-decoration:none">
+          Finalizar pagamento agora ↗
+        </a>
+        <button onclick="pagarDepois()"
+          style="flex:1;padding:10px;background:transparent;border:0.5px solid #3E2A3C;border-radius:10px;color:var(--nb-text-low);font-size:13px;cursor:pointer">
+          Pagar depois
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/carrinho.js"></script>
 </body>
 </html>

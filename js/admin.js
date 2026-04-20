@@ -83,18 +83,23 @@ async function renderDashboard() {
     return dayOrders.reduce((a,o)=>a+Number(o.total),0);
   });
   const maxFatur = Math.max(...faturPorDia, 1);
-  const diasAbrev = ['seg','ter','qua','qui','sex','sáb','dom'];
+  const diasAbrev = ['dom','seg','ter','qua','qui','sex','sáb'];
   const barras = faturPorDia.map((val,i) => {
-    const pct = Math.max(Math.round((val/maxFatur)*100), 4);
     const isHoje = i===6;
+    // Altura mínima de 12% para barras com valor zero, proporcional para as com valor
+    const pct = val > 0 ? Math.max(Math.round((val/maxFatur)*100), 20) : 12;
+    const diaIdx = new Date(dias[i]).getDay();
     return `
       <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
-        <span style="font-size:9px;color:var(--gray)">${val>0?'R$'+Math.round(val):''}</span>
-        <div style="width:100%;height:${pct}%;border-radius:4px 4px 0 0;min-height:4px;
-          background:${isHoje?'var(--pink)':'rgba(240,63,170,.18)'};
-          border:${isHoje?'none':'0.5px solid rgba(240,63,170,.3)'}"></div>
         <span style="font-size:9px;color:${isHoje?'var(--pink)':'var(--gray)'}">
-          ${diasAbrev[new Date(dias[i]).getDay()||6]}
+          ${val>0?'R$'+Math.round(val):''}
+        </span>
+        <div style="width:100%;height:${pct}%;border-radius:4px 4px 0 0;min-height:8px;
+          background:${isHoje?'var(--pink)':val>0?'rgba(240,63,170,.35)':'rgba(240,63,170,.10)'};
+          border:${isHoje?'none':val>0?'0.5px solid rgba(240,63,170,.4)':'0.5px solid rgba(240,63,170,.18)'}">
+        </div>
+        <span style="font-size:9px;color:${isHoje?'var(--pink)':'var(--gray)'}">
+          ${diasAbrev[diaIdx]}
         </span>
       </div>`;
   }).join('');
@@ -105,37 +110,45 @@ async function renderDashboard() {
   const pctPago = ultimosPedidos?.length ? Math.round((nPago/ultimosPedidos.length)*100) : 0;
 
   document.getElementById('conteudo-principal').innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div>
         <h2 style="font-size:20px;font-weight:800">Dashboard</h2>
         <p style="font-size:13px;color:var(--gray);margin-top:2px">${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</p>
       </div>
     </div>
 
-    <!-- Métricas -->
-    <div class="metrics-grid" style="margin-bottom:20px">
-      <div class="metric-card" style="border-top-color:var(--pink)">
+    <!-- Métricas clicáveis -->
+    <div class="metrics-grid" style="margin-bottom:16px">
+      <div class="metric-card" style="border-top-color:var(--pink);cursor:pointer;transition:border-color .15s"
+        onclick="irPara('pedidos')"
+        onmouseover="this.style.borderColor='var(--pink)'" onmouseout="this.style.borderTopColor='var(--pink)';this.style.borderColor=''">
         <div class="metric-icon" style="background:rgba(240,63,170,.1);border:0.5px solid rgba(240,63,170,.25)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         </div>
         <div class="metric-value">${pedidosPagos.length}</div>
         <div class="metric-label">Pedidos pagos hoje</div>
       </div>
-      <div class="metric-card" style="border-top-color:var(--pink)">
+      <div class="metric-card" style="border-top-color:var(--pink);cursor:pointer;transition:border-color .15s"
+        onclick="irPara('pedidos')"
+        onmouseover="this.style.borderColor='var(--pink-deep)'" onmouseout="this.style.borderColor=''">
         <div class="metric-icon" style="background:rgba(240,63,170,.1);border:0.5px solid rgba(240,63,170,.25)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         </div>
         <div class="metric-value">${formatBRL(faturamentoHoje)}</div>
         <div class="metric-label">Faturamento hoje</div>
       </div>
-      <div class="metric-card" style="border-top-color:var(--green)">
+      <div class="metric-card" style="border-top-color:var(--green);cursor:pointer;transition:border-color .15s"
+        onclick="irPara('embaixadoras')"
+        onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor=''">
         <div class="metric-icon" style="background:rgba(63,200,130,.1);border:0.5px solid rgba(63,200,130,.25)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </div>
         <div class="metric-value">${totalEmb||0}</div>
         <div class="metric-label">Embaixadoras ativas</div>
       </div>
-      <div class="metric-card" style="border-top-color:var(--amber)">
+      <div class="metric-card" style="border-top-color:var(--amber);cursor:pointer;transition:border-color .15s"
+        onclick="irPara('pedidos')"
+        onmouseover="this.style.borderColor='var(--amber)'" onmouseout="this.style.borderColor=''">
         <div class="metric-icon" style="background:rgba(220,155,70,.1);border:0.5px solid rgba(220,155,70,.25)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         </div>
@@ -144,10 +157,10 @@ async function renderDashboard() {
       </div>
     </div>
 
-    <!-- Bento principal -->
-    <div class="dash-bento" style="display:grid;grid-template-columns:1.5fr 1fr;gap:16px">
+    <!-- Bento principal — alinha pelo topo, sem forçar mesma altura -->
+    <div class="dash-bento" style="display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start">
 
-      <!-- Coluna esquerda: gráfico + pedidos -->
+      <!-- Coluna esquerda -->
       <div style="display:flex;flex-direction:column;gap:16px">
 
         <!-- Gráfico 7 dias -->
@@ -162,7 +175,7 @@ async function renderDashboard() {
         </div>
 
         <!-- Pedidos recentes -->
-        <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px;flex:1">
+        <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
             <div style="font-size:12px;font-weight:700;color:var(--gray-lighter)">Pedidos recentes</div>
             <button class="btn btn-sm btn-outline" onclick="irPara('pedidos')">Ver todos</button>
@@ -179,34 +192,38 @@ async function renderDashboard() {
                 ${statusLabel(o.status)}
               </div>`).join('')||'<p style="color:var(--gray);font-size:13px">Nenhum pedido ainda.</p>'}
           </div>
-          <!-- Barras de status -->
-          <div style="margin-top:14px;padding-top:14px;border-top:0.5px solid var(--border2);display:flex;flex-direction:column;gap:8px">
-            <div style="display:flex;align-items:center;justify-content:space-between;font-size:11px">
-              <span style="color:var(--gray)">Pendentes</span><span style="font-weight:700;color:var(--amber)">${nPend}</span>
+          <!-- Mini status -->
+          <div style="margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border2);display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div onclick="irPara('pedidos')" style="cursor:pointer">
+              <div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;margin-bottom:5px">
+                <span style="color:var(--gray)">Pendentes</span><span style="font-weight:700;color:var(--amber)">${nPend}</span>
+              </div>
+              <div style="height:3px;background:var(--border2);border-radius:3px;overflow:hidden"><div style="width:${pctPend}%;height:100%;background:var(--amber);border-radius:3px"></div></div>
             </div>
-            <div style="height:3px;background:var(--border2);border-radius:3px;overflow:hidden"><div style="width:${pctPend}%;height:100%;background:var(--amber);border-radius:3px;transition:width .4s"></div></div>
-            <div style="display:flex;align-items:center;justify-content:space-between;font-size:11px">
-              <span style="color:var(--gray)">Pagos</span><span style="font-weight:700;color:var(--green)">${nPago}</span>
+            <div onclick="irPara('pedidos')" style="cursor:pointer">
+              <div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;margin-bottom:5px">
+                <span style="color:var(--gray)">Pagos</span><span style="font-weight:700;color:var(--green)">${nPago}</span>
+              </div>
+              <div style="height:3px;background:var(--border2);border-radius:3px;overflow:hidden"><div style="width:${pctPago}%;height:100%;background:var(--green);border-radius:3px"></div></div>
             </div>
-            <div style="height:3px;background:var(--border2);border-radius:3px;overflow:hidden"><div style="width:${pctPago}%;height:100%;background:var(--green);border-radius:3px;transition:width .4s"></div></div>
           </div>
         </div>
       </div>
 
-      <!-- Coluna direita: aprovações + suporte -->
+      <!-- Coluna direita — align-items:start garante que não estica -->
       <div style="display:flex;flex-direction:column;gap:16px">
 
         <!-- Embaixadoras pendentes -->
         <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${pendentes?.length ? '14' : '10'}px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${pendentes?.length?'12':'8'}px">
             <div style="display:flex;align-items:center;gap:8px">
               <div style="font-size:12px;font-weight:700;color:var(--gray-lighter)">Aguardando aprovação</div>
-              ${pendentes?.length ? `<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(220,155,70,.12);border:0.5px solid rgba(220,155,70,.3);color:var(--amber)">${pendentes.length}</span>` : ''}
+              ${pendentes?.length?`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(220,155,70,.12);border:0.5px solid rgba(220,155,70,.3);color:var(--amber)">${pendentes.length}</span>`:''}
             </div>
             <button class="btn btn-sm btn-outline" onclick="irPara('embaixadoras')">Ver todas</button>
           </div>
           ${pendentes?.length ? pendentes.map(e=>`
-            <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border2)">
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border2)">
               <div class="avatar" style="flex-shrink:0">${initials(e.full_name)}</div>
               <div style="flex:1;min-width:0">
                 <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.full_name||'Sem nome'}</div>
@@ -214,33 +231,33 @@ async function renderDashboard() {
               </div>
               <button class="btn btn-sm btn-primary" style="width:auto;flex-shrink:0" onclick="aprovarEmb('${e.id}')">Aprovar</button>
             </div>`).join('')
-          : `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;color:var(--gray);font-size:13px">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          : `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;color:var(--gray);font-size:12px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               Nenhuma pendente
             </div>`}
         </div>
 
         <!-- Suporte aberto -->
         <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${suporteAberto?.length ? '14' : '10'}px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${suporteAberto?.length?'12':'8'}px">
             <div style="display:flex;align-items:center;gap:8px">
               <div style="font-size:12px;font-weight:700;color:var(--gray-lighter)">Suporte aberto</div>
-              ${suporteAberto?.length ? `<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(91,143,212,.1);border:0.5px solid rgba(91,143,212,.28);color:#5B8FD4">${suporteAberto.length}</span>` : ''}
+              ${suporteAberto?.length?`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(91,143,212,.1);border:0.5px solid rgba(91,143,212,.28);color:#5B8FD4">${suporteAberto.length}</span>`:''}
             </div>
             <button class="btn btn-sm btn-outline" onclick="irPara('suporte')">Ver tudo</button>
           </div>
           ${suporteAberto?.length ? suporteAberto.map(s=>`
-            <div style="padding:10px 0;border-bottom:0.5px solid var(--border2);cursor:pointer" onclick="irPara('suporte')">
+            <div style="padding:9px 0;border-bottom:0.5px solid var(--border2);cursor:pointer" onclick="irPara('suporte')">
               <div style="display:flex;align-items:flex-start;gap:8px">
-                <div style="width:7px;height:7px;border-radius:50%;background:#5B8FD4;flex-shrink:0;margin-top:5px"></div>
+                <div style="width:6px;height:6px;border-radius:50%;background:#5B8FD4;flex-shrink:0;margin-top:5px"></div>
                 <div style="flex:1;min-width:0">
                   <div style="font-size:12px;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.subject||'Sem assunto'}</div>
-                  <div style="font-size:11px;color:var(--gray);margin-top:2px">${s.profiles?.full_name||'Embaixadora'} · ${new Date(s.created_at).toLocaleDateString('pt-BR')}</div>
+                  <div style="font-size:11px;color:var(--gray);margin-top:1px">${s.profiles?.full_name||'Embaixadora'} · ${new Date(s.created_at).toLocaleDateString('pt-BR')}</div>
                 </div>
               </div>
             </div>`).join('')
-          : `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;color:var(--gray);font-size:13px">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          : `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;color:var(--gray);font-size:12px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               Nenhum ticket aberto
             </div>`}
         </div>

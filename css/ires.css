@@ -1289,3 +1289,35 @@ body.page {
   .hero-card { padding: 14px 16px; }
   .hero-card-name { font-size: 18px; }
 }
+
+/* ── Bottom nav — 6 abas + drawer ── */
+.bottom-nav-inner {
+  max-width: 500px;
+  margin: 0 auto;
+}
+.bnav-tab {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  padding: 4px 2px;
+  text-decoration: none;
+}
+.bnav-tab svg {
+  width: 20px; height: 20px;
+  stroke: var(--nb-text-low); fill: none;
+  stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+  flex-shrink: 0;
+}
+.bnav-tab span {
+  font-size: 9px;
+  color: var(--nb-text-low);
+  font-weight: 500;
+  white-space: nowrap;
+  font-family: 'DM Sans', sans-serif;
+}
+.bnav-tab.active svg  { stroke: var(--nb-burg); }
+.bnav-tab.active span { color: var(--nb-burg); }

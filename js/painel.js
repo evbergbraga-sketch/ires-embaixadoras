@@ -600,7 +600,7 @@ function _depoimentoCard(t) {
       </div>
       ${t.image_url ? `
         <div onclick="abrirLightboxDep('${t.image_url}')"
-          style="border-radius:var(--radius-md);overflow:hidden;margin-bottom:12px;height:180px;cursor:zoom-in;position:relative;background:var(--black)">
+          style="border-radius:var(--radius-md);overflow:hidden;margin-bottom:12px;height:180px;cursor:zoom-in;position:relative;background:var(--creme2)">
           <img src="${t.image_url}" style="width:100%;height:100%;object-fit:cover;display:block"/>
           <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);border-radius:6px;padding:4px 8px;font-size:10px;color:#fff">Clique para ampliar</div>
         </div>
@@ -622,7 +622,7 @@ function abrirLightboxDep(url) {
     <div style="position:relative;max-width:90vw;max-height:90vh">
       <img src="${url}" style="max-width:100%;max-height:90vh;border-radius:var(--radius-lg);display:block;object-fit:contain"/>
       <button onclick="document.getElementById('lightbox-dep').remove();document.body.style.overflow=''"
-        style="position:absolute;top:-14px;right:-14px;width:30px;height:30px;border-radius:50%;background:#f03faa;border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700">✕</button>
+        style="position:absolute;top:-14px;right:-14px;width:30px;height:30px;border-radius:50%;background:var(--bord);border:none;color:var(--ouro-cl);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700">✕</button>
     </div>
   `;
   lb.style.display = 'flex';
@@ -660,7 +660,7 @@ function abrirFormDepoimento() {
     <div class="form-group">
       <label>Foto (opcional)</label>
       <div onclick="document.getElementById('dep-foto').click()"
-        style="border:0.5px dashed var(--border);border-radius:var(--radius-md);padding:20px;text-align:center;cursor:pointer;background:var(--black)"
+        style="border:0.5px dashed var(--border);border-radius:var(--radius-md);padding:20px;text-align:center;cursor:pointer;background:var(--creme2)"
         onmouseover="this.style.borderColor='var(--pink)'" onmouseout="this.style.borderColor='var(--border)'">
         <div id="dep-foto-preview">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gray)" stroke-width="1.5" style="margin-bottom:6px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -841,7 +841,7 @@ async function renderVitrine() {
         <div id="filtros-cat" style="display:contents"></div>
       </div>
       <input type="text" id="busca-vitrine" placeholder="Buscar produto..."
-        style="background:var(--black);border:0.5px solid var(--border);border-radius:20px;padding:7px 16px;font-size:13px;color:var(--white);outline:none;width:200px"
+        style="background:var(--creme);border:0.5px solid var(--borda);border-radius:20px;padding:7px 16px;font-size:13px;color:var(--bord-esc);outline:none;width:200px"
         oninput="filtrarProdutosPainel()"/>
     </div>
     <div id="loading-vitrine" class="loading"><div class="spinner"></div> Carregando...</div>
@@ -941,15 +941,15 @@ function abrirProdutoPainel(id) {
   modal.innerHTML = `
     <div class="card" style="max-width:420px;width:100%;position:relative">
       <button onclick="document.getElementById('modal-produto').style.display='none';document.body.style.overflow=''"
-        style="position:absolute;top:12px;right:12px;z-index:10;background:rgba(0,0,0,0.5);border:none;color:#fff;cursor:pointer;font-size:18px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center">✕</button>
+        style="position:absolute;top:12px;right:12px;z-index:10;background:var(--bord);border:none;color:var(--ouro-cl);cursor:pointer;font-size:18px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center">✕</button>
       <div style="background:var(--black);border-radius:var(--radius-md);margin-bottom:16px;overflow:hidden">
         ${imgs.length ? `
           <div id="carousel-track" style="display:flex;transition:transform 0.3s ease">
             ${imgs.map(url=>`<div style="min-width:100%;flex-shrink:0"><img src="${url}" style="width:100%;height:auto;display:block;max-height:320px;object-fit:contain"/></div>`).join('')}
           </div>
           ${imgs.length>1 ? `
-            <button onclick="moverCarrosselPainel(-1)" style="position:absolute;left:8px;top:40%;background:rgba(0,0,0,0.6);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">‹</button>
-            <button onclick="moverCarrosselPainel(1)" style="position:absolute;right:8px;top:40%;background:rgba(0,0,0,0.6);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">›</button>
+            <button onclick="moverCarrosselPainel(-1)" style="position:absolute;left:8px;top:40%;background:var(--bord-esc);border:none;color:var(--ouro-cl);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">‹</button>
+            <button onclick="moverCarrosselPainel(1)" style="position:absolute;right:8px;top:40%;background:var(--bord-esc);border:none;color:var(--ouro-cl);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">›</button>
           ` : ''}
         ` : `<div style="height:200px;display:flex;align-items:center;justify-content:center"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>`}
       </div>
@@ -1290,7 +1290,7 @@ function _renderGridCriativos(lista) {
           <a href="${c.file_url}" download target="_blank"
             style="display:flex;align-items:center;justify-content:center;gap:6px;
               width:100%;padding:8px;border-radius:8px;
-              background:var(--nb-burg);color:#fff;
+              background:var(--nb-burg);color:var(--ouro-cl);
               font-size:12px;font-weight:600;text-decoration:none;
               transition:opacity .15s"
             onmouseover="this.style.opacity='.85'"
@@ -1335,7 +1335,7 @@ function _abrirPreviewCriativo(id) {
     <div style="position:relative;max-width:90vw;max-height:90vh;display:flex;flex-direction:column;gap:12px">
       <button onclick="document.getElementById('lightbox-criativo').remove();document.body.style.overflow=''"
         style="position:absolute;top:-14px;right:-14px;width:30px;height:30px;border-radius:50%;
-          background:var(--nb-burg);border:none;color:#fff;font-size:16px;cursor:pointer;
+          background:var(--nb-burg);border:none;color:var(--ouro-cl);font-size:16px;cursor:pointer;
           display:flex;align-items:center;justify-content:center;font-weight:700;z-index:1">✕</button>
 
       ${isVid
@@ -1347,7 +1347,7 @@ function _abrirPreviewCriativo(id) {
 
       <a href="${c.file_url}" download target="_blank"
         style="display:flex;align-items:center;justify-content:center;gap:8px;
-          padding:10px 24px;background:var(--nb-burg);color:#fff;border-radius:10px;
+          padding:10px 24px;background:var(--nb-burg);color:var(--ouro-cl);border-radius:10px;
           font-size:13px;font-weight:600;text-decoration:none;align-self:center">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>

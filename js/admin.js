@@ -1226,8 +1226,11 @@ function abrirFormCriativo(id) {
   (async()=>{
     let c={};
     if(id){const{data}=await _supabase.from('creatives').select('*').eq('id',id).single();c=data||{};}
-    window._criativoFileUrl=c.file_url||'';
-    window._criativoThumbUrl=c.thumbnail_url||'';
+    // arquivos já existentes (edição)
+    window._criativosArquivos = c.file_url
+      ? [{ url: c.file_url, tipo: c.file_type||'image' }]
+      : [];
+
     abrirModal(`
       <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
       <h3 style="font-size:16px;font-weight:800;margin-bottom:16px">${id?'Editar criativo':'Novo criativo'}</h3>
@@ -1237,54 +1240,162 @@ function abrirFormCriativo(id) {
         <div class="form-group"><label>Tipo *</label><select id="cri-tipo"><option value="image" ${!c.file_type||c.file_type==='image'?'selected':''}>Imagem</option><option value="video" ${c.file_type==='video'?'selected':''}>Vídeo</option></select></div>
       </div>
       <div class="form-group"><label>Descrição</label><input type="text" id="cri-desc" value="${c.description||''}"/></div>
+
       <div class="form-group">
-        <label>Arquivo principal *</label>
-        <div onclick="document.getElementById('cri-file-input').click()" style="border:0.5px dashed var(--border);border-radius:var(--radius-md);padding:16px;text-align:center;cursor:pointer;background:var(--creme2)" onmouseover="this.style.borderColor='var(--pink)'" onmouseout="this.style.borderColor='var(--border)'">
-          <div id="cri-file-preview">${c.file_url?`<div style="font-size:12px;color:var(--green)">✓ Arquivo: <a href="${c.file_url}" target="_blank" style="color:var(--pink)">ver</a></div>`:'<div style="font-size:12px;color:var(--gray)">Clique para fazer upload</div>'}</div>
-          <div id="cri-upload-prog" style="display:none;margin-top:8px"><div style="height:3px;background:var(--border);border-radius:2px;overflow:hidden"><div id="cri-upload-bar" style="height:100%;width:0%;background:var(--pink);transition:width .3s"></div></div></div>
+        <label>Arquivos (até 7 imagens/vídeos)</label>
+        <div id="cri-drop-area"
+          onclick="document.getElementById('cri-file-input').click()"
+          style="border:1.5px dashed var(--borda);border-radius:12px;padding:20px;text-align:center;cursor:pointer;background:var(--creme2);transition:border-color .2s"
+          onmouseover="this.style.borderColor='var(--bord)'"
+          onmouseout="this.style.borderColor='var(--borda)'">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--cinza)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 8px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div style="font-size:13px;font-weight:600;color:var(--bord)">Clique ou arraste até 7 arquivos</div>
+          <div style="font-size:11px;color:var(--cinza2);margin-top:4px">PNG, JPG, MP4, MOV</div>
         </div>
-        <input type="file" id="cri-file-input" accept="image/*,video/*" style="display:none" onchange="uploadCriativoArquivo(this.files[0])"/>
+        <input type="file" id="cri-file-input" accept="image/*,video/*" multiple style="display:none" onchange="_onCriativoFilesSelected(this.files)"/>
+
+        <!-- Grade de previews -->
+        <div id="cri-preview-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px"></div>
+
+        <!-- Barra de progresso geral -->
+        <div id="cri-prog-wrap" style="display:none;margin-top:10px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--cinza);margin-bottom:4px">
+            <span id="cri-prog-label">Enviando...</span>
+            <span id="cri-prog-pct">0%</span>
+          </div>
+          <div style="height:4px;background:var(--borda);border-radius:4px;overflow:hidden">
+            <div id="cri-prog-bar" style="height:100%;width:0%;background:var(--bord);border-radius:4px;transition:width .3s"></div>
+          </div>
+        </div>
       </div>
+
       <div style="display:flex;gap:10px;margin-top:4px">
         <button class="btn btn-outline" style="flex:1" onclick="fecharModal()">Cancelar</button>
-        <button class="btn btn-primary" style="flex:1" id="btn-salvar-cri" onclick="salvarCriativo(${id?`'${id}'`:'null'})">Salvar</button>
+        <button class="btn btn-primary" style="flex:1" id="btn-salvar-cri" onclick="salvarCriativo(${id?`'${id}'`:'null'})">
+          ${id ? 'Salvar alterações' : 'Salvar criativo(s)'}
+        </button>
       </div>
     `);
+
+    // Renderizar previews existentes (edição)
+    _renderCriativosPreviews();
   })();
 }
 
-async function uploadCriativoArquivo(file) {
-  if(!file) return;
-  document.getElementById('cri-upload-prog').style.display='block';
-  document.getElementById('cri-upload-bar').style.width='30%';
-  document.getElementById('btn-salvar-cri').disabled=true;
-  const ext=file.name.split('.').pop();
-  const name=`criativo_${Date.now()}.${ext}`;
-  const{error}=await _supabase.storage.from('criativos').upload(name,file,{cacheControl:'3600',upsert:false});
-  if(error){showToast('Erro no upload: '+error.message,'error');return;}
-  document.getElementById('cri-upload-bar').style.width='100%';
-  const{data:{publicUrl}}=_supabase.storage.from('criativos').getPublicUrl(name);
-  window._criativoFileUrl=publicUrl;
-  const isVid=file.type.startsWith('video/');
-  document.getElementById('cri-file-preview').innerHTML=isVid?`<video src="${publicUrl}" style="height:80px;border-radius:6px;" muted></video>`:`<img src="${publicUrl}" style="height:80px;border-radius:6px;object-fit:cover"/>`;
-  setTimeout(()=>{document.getElementById('cri-upload-prog').style.display='none';document.getElementById('btn-salvar-cri').disabled=false;},500);
+function _renderCriativosPreviews() {
+  const grid = document.getElementById('cri-preview-grid');
+  if (!grid) return;
+  const arquivos = window._criativosArquivos || [];
+  if (!arquivos.length) { grid.innerHTML = ''; return; }
+  grid.innerHTML = arquivos.map((a, i) => `
+    <div style="position:relative;border-radius:9px;overflow:hidden;aspect-ratio:1;background:var(--creme2);border:0.5px solid var(--borda)">
+      ${a.tipo === 'video'
+        ? `<video src="${a.url}" style="width:100%;height:100%;object-fit:cover" muted></video>`
+        : `<img src="${a.url}" style="width:100%;height:100%;object-fit:cover"/>`
+      }
+      <button onclick="_removerCriativoArquivo(${i})"
+        style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:var(--bord);border:none;color:#fff;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;font-weight:700">✕</button>
+    </div>
+  `).join('');
+}
+
+function _removerCriativoArquivo(idx) {
+  window._criativosArquivos = (window._criativosArquivos || []).filter((_,i) => i !== idx);
+  _renderCriativosPreviews();
+}
+
+async function _garantirBucketCriativos() {
+  // Tenta fazer upload de um arquivo vazio para verificar se o bucket existe
+  // Se não existir, cria via API
+  const { data: buckets } = await _supabase.storage.listBuckets();
+  const existe = (buckets || []).some(b => b.name === 'criativos');
+  if (!existe) {
+    await _supabase.storage.createBucket('criativos', { public: true, allowedMimeTypes: ['image/*','video/*'], fileSizeLimit: 52428800 });
+  }
+}
+
+async function _onCriativoFilesSelected(files) {
+  if (!files || !files.length) return;
+  const atual = window._criativosArquivos || [];
+  const disponiveis = 7 - atual.length;
+  if (disponiveis <= 0) { showToast('Máximo de 7 arquivos atingido.', 'error'); return; }
+  const selecionados = Array.from(files).slice(0, disponiveis);
+
+  const btn = document.getElementById('btn-salvar-cri');
+  const progWrap = document.getElementById('cri-prog-wrap');
+  const progBar  = document.getElementById('cri-prog-bar');
+  const progLabel= document.getElementById('cri-prog-label');
+  const progPct  = document.getElementById('cri-prog-pct');
+
+  btn.disabled = true;
+  progWrap.style.display = 'block';
+
+  // Garantir bucket existe
+  await _garantirBucketCriativos();
+
+  for (let i = 0; i < selecionados.length; i++) {
+    const file = selecionados[i];
+    progLabel.textContent = `Enviando ${i+1} de ${selecionados.length}: ${file.name}`;
+    const pct = Math.round(((i) / selecionados.length) * 100);
+    progBar.style.width = pct + '%';
+    progPct.textContent = pct + '%';
+
+    const ext  = file.name.split('.').pop().toLowerCase();
+    const nome = `cri_${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;
+    const { error } = await _supabase.storage.from('criativos').upload(nome, file, { cacheControl:'3600', upsert:false });
+    if (error) { showToast(`Erro ao enviar ${file.name}: ${error.message}`, 'error'); continue; }
+
+    const { data: { publicUrl } } = _supabase.storage.from('criativos').getPublicUrl(nome);
+    window._criativosArquivos = window._criativosArquivos || [];
+    window._criativosArquivos.push({ url: publicUrl, tipo: file.type.startsWith('video/') ? 'video' : 'image' });
+    _renderCriativosPreviews();
+  }
+
+  progBar.style.width = '100%';
+  progPct.textContent = '100%';
+  progLabel.textContent = `${selecionados.length} arquivo(s) enviado(s) com sucesso!`;
+  setTimeout(() => { progWrap.style.display = 'none'; btn.disabled = false; }, 1000);
 }
 
 async function salvarCriativo(id) {
-  const titulo=document.getElementById('cri-titulo').value.trim();
-  const formato=document.getElementById('cri-formato').value;
-  const tipo=document.getElementById('cri-tipo').value;
-  const desc=document.getElementById('cri-desc').value.trim();
-  if(!titulo){showToast('Informe o título.','error');return;}
-  if(!window._criativoFileUrl){showToast('Faça upload do arquivo.','error');return;}
-  const btn=document.getElementById('btn-salvar-cri');
-  btn.disabled=true;btn.innerHTML='<div class="spinner" style="margin:0 auto"></div>';
-  const payload={title:titulo,format:formato,file_type:tipo,description:desc||null,file_url:window._criativoFileUrl,thumbnail_url:window._criativoThumbUrl||null};
-  const{error}=id?await _supabase.from('creatives').update(payload).eq('id',id):await _supabase.from('creatives').insert({...payload,is_active:true});
-  if(error){showToast('Erro: '+error.message,'error');btn.disabled=false;btn.textContent='Salvar';return;}
-  showToast(id?'Criativo atualizado!':'Criativo criado!','success');
-  fecharModal();renderCriativosAdmin();
+  const titulo  = document.getElementById('cri-titulo').value.trim();
+  const formato = document.getElementById('cri-formato').value;
+  const tipo    = document.getElementById('cri-tipo').value;
+  const desc    = document.getElementById('cri-desc').value.trim();
+  const arquivos = window._criativosArquivos || [];
+
+  if (!titulo)         { showToast('Informe o título.','error'); return; }
+  if (!arquivos.length){ showToast('Adicione pelo menos 1 arquivo.','error'); return; }
+
+  const btn = document.getElementById('btn-salvar-cri');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
+
+  // Se for edição — atualiza o registro existente com o primeiro arquivo
+  if (id) {
+    const payload = { title:titulo, format:formato, file_type:tipo, description:desc||null, file_url:arquivos[0].url };
+    const { error } = await _supabase.from('creatives').update(payload).eq('id', id);
+    if (error) { showToast('Erro: '+error.message,'error'); btn.disabled=false; btn.textContent='Salvar alterações'; return; }
+    showToast('Criativo atualizado!','success');
+    fecharModal(); renderCriativosAdmin(); return;
+  }
+
+  // Novo — cria um registro por arquivo
+  const inserts = arquivos.map(a => ({
+    title:       arquivos.length === 1 ? titulo : `${titulo}`,
+    format:      formato,
+    file_type:   a.tipo,
+    description: desc || null,
+    file_url:    a.url,
+    is_active:   true,
+  }));
+
+  const { error } = await _supabase.from('creatives').insert(inserts);
+  if (error) { showToast('Erro: '+error.message,'error'); btn.disabled=false; btn.textContent='Salvar criativo(s)'; return; }
+  showToast(`${inserts.length} criativo(s) adicionado(s)!`, 'success');
+  fecharModal(); renderCriativosAdmin();
 }
+
 
 async function toggleCriativo(id,ativo) {
   const{error}=await _supabase.from('creatives').update({is_active:!ativo}).eq('id',id);

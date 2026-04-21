@@ -293,13 +293,13 @@ async function renderInicio() {
 
   const avatarContent = _perfil.avatar_url
     ? `<img src="${_perfil.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`
-    : `<span style="font-size:14px;font-weight:700;color:var(--nb-burg);">${initials(_perfil.full_name)}</span>`;
+    : `<span style="font-size:14px;font-weight:700;color:var(--ouro-cl);">${initials(_perfil.full_name)}</span>`;
 
   document.getElementById('conteudo').innerHTML = `
     <div class="home-bento">
       <div class="hero-card">
         <div style="display:flex;align-items:center;gap:14px;">
-          <div onclick="irAba('perfil')" style="width:46px;height:46px;border-radius:50%;background:var(--nb-card);border:1.5px solid var(--nb-burg-bdr);overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
+          <div onclick="irAba('perfil')" style="width:46px;height:46px;border-radius:50%;background:rgba(196,154,122,.2);border:1.5px solid rgba(196,154,122,.5);overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
             ${avatarContent}
           </div>
           <div>
@@ -827,7 +827,7 @@ async function renderVitrine() {
   document.getElementById('conteudo').innerHTML = `
     <div class="vitrine-hero" style="margin-bottom:16px">
       <div>
-        <h2>Bem-vinda, <span style="color:var(--pink)">${_perfil.full_name?.split(' ')[0]||'Embaixadora'}</span></h2>
+        <h2>Bem-vinda, <span style="color:#fff;font-weight:900">${_perfil.full_name?.split(' ')[0]||'Embaixadora'}</span></h2>
         <p style="font-size:13px;color:var(--gray)">Produtos exclusivos para embaixadoras IRES</p>
       </div>
       <div class="vitrine-hero-badge">

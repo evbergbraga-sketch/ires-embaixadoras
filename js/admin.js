@@ -147,30 +147,30 @@ async function renderDashboard() {
     <!-- Saudação -->
     <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px">
       <div>
-        <h2 style="font-size:22px;font-weight:800;color:var(--white)">${saud}, ${adminNome}</h2>
+        <h2 style="font-size:22px;font-weight:800;color:var(--bord-esc)">${saud}, ${adminNome}</h2>
         <p style="font-size:13px;color:var(--gray);margin-top:3px">${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</p>
       </div>
     </div>
 
     <!-- Hero KPI strip -->
-    <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:18px 24px;margin-bottom:18px;display:grid;grid-template-columns:repeat(4,1fr);gap:0">
+    <div style="background:var(--creme);border:0.5px solid var(--borda);border-radius:var(--radius-lg);padding:18px 24px;margin-bottom:18px;display:grid;grid-template-columns:repeat(4,1fr);gap:0">
       <div style="border-right:0.5px solid var(--border2);padding-right:20px;cursor:pointer" onclick="irPara('pedidos')">
         <div style="font-size:28px;font-weight:900;color:var(--pink);letter-spacing:-1px">${formatBRL(faturHoje)}</div>
         <div style="font-size:11px;color:var(--gray);margin-top:3px">Faturamento hoje</div>
         <div style="font-size:11px;font-weight:700;color:var(--green);margin-top:5px">↑ acumulado 7d: ${formatBRL(faturPorDia.reduce((a,v)=>a+v,0))}</div>
       </div>
       <div style="border-right:0.5px solid var(--border2);padding:0 20px;cursor:pointer" onclick="irPara('pedidos')">
-        <div style="font-size:28px;font-weight:900;color:var(--white);letter-spacing:-1px">${(pedidosHoje||[]).length}</div>
+        <div style="font-size:28px;font-weight:900;color:var(--bord-esc);letter-spacing:-1px">${(pedidosHoje||[]).length}</div>
         <div style="font-size:11px;color:var(--gray);margin-top:3px">Pedidos hoje</div>
         <div style="font-size:11px;font-weight:700;color:var(--amber);margin-top:5px">${totalPendHoje} pendente${totalPendHoje!==1?'s':''}</div>
       </div>
       <div style="border-right:0.5px solid var(--border2);padding:0 20px;cursor:pointer" onclick="irPara('embaixadoras')">
-        <div style="font-size:28px;font-weight:900;color:var(--white);letter-spacing:-1px">${totalEmb||0}</div>
+        <div style="font-size:28px;font-weight:900;color:var(--bord-esc);letter-spacing:-1px">${totalEmb||0}</div>
         <div style="font-size:11px;color:var(--gray);margin-top:3px">Embaixadoras ativas</div>
         <div style="font-size:11px;font-weight:700;color:${pendentes?.length?'var(--amber)':'var(--green)'};margin-top:5px">${pendentes?.length?`${pendentes.length} aguardando aprovação`:'Todas aprovadas'}</div>
       </div>
       <div style="padding-left:20px;cursor:pointer" onclick="irPara('pedidos')">
-        <div style="font-size:28px;font-weight:900;color:var(--white);letter-spacing:-1px">${formatBRL(ticketMedio)}</div>
+        <div style="font-size:28px;font-weight:900;color:var(--bord-esc);letter-spacing:-1px">${formatBRL(ticketMedio)}</div>
         <div style="font-size:11px;color:var(--gray);margin-top:3px">Ticket médio</div>
         <div style="font-size:11px;font-weight:700;color:var(--gray);margin-top:5px">últimos ${ultimosPedidos?.length||0} pedidos</div>
       </div>
@@ -181,7 +181,7 @@ async function renderDashboard() {
 
       <!-- Col 1: Pedidos + mini gráfico -->
       <div style="display:flex;flex-direction:column;gap:16px">
-        <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px">
+        <div style="background:var(--creme);border:0.5px solid var(--borda);border-radius:var(--radius-lg);padding:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
             <div style="font-size:12px;font-weight:700;color:var(--gray-lighter)">Pedidos recentes</div>
             <button class="btn btn-sm btn-outline" onclick="irPara('pedidos')">Ver todos</button>
@@ -208,7 +208,7 @@ async function renderDashboard() {
 
       <!-- Col 2: Aprovação + Suporte -->
       <div style="display:flex;flex-direction:column;gap:16px">
-        <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px">
+        <div style="background:var(--creme);border:0.5px solid var(--borda);border-radius:var(--radius-lg);padding:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${pendentes?.length?'12':'8'}px">
             <div style="display:flex;align-items:center;gap:7px">
               <div style="font-size:12px;font-weight:700;color:var(--gray-lighter)">Aguardando aprovação</div>
@@ -231,7 +231,7 @@ async function renderDashboard() {
             </div>`}
         </div>
 
-        <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px">
+        <div style="background:var(--creme);border:0.5px solid var(--borda);border-radius:var(--radius-lg);padding:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${suporteAberto?.length?'12':'8'}px">
             <div style="display:flex;align-items:center;gap:7px">
               <div style="font-size:12px;font-weight:700;color:var(--gray-lighter)">Suporte aberto</div>
@@ -244,7 +244,7 @@ async function renderDashboard() {
               <div style="display:flex;align-items:flex-start;gap:8px">
                 <div style="width:6px;height:6px;border-radius:50%;background:#5B8FD4;flex-shrink:0;margin-top:5px"></div>
                 <div style="flex:1;min-width:0">
-                  <div style="font-size:12px;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.subject||'Sem assunto'}</div>
+                  <div style="font-size:12px;font-weight:600;color:var(--bord-esc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.subject||'Sem assunto'}</div>
                   <div style="font-size:11px;color:var(--gray);margin-top:1px">${s.profiles?.full_name||'Embaixadora'} · ${new Date(s.created_at).toLocaleDateString('pt-BR')}</div>
                 </div>
               </div>
@@ -257,13 +257,13 @@ async function renderDashboard() {
       </div>
 
       <!-- Col 3: Feed de atividade -->
-      <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px">
+      <div style="background:var(--creme);border:0.5px solid var(--borda);border-radius:var(--radius-lg);padding:16px">
         <div style="font-size:12px;font-weight:700;color:var(--gray-lighter);margin-bottom:14px">Atividade recente</div>
         ${atividades.length ? atividades.map(a=>`
           <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border2)">
             <div style="width:7px;height:7px;border-radius:50%;background:${a.cor};flex-shrink:0;margin-top:5px"></div>
             <div style="flex:1;min-width:0">
-              <div style="font-size:12px;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.titulo}</div>
+              <div style="font-size:12px;font-weight:600;color:var(--bord-esc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.titulo}</div>
               <div style="font-size:11px;color:var(--gray);margin-top:1px">${a.sub}</div>
             </div>
             <div style="font-size:10px;color:var(--gray);flex-shrink:0;margin-top:1px">${tempoRelativo(a.ts)}</div>
@@ -308,13 +308,13 @@ async function renderPedidos() {
 
 function pedidoRow(o) {
   return `
-    <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px;cursor:pointer" onclick="abrirPedido('${o.id}')" data-status="${o.status}">
+    <div style="background:var(--creme);border:0.5px solid var(--borda);border-radius:var(--radius-lg);padding:14px;cursor:pointer" onclick="abrirPedido('${o.id}')" data-status="${o.status}">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
         <div style="display:flex;align-items:center;gap:8px">
           <span class="order-id">#${o.id.slice(-4).toUpperCase()}</span>
           ${statusLabel(o.status)}
         </div>
-        <span style="font-size:14px;font-weight:800;color:var(--white)">${formatBRL(o.total)}</span>
+        <span style="font-size:14px;font-weight:800;color:var(--bord-esc)">${formatBRL(o.total)}</span>
       </div>
       <div style="font-size:11px;color:var(--gray)">${o.profiles?.full_name || 'Embaixadora'} · ${new Date(o.created_at).toLocaleDateString('pt-BR')}</div>
     </div>
@@ -391,20 +391,20 @@ async function renderProdutos() {
     </div>
     <div style="display:flex;flex-direction:column;gap:8px" id="lista-produtos">
       ${(produtos||[]).map(p => `
-        <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px;">
+        <div style="background:var(--creme);border:0.5px solid var(--borda);border-radius:var(--radius-lg);padding:14px;">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
-            <div style="width:52px;height:52px;border-radius:var(--radius-md);background:var(--black);border:0.5px solid var(--border);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+            <div style="width:52px;height:52px;border-radius:var(--radius-md);background:var(--creme2);border:0.5px solid var(--border);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
               ${p.images?.[0] ? `<img src="${p.images[0]}" style="width:100%;height:100%;object-fit:cover"/>` : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>`}
             </div>
             <div style="flex:1;min-width:0">
-              <div style="font-size:13px;font-weight:600;color:var(--white)">${p.name}</div>
+              <div style="font-size:13px;font-weight:600;color:var(--bord-esc)">${p.name}</div>
               <div style="font-size:11px;color:var(--gray);margin-top:2px">${p.categories?.name||'Sem categoria'}</div>
             </div>
             <span class="pill ${p.is_active?'pill-green':'pill-gray'}">${p.is_active?'Ativo':'Inativo'}</span>
           </div>
           <div style="display:flex;align-items:center;justify-content:space-between">
             <div>
-              <div style="font-size:14px;font-weight:800;color:var(--white)">${formatBRL(p.price)}</div>
+              <div style="font-size:14px;font-weight:800;color:var(--bord-esc)">${formatBRL(p.price)}</div>
               <div style="font-size:10px;color:var(--gray)">mín. ${p.min_quantity} un.</div>
             </div>
             <div style="display:flex;gap:6px">
@@ -452,7 +452,7 @@ function abrirFormProduto(id) {
         <div id="fotos-grid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
           ${fotos}
           <div id="btn-add-foto" onclick="document.getElementById('prod-img-file').click()"
-            style="width:72px;height:72px;border:0.5px dashed var(--border);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:var(--black);flex-shrink:0"
+            style="width:72px;height:72px;border:0.5px dashed var(--border);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:var(--creme2);flex-shrink:0"
             onmouseover="this.style.borderColor='var(--pink)'" onmouseout="this.style.borderColor='var(--border)'">
             <span style="font-size:24px;color:var(--gray);line-height:1">+</span>
             <span style="font-size:9px;color:var(--gray);margin-top:2px">Adicionar</span>
@@ -523,7 +523,7 @@ async function renderEmbaixadoras() {
 
 function embRow(e, statusCores, statusNomes) {
   return `
-    <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px;" data-status="${e.status}">
+    <div style="background:var(--creme);border:0.5px solid var(--borda);border-radius:var(--radius-lg);padding:14px;" data-status="${e.status}">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;cursor:pointer" onclick="abrirDetalhesEmb('${e.id}')">
         <div class="avatar">${initials(e.full_name)}</div>
         <div style="flex:1;min-width:0">
@@ -560,14 +560,14 @@ async function abrirDetalhesEmb(id) {
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
-      <div style="background:var(--black);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:12px"><div style="font-size:11px;color:var(--gray);margin-bottom:4px">WhatsApp</div><div style="font-size:13px;font-weight:600">${e.phone||'—'}</div></div>
-      <div style="background:var(--black);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:12px"><div style="font-size:11px;color:var(--gray);margin-bottom:4px">CPF</div><div style="font-size:13px;font-weight:600">${e.cpf||'—'}</div></div>
-      <div style="background:var(--black);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:12px"><div style="font-size:11px;color:var(--gray);margin-bottom:4px">Como nos encontrou</div><div style="font-size:13px;font-weight:600">${e.how_found||'—'}</div></div>
-      <div style="background:var(--black);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:12px"><div style="font-size:11px;color:var(--gray);margin-bottom:4px">Cadastro</div><div style="font-size:13px;font-weight:600">${new Date(e.created_at).toLocaleDateString('pt-BR')}</div></div>
+      <div style="background:var(--creme2);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:12px"><div style="font-size:11px;color:var(--gray);margin-bottom:4px">WhatsApp</div><div style="font-size:13px;font-weight:600">${e.phone||'—'}</div></div>
+      <div style="background:var(--creme2);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:12px"><div style="font-size:11px;color:var(--gray);margin-bottom:4px">CPF</div><div style="font-size:13px;font-weight:600">${e.cpf||'—'}</div></div>
+      <div style="background:var(--creme2);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:12px"><div style="font-size:11px;color:var(--gray);margin-bottom:4px">Como nos encontrou</div><div style="font-size:13px;font-weight:600">${e.how_found||'—'}</div></div>
+      <div style="background:var(--creme2);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:12px"><div style="font-size:11px;color:var(--gray);margin-bottom:4px">Cadastro</div><div style="font-size:13px;font-weight:600">${new Date(e.created_at).toLocaleDateString('pt-BR')}</div></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
-      <div style="background:var(--black);border:0.5px solid var(--border);border-top:2px solid var(--pink);border-radius:var(--radius-md);padding:12px"><div style="font-size:20px;font-weight:900">${(pedidos||[]).length}</div><div style="font-size:11px;color:var(--gray)">Pedidos feitos</div></div>
-      <div style="background:var(--black);border:0.5px solid var(--border);border-top:2px solid var(--pink);border-radius:var(--radius-md);padding:12px"><div style="font-size:20px;font-weight:900">${formatBRL(totalGasto)}</div><div style="font-size:11px;color:var(--gray)">Total comprado</div></div>
+      <div style="background:var(--creme2);border:0.5px solid var(--border);border-top:2px solid var(--pink);border-radius:var(--radius-md);padding:12px"><div style="font-size:20px;font-weight:900">${(pedidos||[]).length}</div><div style="font-size:11px;color:var(--gray)">Pedidos feitos</div></div>
+      <div style="background:var(--creme2);border:0.5px solid var(--border);border-top:2px solid var(--pink);border-radius:var(--radius-md);padding:12px"><div style="font-size:20px;font-weight:900">${formatBRL(totalGasto)}</div><div style="font-size:11px;color:var(--gray)">Total comprado</div></div>
     </div>
     <div style="display:flex;gap:8px">
       ${e.status==='pending'   ?`<button class="btn btn-primary btn-sm" style="flex:1" onclick="aprovarEmb('${e.id}');fecharModal()">Aprovar</button>`:''}
@@ -763,17 +763,17 @@ function abrirCropper(file) {
       document.body.appendChild(mc);
     }
     mc.innerHTML = `
-      <div style="background:#161616;border:0.5px solid #2a2a2a;border-radius:16px;padding:20px;width:100%;max-width:520px">
+      <div style="background:var(--creme);border:0.5px solid var(--borda);border-radius:16px;padding:20px;width:100%;max-width:520px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div><div style="font-size:15px;font-weight:700;color:#fff">Recortar imagem</div><div style="font-size:11px;color:#666;margin-top:2px">Tamanho ideal: <strong style="color:#f03faa">800 × 800px</strong></div></div>
+          <div><div style="font-size:15px;font-weight:700;color:var(--bord-esc)">Recortar imagem</div><div style="font-size:11px;color:var(--cinza);margin-top:2px">Tamanho ideal: <strong style="color:var(--bord)">800 × 800px</strong></div></div>
           <button onclick="fecharCropper()" style="background:none;border:none;color:#666;cursor:pointer;font-size:20px">✕</button>
         </div>
-        <div style="max-height:360px;overflow:hidden;border-radius:8px;background:#0d0d0d;margin-bottom:14px">
+        <div style="max-height:360px;overflow:hidden;border-radius:8px;background:var(--creme2);margin-bottom:14px">
           <img id="cropper-img" src="${e.target.result}" style="max-width:100%;display:block"/>
         </div>
         <div style="display:flex;gap:8px">
           <button onclick="pularCrop()" style="flex:1;padding:10px;background:transparent;border:0.5px solid #2a2a2a;border-radius:8px;color:#999;font-size:13px;cursor:pointer">Usar original</button>
-          <button onclick="confirmarCrop()" style="flex:1;padding:10px;background:#f03faa;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">Recortar e usar ✓</button>
+          <button onclick="confirmarCrop()" style="flex:1;padding:10px;background:var(--bord);border:none;border-radius:8px;color:var(--ouro-cl);font-size:13px;font-weight:700;cursor:pointer">Recortar e usar ✓</button>
         </div>
       </div>`;
     mc.style.display = 'flex';
@@ -860,7 +860,7 @@ async function renderCategorias() {
     </div>
     <div style="display:flex;flex-direction:column;gap:8px" id="lista-cats">
       ${(data||[]).map(c=>`
-        <div style="background:#111;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
+        <div style="background:var(--creme);border:0.5px solid var(--borda);border-radius:var(--radius-lg);padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
           <span style="font-size:13px;font-weight:600">${c.name}</span>
           <div style="display:flex;gap:6px">
             <button class="btn btn-sm btn-outline" onclick="abrirFormCategoria('${c.id}','${c.name}')">Editar</button>
@@ -939,7 +939,7 @@ function depAdminCard(t) {
         <div style="flex:1"><div style="font-size:13px;font-weight:600">${nome}</div><div style="font-size:11px;color:var(--gray)">${new Date(t.created_at).toLocaleDateString('pt-BR')}</div></div>
         <span class="pill ${st.cls}">${st.label}</span>
       </div>
-      ${t.image_url?`<div onclick="abrirLightboxAdmin('${t.image_url}')" style="border-radius:var(--radius-md);overflow:hidden;margin-bottom:10px;height:160px;cursor:zoom-in;position:relative;background:var(--black)"><img src="${t.image_url}" style="width:100%;height:100%;object-fit:cover;display:block"/><div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.6);border-radius:6px;padding:3px 8px;font-size:10px;color:#fff">Ampliar</div></div>`:''}
+      ${t.image_url?`<div onclick="abrirLightboxAdmin('${t.image_url}')" style="border-radius:var(--radius-md);overflow:hidden;margin-bottom:10px;height:160px;cursor:zoom-in;position:relative;background:var(--creme2)"><img src="${t.image_url}" style="width:100%;height:100%;object-fit:cover;display:block"/><div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.6);border-radius:6px;padding:3px 8px;font-size:10px;color:#fff">Ampliar</div></div>`:''}
       <p style="font-size:13px;color:var(--gray-lighter);line-height:1.7;margin-bottom:12px">${t.body}</p>
       ${t.status==='pending'?`<div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" style="flex:1" onclick="aprovarDep('${t.id}')">Aprovar</button><button class="btn btn-danger btn-sm" style="flex:1" onclick="rejeitarDep('${t.id}')">Rejeitar</button></div>`
         :t.status==='approved'?`<button class="btn btn-outline btn-sm" onclick="rejeitarDep('${t.id}')">Remover aprovação</button>`
@@ -1001,7 +1001,7 @@ function supAdminCard(m) {
         <span class="pill ${st.cls}" style="flex-shrink:0">${st.label}</span>
       </div>
       <p style="font-size:13px;color:var(--gray-lighter);line-height:1.7;margin-bottom:12px">${m.body}</p>
-      ${m.reply?`<div style="background:var(--black);border:0.5px solid var(--pink-deep);border-radius:var(--radius-md);padding:12px;margin-bottom:12px"><div style="font-size:10px;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">Sua resposta</div><p style="font-size:12px;color:var(--gray-lighter);line-height:1.6">${m.reply}</p></div>`:''}
+      ${m.reply?`<div style="background:var(--creme2);border:0.5px solid var(--pink-deep);border-radius:var(--radius-md);padding:12px;margin-bottom:12px"><div style="font-size:10px;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">Sua resposta</div><p style="font-size:12px;color:var(--gray-lighter);line-height:1.6">${m.reply}</p></div>`:''}
       <div style="display:flex;gap:8px">
         ${m.status!=='closed'?`<button class="btn btn-primary btn-sm" style="flex:1" onclick="abrirRespostaSuporteAdmin('${m.id}')">${m.status==='answered'?'Editar resposta':'Responder'}</button>`:''}
         ${m.status!=='closed'?`<button class="btn btn-outline btn-sm" onclick="encerrarSuporteAdmin('${m.id}')">Encerrar</button>`:''}
@@ -1022,7 +1022,7 @@ function abrirRespostaSuporteAdmin(id) {
   abrirModal(`
     <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
     <h3 style="font-size:16px;font-weight:800;margin-bottom:6px">Responder suporte</h3>
-    <div style="background:var(--black);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:16px">
+    <div style="background:var(--creme2);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:16px">
       <div style="font-size:11px;color:var(--gray);margin-bottom:4px">${m.profiles?.full_name} perguntou:</div>
       <p style="font-size:13px;color:var(--gray-lighter);line-height:1.6">${m.body}</p>
     </div>
@@ -1059,7 +1059,7 @@ function abrirLightboxAdmin(url) {
     lb.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;cursor:zoom-out';
     document.body.appendChild(lb);
   }
-  lb.innerHTML = `<div style="position:relative;max-width:90vw;max-height:90vh"><img src="${url}" style="max-width:100%;max-height:90vh;border-radius:12px;display:block;object-fit:contain"/><button onclick="document.getElementById('lightbox-admin').remove();document.body.style.overflow=''" style="position:absolute;top:-14px;right:-14px;width:30px;height:30px;border-radius:50%;background:#f03faa;border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700">✕</button></div>`;
+  lb.innerHTML = `<div style="position:relative;max-width:90vw;max-height:90vh"><img src="${url}" style="max-width:100%;max-height:90vh;border-radius:12px;display:block;object-fit:contain"/><button onclick="document.getElementById('lightbox-admin').remove();document.body.style.overflow=''" style="position:absolute;top:-14px;right:-14px;width:30px;height:30px;border-radius:50%;background:var(--bord);border:none;color:var(--ouro-cl);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700">✕</button></div>`;
   lb.style.display='flex'; document.body.style.overflow='hidden';
   lb.onclick=(e)=>{ if(e.target===lb){lb.remove();document.body.style.overflow='';} };
 }
@@ -1198,14 +1198,14 @@ function _criativoAdmCard(c,fmtColor) {
   const fmt=fmtColor[c.format]||fmtColor.outro;
   const thumb=c.thumbnail_url||c.file_url;
   return `
-    <div style="background:#111;border:0.5px solid var(--border);border-radius:14px;overflow:hidden">
-      <div style="position:relative;height:160px;background:var(--black);overflow:hidden">
+    <div style="background:var(--creme);border:0.5px solid var(--border);border-radius:14px;overflow:hidden">
+      <div style="position:relative;height:160px;background:var(--creme2);overflow:hidden">
         ${thumb&&c.file_type!=='video'?`<img src="${thumb}" style="width:100%;height:100%;object-fit:cover"/>`:`<div style="display:flex;align-items:center;justify-content:center;height:100%"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`}
         <div style="position:absolute;top:8px;left:8px;background:${fmt.bg};border:0.5px solid ${fmt.border};color:${fmt.text};font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">${c.format.toUpperCase()}</div>
         <div style="position:absolute;top:8px;right:8px"><span class="pill ${c.is_active?'pill-green':'pill-gray'}">${c.is_active?'Ativo':'Inativo'}</span></div>
       </div>
       <div style="padding:12px">
-        <div style="font-size:13px;font-weight:600;color:var(--white);margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.title}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--bord-esc);margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.title}</div>
         <div style="display:flex;gap:6px">
           <button class="btn btn-sm btn-outline" style="flex:1" onclick="abrirFormCriativo('${c.id}')">Editar</button>
           <button class="btn btn-sm btn-danger" onclick="toggleCriativo('${c.id}',${c.is_active})">${c.is_active?'Desativar':'Ativar'}</button>
@@ -1239,7 +1239,7 @@ function abrirFormCriativo(id) {
       <div class="form-group"><label>Descrição</label><input type="text" id="cri-desc" value="${c.description||''}"/></div>
       <div class="form-group">
         <label>Arquivo principal *</label>
-        <div onclick="document.getElementById('cri-file-input').click()" style="border:0.5px dashed var(--border);border-radius:var(--radius-md);padding:16px;text-align:center;cursor:pointer;background:var(--black)" onmouseover="this.style.borderColor='var(--pink)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div onclick="document.getElementById('cri-file-input').click()" style="border:0.5px dashed var(--border);border-radius:var(--radius-md);padding:16px;text-align:center;cursor:pointer;background:var(--creme2)" onmouseover="this.style.borderColor='var(--pink)'" onmouseout="this.style.borderColor='var(--border)'">
           <div id="cri-file-preview">${c.file_url?`<div style="font-size:12px;color:var(--green)">✓ Arquivo: <a href="${c.file_url}" target="_blank" style="color:var(--pink)">ver</a></div>`:'<div style="font-size:12px;color:var(--gray)">Clique para fazer upload</div>'}</div>
           <div id="cri-upload-prog" style="display:none;margin-top:8px"><div style="height:3px;background:var(--border);border-radius:2px;overflow:hidden"><div id="cri-upload-bar" style="height:100%;width:0%;background:var(--pink);transition:width .3s"></div></div></div>
         </div>
@@ -1313,10 +1313,10 @@ async function renderCapacitacaoAdmin() {
 function _moduloAdmCard(m) {
   const aulas=(m.lessons||[]).sort((a,b)=>a.order-b.order);
   return `
-    <div style="background:#111;border:0.5px solid var(--border);border-radius:14px;overflow:hidden">
+    <div style="background:var(--creme);border:0.5px solid var(--border);border-radius:14px;overflow:hidden">
       <div style="padding:16px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--border2)">
         <div>
-          <div style="font-size:14px;font-weight:700;color:var(--white)">${m.title}</div>
+          <div style="font-size:14px;font-weight:700;color:var(--bord-esc)">${m.title}</div>
           ${m.description?`<div style="font-size:12px;color:var(--gray);margin-top:2px">${m.description}</div>`:''}
           <div style="font-size:11px;color:var(--gray);margin-top:4px">${aulas.length} aula${aulas.length!==1?'s':''}</div>
         </div>
@@ -1326,7 +1326,7 @@ function _moduloAdmCard(m) {
           <button class="btn btn-sm btn-danger" onclick="deletarModulo('${m.id}')">Excluir</button>
         </div>
       </div>
-      ${aulas.length?`<div>${aulas.map((a,ai)=>{const durMin=a.duration_seconds?Math.ceil(a.duration_seconds/60):null;return`<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:0.5px solid var(--border2)${ai===aulas.length-1?';border-bottom:none':''}"><div style="width:28px;height:28px;border-radius:50%;background:var(--pink-faint);border:0.5px solid var(--pink-deep);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--pink);flex-shrink:0">${ai+1}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--white)">${a.title}</div>${durMin?`<div style="font-size:11px;color:var(--gray)">${durMin} min</div>`:''}</div><span class="pill ${a.is_active?'pill-green':'pill-gray'}" style="font-size:10px">${a.is_active?'Ativa':'Inativa'}</span><div style="display:flex;gap:6px"><button class="btn btn-sm btn-outline" onclick="abrirFormAula('${a.id}','${m.id}')">Editar</button><button class="btn btn-sm btn-danger" onclick="deletarAula('${a.id}')">✕</button></div></div>`;}).join('')}</div>`:`<div style="padding:16px;text-align:center;font-size:13px;color:var(--gray)">Nenhuma aula. <button class="btn btn-sm btn-outline" style="margin-left:8px" onclick="abrirFormAula(null,'${m.id}')">+ Adicionar</button></div>`}
+      ${aulas.length?`<div>${aulas.map((a,ai)=>{const durMin=a.duration_seconds?Math.ceil(a.duration_seconds/60):null;return`<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:0.5px solid var(--border2)${ai===aulas.length-1?';border-bottom:none':''}"><div style="width:28px;height:28px;border-radius:50%;background:var(--pink-faint);border:0.5px solid var(--pink-deep);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--pink);flex-shrink:0">${ai+1}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--bord-esc)">${a.title}</div>${durMin?`<div style="font-size:11px;color:var(--gray)">${durMin} min</div>`:''}</div><span class="pill ${a.is_active?'pill-green':'pill-gray'}" style="font-size:10px">${a.is_active?'Ativa':'Inativa'}</span><div style="display:flex;gap:6px"><button class="btn btn-sm btn-outline" onclick="abrirFormAula('${a.id}','${m.id}')">Editar</button><button class="btn btn-sm btn-danger" onclick="deletarAula('${a.id}')">✕</button></div></div>`;}).join('')}</div>`:`<div style="padding:16px;text-align:center;font-size:13px;color:var(--gray)">Nenhuma aula. <button class="btn btn-sm btn-outline" style="margin-left:8px" onclick="abrirFormAula(null,'${m.id}')">+ Adicionar</button></div>`}
     </div>`;
 }
 

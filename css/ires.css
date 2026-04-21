@@ -14,8 +14,8 @@
   /* Paleta primária */
   --bord:        #5c1a2e;   /* Bordô — cor primária, CTAs, títulos */
   --bord-esc:    #3a0e1d;   /* Bordô escuro — fundos hero */
-  --ouro:        #c49a7a;   /* Ouro rosa — acentos, ícones */
-  --ouro-cl:     #e8c9ac;   /* Ouro claro — texto sobre bordô */
+  --ouro:        #d4a876;   /* Ouro — legível sobre bordô escuro */
+  --ouro-cl:     #f0dcc0;   /* Ouro claro — máximo contraste sobre bordô */
   --creme:       #fdf8f3;   /* Creme — fundo principal */
   --creme2:      #f7efe4;   /* Creme 2 — fundo alternado */
   --borda:       #e8ddd5;   /* Borda — divisores */
@@ -471,17 +471,17 @@ select option { background: var(--creme); color: var(--bord-esc); }
   padding: 20px 24px;
   display: flex; align-items: center; justify-content: space-between;
 }
-.vitrine-hero h2 { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: var(--ouro-cl); font-family: 'Playfair Display', Georgia, serif; }
-.vitrine-hero h2 span { color: var(--ouro); }
-.vitrine-hero p { font-size: 12px; color: rgba(232,201,172,.65); margin-top: 4px; }
+.vitrine-hero h2 { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: #fff; font-family: 'Playfair Display', Georgia, serif; }
+.vitrine-hero h2 span { color: var(--ouro-cl); }  /* nome em ouro claro, legível sobre bordô */
+.vitrine-hero p { font-size: 13px; color: rgba(232,201,172,.7); margin-top: 5px; font-weight: 500; }
 .vitrine-hero-badge {
-  background: rgba(196,154,122,.15);
-  border: 0.5px solid rgba(196,154,122,.3);
+  background: rgba(255,255,255,.08);
+  border: 0.5px solid rgba(232,201,172,.3);
   border-radius: var(--radius-lg);
   padding: 10px 16px; text-align: center;
 }
-.vitrine-hero-badge .num { font-size: 24px; font-weight: 900; color: var(--ouro-cl); font-family: 'Playfair Display', Georgia, serif; }
-.vitrine-hero-badge .lbl { font-size: 9px; color: rgba(232,201,172,.55); letter-spacing: 1px; text-transform: uppercase; }
+.vitrine-hero-badge .num { font-size: 24px; font-weight: 900; color: #fff; font-family: 'Playfair Display', Georgia, serif; }
+.vitrine-hero-badge .lbl { font-size: 9px; color: rgba(232,201,172,.7); letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
 
 .section-title {
   font-size: 10.5px; font-weight: 700;
@@ -812,24 +812,25 @@ body.page {
   align-items: center;
   gap: 5px;
   font-size: 12px;
-  color: var(--nb-text-low);
+  color: rgba(232,201,172,.72);   /* ouro claro com boa opacidade */
   font-weight: 500;
   padding: 6px 10px;
   border-radius: 8px;
   cursor: pointer;
   white-space: nowrap;
   text-decoration: none;
-  border-bottom: none;
+  border-bottom: 2px solid transparent;
   transition: color .15s, background .15s;
 }
 .nav-tab-new:hover {
   color: var(--ouro-cl);
-  background: rgba(92,26,46,.25);
+  background: rgba(255,255,255,.06);
 }
 .nav-tab-new.active {
-  color: var(--ouro-cl);
-  background: rgba(92,26,46,.35);
+  color: #fff;
+  background: rgba(255,255,255,.10);
   border-bottom: 2px solid var(--ouro);
+  font-weight: 700;
 }
 .nav-tab-new svg {
   width: 13px; height: 13px;
@@ -838,12 +839,78 @@ body.page {
   flex-shrink: 0;
 }
 
-/* ── Topbar right (auth.js popula aqui, estilos reaproveitados) ── */
+/* ── Topbar right (auth.js popula aqui) ── */
 .topbar-right {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
+}
+
+/* Carrinho, botões e links na topbar sobre fundo bordô escuro */
+.topbar-right a,
+.topbar-right button,
+#cart-link {
+  color: rgba(232,201,172,.85) !important;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 12px;
+  transition: color .15s, opacity .15s;
+}
+.topbar-right a:hover,
+.topbar-right button:hover,
+#cart-link:hover {
+  color: #fff !important;
+  opacity: 1;
+}
+
+/* Botão Sair — outline claro */
+.topbar-right .btn-sair,
+.topbar-right [onclick*="signOut"],
+.topbar-right [onclick*="sair"],
+.topbar-right [onclick*="Sair"] {
+  border: 0.5px solid rgba(232,201,172,.4) !important;
+  color: rgba(232,201,172,.85) !important;
+  background: transparent !important;
+  border-radius: 8px;
+  padding: 5px 14px;
+}
+
+/* Ícone sino */
+.topbar-right .notif-wrap svg,
+.topbar-right svg {
+  stroke: rgba(232,201,172,.75) !important;
+  fill: none;
+}
+.topbar-right .notif-wrap:hover svg,
+.topbar-right a:hover svg {
+  stroke: #fff !important;
+}
+
+/* Avatar círculo */
+.topbar-right .avatar {
+  background: rgba(196,154,122,.2) !important;
+  border: 1.5px solid rgba(196,154,122,.5) !important;
+  color: var(--ouro-cl) !important;
+}
+
+/* Cart link com ícone */
+#cart-link {
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 5px 12px !important;
+  border: 0.5px solid rgba(232,201,172,.3) !important;
+  border-radius: 8px !important;
+  color: rgba(232,201,172,.85) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  background: rgba(255,255,255,.05) !important;
+}
+#cart-link:hover {
+  background: rgba(255,255,255,.10) !important;
+  color: #fff !important;
+  border-color: rgba(232,201,172,.55) !important;
 }
 
 /* ── Main content ── */

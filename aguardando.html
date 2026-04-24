@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IRES — Aguardando aprovação</title>
+  <link rel="stylesheet" href="css/ires.css"/>
+</head>
+<body>
+
+<div class="auth-page">
+  <div class="auth-card" style="text-align:center">
+
+    <div class="auth-logo-circle" style="margin:0 auto 20px">
+      <span class="logo-ires">ires</span>
+      <span class="logo-sub">embaixadoras</span>
+    </div>
+
+    <!-- Ícone de relógio -->
+    <div style="width:64px;height:64px;border-radius:50%;background:var(--amber-bg);border:0.5px solid var(--amber-border);display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+    </div>
+
+    <h2 style="font-size:18px;font-weight:800;margin-bottom:8px">Cadastro em análise</h2>
+    <p style="font-size:13px;color:var(--gray);line-height:1.7;margin-bottom:24px">
+      Recebemos sua solicitação! Nossa equipe está analisando seus dados e você receberá uma resposta no e-mail cadastrado em até <strong style="color:var(--pink)">48 horas</strong>.
+    </p>
+
+    <div class="info-box" style="text-align:left">
+      <div class="info-box-dot"></div>
+      <p>Assim que aprovada, você terá acesso completo ao catálogo e poderá fazer seus primeiros pedidos.</p>
+    </div>
+
+    <button class="btn btn-outline" onclick="signOut()" style="margin-top:8px">
+      Sair da conta
+    </button>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  // Verifica a cada 30s se já foi aprovada
+  setInterval(async () => {
+    const profile = await getMyProfile();
+    if (profile && profile.status === 'active') {
+      showToast('Parabéns! Seu acesso foi aprovado!', 'success');
+      setTimeout(() => window.location.href = 'painel.html', 1500);
+    }
+  }, 30000);
+</script>
+</body>
+</html>

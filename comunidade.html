@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Redirecionando...</title>
+</head>
+<body>
+  <script>
+    // mantém o hash: #suporte → painel.html#suporte, qualquer outra coisa → #depoimentos
+    const hash = window.location.hash.replace('#','');
+    const dest = hash === 'suporte' ? 'painel.html#suporte' : 'painel.html#depoimentos';
+    window.location.replace(dest);
+  </script>
+</body>
+</html>

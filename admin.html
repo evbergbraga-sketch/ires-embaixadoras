@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ires. — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/ires.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css"/>
+  <style>
+    /* ── Admin — Paleta IRES ── */
+    :root {
+      --bord:#5c1a2e; --bord-esc:#3a0e1d;
+      --ouro:#d4a876; --ouro-cl:#f0dcc0;
+      --creme:#fdf8f3; --creme2:#f0e6da;
+      --borda:#d6c8bc; --cinza:#6b3040; --cinza2:#8c5e38;
+      --bord-dim:rgba(92,26,46,.12); --bord-bdr:rgba(92,26,46,.28);
+      --ouro-dim:rgba(140,94,56,.12); --ouro-bdr:rgba(140,94,56,.28);
+      --green:#2d6645; --green-bg:rgba(45,102,69,.10); --green-border:rgba(45,102,69,.28);
+      --amber:#7a4a18; --amber-bg:rgba(122,74,24,.10); --amber-border:rgba(122,74,24,.26);
+      --info:#2a5080; --info-bg:rgba(42,80,128,.10); --info-border:rgba(42,80,128,.26);
+      --red:#8b2020; --red-bg:rgba(139,32,32,.10);
+      /* legado */
+      --pink:#5c1a2e; --pink-dark:#3a0e1d; --pink-faint:rgba(92,26,46,.10); --pink-deep:rgba(92,26,46,.25);
+      --black:var(--creme2); --card:var(--creme); --card2:#f7efe4;
+      --border:var(--borda); --border2:#e0d4c8;
+      --white:#1e0a12; --gray:var(--cinza); --gray-light:var(--cinza2); --gray-lighter:var(--bord);
+      --radius-sm:6px; --radius-md:10px; --radius-lg:14px; --radius-xl:20px; --radius-full:9999px;
+      --font:'DM Sans',sans-serif; --font-serif:'Playfair Display',Georgia,serif;
+      --transition:0.18s ease;
+    }
+
+    .admin-topbar {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--bord-esc);
+      border-bottom: 0.5px solid rgba(232,221,213,.15);
+      height: 64px; padding: 0 28px;
+      display: flex; align-items: center; justify-content: space-between; gap: 20px;
+    }
+    .admin-logo {
+      font-family: var(--font-serif);
+      font-size: 22px; font-weight: 700;
+      color: var(--ouro-cl);
+      letter-spacing: 0.3px; text-decoration: none; flex-shrink: 0;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .admin-logo em { color: var(--ouro); font-style: normal; }
+    .admin-logo-img {
+      width: 34px; height: 34px; border-radius: 50%;
+      overflow: hidden; flex-shrink: 0; background: var(--bord);
+    }
+    .admin-logo-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .admin-logo-badge {
+      font-family: var(--font);
+      font-size: 9px; font-weight: 700; color: rgba(232,201,172,.5);
+      letter-spacing: .8px; text-transform: uppercase;
+      padding: 2px 9px; background: rgba(92,26,46,.35);
+      border: 0.5px solid rgba(196,154,122,.18); border-radius: 20px;
+    }
+    .admin-nav {
+      display: flex; gap: 2px; flex: 1; justify-content: center;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .admin-nav::-webkit-scrollbar { display: none; }
+    .admin-nav-tab {
+      font-family: var(--font); font-size: 12px;
+      color: rgba(232,201,172,.45); font-weight: 500;
+      padding: 6px 11px; border-radius: 8px; cursor: pointer;
+      white-space: nowrap; text-decoration: none;
+      transition: color .15s, background .15s;
+      display: flex; align-items: center; gap: 0;
+    }
+    .admin-nav-tab:hover { color: var(--ouro-cl); background: rgba(92,26,46,.3); }
+    .admin-nav-tab.active { color: var(--ouro-cl); background: rgba(92,26,46,.4); border-bottom: 2px solid var(--ouro); }
+    .admin-nav-tab svg { display: none; }
+    .admin-topbar-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+
+    body.page { background: var(--creme2); font-family: var(--font); color: var(--bord-esc); }
+    #conteudo-principal { padding: 24px clamp(20px,4vw,60px) 40px; max-width: none; width: 100%; }
+
+    /* Títulos de seção */
+    .section-title { font-size: 11px; font-weight: 700; color: var(--cinza); text-transform: uppercase; letter-spacing: 1px; }
+
+    /* Métricas admin */
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(140px,1fr)); gap: 12px; margin-bottom: 16px; }
+    .metric-card { background: var(--creme); border: 0.5px solid var(--borda); border-radius: 14px; padding: 14px 16px; border-top: 2px solid var(--bord); }
+    .metric-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+    .metric-value { font-size: 22px; font-weight: 900; color: var(--bord-esc); }
+    .metric-label { font-size: 11px; color: var(--cinza2); margin-top: 2px; }
+
+    /* Pedidos */
+    .orders-list { display: flex; flex-direction: column; gap: 8px; }
+    .order-row { background: var(--creme); border: 0.5px solid var(--borda); border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: border-color .15s; }
+    .order-row:hover { border-color: var(--bord-bdr); }
+    .order-id { font-size: 13px; font-weight: 700; color: var(--bord-esc); min-width: 55px; }
+    .order-date { font-size: 11px; color: var(--cinza2); margin-top: 2px; }
+    .order-items-preview { font-size: 13px; color: var(--cinza); flex: 1; }
+    .order-total { font-size: 14px; font-weight: 800; color: var(--bord); }
+
+    /* Status pills */
+    .pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 10px; font-weight: 700; }
+    .pill-pending { background: var(--amber-bg); border: 0.5px solid var(--amber-border); color: var(--amber); }
+    .pill-paid, .pill-delivered { background: var(--green-bg); border: 0.5px solid var(--green-border); color: var(--green); }
+    .pill-processing, .pill-shipped { background: var(--info-bg); border: 0.5px solid var(--info-border); color: var(--info); }
+    .pill-cancelled { background: var(--red-bg); border: 0.5px solid rgba(155,48,48,.3); color: var(--red); }
+    .pill-green  { background: var(--green-bg);  border: 0.5px solid var(--green-border);  color: var(--green); }
+    .pill-amber  { background: var(--amber-bg);  border: 0.5px solid var(--amber-border);  color: var(--amber); }
+    .pill-red    { background: var(--red-bg);    border: 0.5px solid rgba(155,48,48,.3);   color: var(--red); }
+    .pill-pink   { background: var(--bord-dim);  border: 0.5px solid var(--bord-bdr);      color: var(--bord); }
+    .pill-gray   { background: var(--creme2);    border: 0.5px solid var(--borda);         color: var(--cinza); }
+    .pill-blue   { background: var(--info-bg);   border: 0.5px solid var(--info-border);   color: var(--info); }
+
+    /* Cards */
+    .card { background: var(--creme); border: 0.5px solid var(--borda); border-radius: 14px; padding: 20px; }
+
+    /* Avatar */
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--ouro-dim); border: 0.5px solid var(--ouro-bdr); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--ouro); flex-shrink: 0; }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border-radius: 10px; font-family: var(--font); font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity .18s, transform .18s; border: none; text-decoration: none; white-space: nowrap; }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--bord); color: var(--ouro-cl); width: 100%; }
+    .btn-primary:hover { opacity: .88; color: var(--ouro-cl); }
+    .btn-outline { background: transparent; border: 0.5px solid var(--borda); color: var(--cinza); width: 100%; }
+    .btn-outline:hover { border-color: var(--bord-bdr); color: var(--bord); }
+    .btn-sm { padding: 6px 14px; font-size: 11.5px; width: auto; }
+    .btn-danger { background: var(--red-bg); border: 0.5px solid rgba(155,48,48,.3); color: var(--red); }
+
+    /* Forms */
+    .form-group { margin-bottom: 16px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    label { display: block; font-size: 10.5px; font-weight: 700; color: var(--bord); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    input, select, textarea { width: 100%; background: var(--creme); border: 0.5px solid var(--borda); border-radius: 10px; padding: 10px 13px; color: var(--bord-esc); font-family: var(--font); font-size: 13px; outline: none; transition: border-color .18s; -webkit-appearance: none; }
+    input:focus, select:focus, textarea:focus { border-color: var(--bord); }
+    input::placeholder, textarea::placeholder { color: var(--cinza2); }
+    select option { background: var(--creme); color: var(--bord-esc); }
+
+    /* Filter pills */
+    .filter-pill { font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 20px; border: 0.5px solid var(--borda); color: var(--cinza); cursor: pointer; transition: all .15s; }
+    .filter-pill.active { background: var(--bord); color: var(--ouro-cl); border-color: var(--bord); }
+    .filter-pill:hover:not(.active) { border-color: var(--bord-bdr); color: var(--bord); }
+
+    /* Loading */
+    .loading { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 40px; color: var(--cinza); font-size: 13px; }
+    .spinner { width: 18px; height: 18px; border: 2px solid var(--borda); border-top-color: var(--bord); border-radius: 50%; animation: spin .6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Info box */
+    .info-box { background: var(--ouro-dim); border: 0.5px solid var(--ouro-bdr); border-radius: 10px; padding: 10px 14px; display: flex; align-items: flex-start; gap: 8px; margin-bottom: 16px; }
+    .info-box-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ouro); margin-top: 5px; flex-shrink: 0; }
+    .info-box p { font-size: 12px; color: var(--cinza); line-height: 1.5; }
+
+    /* Modal */
+    #modal { position: fixed; inset: 0; background: rgba(58,14,29,.55); z-index: 999; align-items: center; justify-content: center; padding: 16px; overflow-y: auto; }
+    #modal-body { background: var(--creme); border: 0.5px solid var(--borda); border-radius: 16px; max-width: 480px; width: 100%; position: relative; margin: auto; padding: 24px; color: var(--bord-esc); }
+
+    /* Products grid */
+    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 12px; }
+
+    /* Cropper */
+    .cropper-container { background: var(--creme2) !important; }
+
+    /* Bottom nav mobile */
+    .admin-bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--bord-esc); border-top: 0.5px solid rgba(232,221,213,.15); padding: 10px 0 env(safe-area-inset-bottom,16px); z-index: 200; }
+    .admin-bnav-inner { display: flex; max-width: 500px; margin: 0 auto; }
+    .admin-bnav-tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 4px 0; text-decoration: none; }
+    .admin-bnav-tab svg { width: 20px; height: 20px; stroke: rgba(232,201,172,.4); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .admin-bnav-tab span { font-size: 10px; color: rgba(232,201,172,.4); font-weight: 500; }
+    .admin-bnav-tab.active svg { stroke: var(--ouro-cl); }
+    .admin-bnav-tab.active span { color: var(--ouro-cl); }
+
+    @media (min-width: 768px) {
+      .admin-nav { display: flex; }
+      .admin-bottom-nav { display: none !important; }
+      #conteudo-principal { padding: 28px 32px 40px; }
+    }
+    @media (max-width: 767px) {
+      .admin-nav { display: none; }
+      .admin-bottom-nav { display: block; }
+      #conteudo-principal { padding: 14px 14px 90px; }
+      .dash-bento { grid-template-columns: 1fr !important; }
+      .metrics-grid { grid-template-columns: repeat(2,1fr) !important; gap: 10px !important; }
+      .form-row { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</head>
+<body class="page">
+
+  <!-- ── Topbar admin ── -->
+  <header class="admin-topbar">
+    <a href="#" class="admin-logo" onclick="irPara('dashboard'); return false">
+      <div class="admin-logo-img"><img src="img/ires-logo.svg" alt="IRES"/></div>
+      ires<em>.</em>
+      <span class="admin-logo-badge">admin</span>
+    </a>
+
+    <nav class="admin-nav" aria-label="Navegação admin">
+      <a class="admin-nav-tab active" id="nav-dashboard" onclick="irPara('dashboard'); return false" href="#">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a class="admin-nav-tab" id="nav-pedidos" onclick="irPara('pedidos'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Pedidos
+      </a>
+      <a class="admin-nav-tab" id="nav-produtos" onclick="irPara('produtos'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        Produtos
+      </a>
+      <a class="admin-nav-tab" id="nav-embaixadoras" onclick="irPara('embaixadoras'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Embaixadoras
+      </a>
+      <a class="admin-nav-tab" id="nav-categorias" onclick="irPara('categorias'); return false" href="#">
+        <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Categorias
+      </a>
+      <a class="admin-nav-tab" id="nav-comunicados" onclick="irPara('comunicados'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Comunicados
+      </a>
+      <a class="admin-nav-tab" id="nav-depoimentos" onclick="irPara('depoimentos'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 0 1-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        Depoimentos
+      </a>
+      <a class="admin-nav-tab" id="nav-suporte" onclick="irPara('suporte'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Suporte
+      </a>
+      <a class="admin-nav-tab" id="nav-criativos" onclick="irPara('criativos'); return false" href="#">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        Criativos
+      </a>
+      <a class="admin-nav-tab" id="nav-capacitacao" onclick="irPara('capacitacao'); return false" href="#">
+        <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        Capacitação
+      </a>
+    </nav>
+
+    <div class="admin-topbar-right" id="topbar-right"></div>
+  </header>
+
+  <!-- ── Conteúdo principal ── -->
+  <main id="conteudo-principal">
+    <div class="loading"><div class="spinner"></div> Carregando...</div>
+  </main>
+
+  <!-- ── Bottom nav mobile ── -->
+  <nav class="admin-bottom-nav" aria-label="Navegação admin mobile">
+    <div class="admin-bnav-inner">
+      <a class="admin-bnav-tab active" id="admin-bnav-0" onclick="irPara('dashboard'); return false" href="#">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>Dashboard</span>
+      </a>
+      <a class="admin-bnav-tab" id="admin-bnav-1" onclick="irPara('pedidos'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span>Pedidos</span>
+      </a>
+      <a class="admin-bnav-tab" id="admin-bnav-2" onclick="irPara('produtos'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span>Produtos</span>
+      </a>
+      <a class="admin-bnav-tab" id="admin-bnav-3" onclick="irPara('embaixadoras'); return false" href="#">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <span>Embaixadoras</span>
+      </a>
+      <a class="admin-bnav-tab" id="admin-bnav-mais" onclick="_abrirDrawerAdmin(); return false" href="#">
+        <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+        <span>Mais</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- ── Drawer mobile admin ── -->
+  <div id="admin-drawer-overlay"
+    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0);z-index:190;transition:background .25s;"
+    onclick="_fecharDrawerAdmin()">
+  </div>
+  <div id="admin-drawer"
+    style="display:none;position:fixed;bottom:-320px;left:0;right:0;
+      background:#0e0810;border-top:0.5px solid #3E2A3C;border-radius:20px 20px 0 0;
+      padding:0 0 env(safe-area-inset-bottom,24px);z-index:200;
+      transition:bottom .3s cubic-bezier(.32,.72,0,1);">
+    <div style="width:36px;height:4px;background:#3E2A3C;border-radius:2px;margin:10px auto 16px;"></div>
+    <div style="font-size:11px;font-weight:600;color:#705868;text-transform:uppercase;letter-spacing:.8px;padding:0 20px;margin-bottom:12px;">Mais opções</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px 8px;">
+      <div onclick="irPara('categorias'); _fecharDrawerAdmin()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#201520;border:0.5px solid #3E2A3C;border-radius:12px;cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0A8B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span style="font-size:13px;font-weight:500;color:#C0A8B8;">Categorias</span>
+      </div>
+      <div onclick="irPara('comunicados'); _fecharDrawerAdmin()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#201520;border:0.5px solid #3E2A3C;border-radius:12px;cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0A8B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span style="font-size:13px;font-weight:500;color:#C0A8B8;">Comunicados</span>
+      </div>
+      <div onclick="irPara('depoimentos'); _fecharDrawerAdmin()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#201520;border:0.5px solid #3E2A3C;border-radius:12px;cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0A8B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 0 1-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        <span style="font-size:13px;font-weight:500;color:#C0A8B8;">Depoimentos</span>
+      </div>
+      <div onclick="irPara('suporte'); _fecharDrawerAdmin()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#201520;border:0.5px solid #3E2A3C;border-radius:12px;cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0A8B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span style="font-size:13px;font-weight:500;color:#C0A8B8;">Suporte</span>
+      </div>
+      <div onclick="irPara('criativos'); _fecharDrawerAdmin()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#201520;border:0.5px solid #3E2A3C;border-radius:12px;cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0A8B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <span style="font-size:13px;font-weight:500;color:#C0A8B8;">Criativos</span>
+      </div>
+      <div onclick="irPara('capacitacao'); _fecharDrawerAdmin()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#201520;border:0.5px solid #3E2A3C;border-radius:12px;cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0A8B8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        <span style="font-size:13px;font-weight:500;color:#C0A8B8;">Capacitação</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal genérico ── -->
+  <div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;align-items:center;justify-content:center;padding:16px;overflow-y:auto">
+    <div id="modal-body" class="card" style="max-width:480px;width:100%;position:relative;margin:auto"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/admin.js"></script>
+  <script>
+  function _abrirDrawerAdmin() {
+    const d=document.getElementById('admin-drawer');
+    const o=document.getElementById('admin-drawer-overlay');
+    d.style.display='block'; o.style.display='block';
+    requestAnimationFrame(()=>{ d.style.bottom='0'; o.style.background='rgba(0,0,0,0.6)'; });
+  }
+  function _fecharDrawerAdmin() {
+    const d=document.getElementById('admin-drawer');
+    const o=document.getElementById('admin-drawer-overlay');
+    d.style.bottom='-320px'; o.style.background='rgba(0,0,0,0)';
+    setTimeout(()=>{ d.style.display='none'; o.style.display='none'; },300);
+  }
+  window.addEventListener('load', function() {
+    if (typeof irPara !== 'function') return;
+    const _orig = irPara;
+    window.irPara = function(pagina) {
+      _orig(pagina);
+      document.querySelectorAll('.admin-nav-tab').forEach(t=>t.classList.remove('active'));
+      const tab=document.getElementById('nav-'+pagina);
+      if(tab) tab.classList.add('active');
+      document.querySelectorAll('.admin-bnav-tab').forEach(t=>t.classList.remove('active'));
+      const bmap={dashboard:0,pedidos:1,produtos:2,embaixadoras:3};
+      if(bmap[pagina]!==undefined){
+        const tabs=document.querySelectorAll('.admin-bnav-tab');
+        if(tabs[bmap[pagina]]) tabs[bmap[pagina]].classList.add('active');
+      }
+    };
+  });
+  </script>
+</body>
+</html>

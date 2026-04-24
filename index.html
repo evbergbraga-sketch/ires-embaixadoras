@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IRES Embaixadoras — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/ires.css"/>
+  <style>
+    body { background: #f0e6da; }
+
+    .auth-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+      background: #f0e6da;
+    }
+
+    .auth-card {
+      background: #fdf8f3;
+      border: 0.5px solid #d6c8bc;
+      border-radius: 20px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    /* ── Logo ── */
+    .auth-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 32px;
+    }
+    .auth-logo-circle {
+      width: 88px; height: 88px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #5c1a2e url('img/ires-logo.svg') center/cover no-repeat;
+      flex-shrink: 0;
+    }
+    .auth-logo-circle img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+    .auth-logo-circle .logo-ires,
+    .auth-logo-circle .logo-sub { display: none; }
+
+    .auth-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 20px;
+      font-weight: 800;
+      color: #1e0a12;
+      text-align: center;
+      letter-spacing: -0.3px;
+    }
+    .auth-subtitle {
+      font-size: 13px;
+      color: #7a6860;
+      text-align: center;
+      font-weight: 500;
+      margin-top: -6px;
+    }
+
+    /* Badge exclusiva */
+    .auth-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 12px;
+      border-radius: 999px;
+      background: rgba(92,26,46,.10);
+      border: 0.5px solid rgba(92,26,46,.22);
+      color: #5c1a2e;
+      letter-spacing: 0.4px;
+    }
+
+    /* ── Form ── */
+    .form-group { margin-bottom: 14px; }
+    label {
+      display: block;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #5c1a2e;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      background: #fff;
+      border: 0.5px solid #d6c8bc;
+      border-radius: 10px;
+      padding: 11px 14px;
+      color: #1e0a12;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color .18s, box-shadow .18s;
+    }
+    input:focus {
+      border-color: #5c1a2e;
+      box-shadow: 0 0 0 3px rgba(92,26,46,.08);
+    }
+    input::placeholder { color: #c8b8aa; }
+
+    .forgot-link {
+      font-size: 12px;
+      color: #8c5e38;
+      font-weight: 600;
+      text-decoration: none;
+      float: right;
+      margin-top: -8px;
+      margin-bottom: 20px;
+      display: block;
+      text-align: right;
+    }
+    .forgot-link:hover { color: #5c1a2e; }
+
+    /* ── Botões ── */
+    .btn-login {
+      width: 100%;
+      padding: 13px;
+      background: #5c1a2e;
+      border: none;
+      border-radius: 11px;
+      color: #f0dcc0;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity .18s, transform .15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-login:hover { opacity: .88; }
+    .btn-login:active { transform: scale(0.98); }
+    .btn-login:disabled { opacity: .6; cursor: not-allowed; }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 20px 0;
+    }
+    .divider-line { flex: 1; height: 0.5px; background: #e8ddd5; }
+    .divider span { font-size: 11px; color: #a89088; font-weight: 600; }
+
+    .btn-cadastro {
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      border: 0.5px solid #d6c8bc;
+      border-radius: 11px;
+      color: #6b3040;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+      transition: border-color .18s, color .18s, background .18s;
+    }
+    .btn-cadastro:hover {
+      border-color: #5c1a2e;
+      color: #5c1a2e;
+      background: rgba(92,26,46,.04);
+    }
+
+    .auth-footer {
+      text-align: center;
+      font-size: 11px;
+      color: #a89088;
+      margin-top: 20px;
+      font-weight: 500;
+    }
+
+    /* ── Spinner ── */
+    .spinner-ring {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(240,220,192,.3);
+      border-top-color: #f0dcc0;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Modal recuperação ── */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(58,14,29,.55);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: #fdf8f3;
+      border: 0.5px solid #d6c8bc;
+      border-radius: 16px;
+      padding: 28px 28px 24px;
+      max-width: 360px;
+      width: 100%;
+    }
+    .modal-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 17px;
+      font-weight: 700;
+      color: #1e0a12;
+      margin-bottom: 6px;
+    }
+    .modal-sub {
+      font-size: 12px;
+      color: #7a6860;
+      margin-bottom: 20px;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .btn-cancelar {
+      flex: 1; padding: 10px;
+      background: transparent;
+      border: 0.5px solid #d6c8bc;
+      border-radius: 9px;
+      color: #7a6860;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer;
+      transition: border-color .15s, color .15s;
+    }
+    .btn-cancelar:hover { border-color: #5c1a2e; color: #5c1a2e; }
+    .btn-enviar {
+      flex: 1; padding: 10px;
+      background: #5c1a2e;
+      border: none;
+      border-radius: 9px;
+      color: #f0dcc0;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 700;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+    .btn-enviar:hover { opacity: .88; }
+
+    @media (max-width: 440px) {
+      .auth-card { padding: 28px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="auth-page">
+  <div class="auth-card">
+
+    <!-- Logo -->
+    <div class="auth-logo">
+      <div class="auth-logo-circle">
+        <img src="img/ires-logo.svg" alt="IRES"/>
+        <span class="logo-ires">ires</span>
+        <span class="logo-sub">embaixadoras</span>
+      </div>
+      <div>
+        <div class="auth-title">Portal das Embaixadoras</div>
+        <div class="auth-subtitle">Acesse sua conta para continuar</div>
+      </div>
+      <span class="auth-badge">Área exclusiva</span>
+    </div>
+
+    <!-- Form -->
+    <div class="form-group">
+      <label for="email">E-mail</label>
+      <input type="email" id="email" placeholder="sua@email.com" autocomplete="email"/>
+    </div>
+
+    <div class="form-group">
+      <label for="senha">Senha</label>
+      <input type="password" id="senha" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+
+    <a href="#" onclick="abrirRecuperacao(); return false" class="forgot-link">Esqueci minha senha</a>
+
+    <button class="btn-login" id="btn-login" onclick="fazerLogin()">Entrar</button>
+
+    <div class="divider">
+      <div class="divider-line"></div>
+      <span>ou</span>
+      <div class="divider-line"></div>
+    </div>
+
+    <a href="cadastro.html" class="btn-cadastro">Quero ser embaixadora →</a>
+
+    <p class="auth-footer">Acesso restrito a embaixadoras aprovadas</p>
+  </div>
+</div>
+
+<!-- Modal recuperação -->
+<div id="modal-recuperacao" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-title">Recuperar senha</div>
+    <div class="modal-sub">Informe seu e-mail e enviaremos um link para redefinir sua senha.</div>
+    <div class="form-group">
+      <label for="email-recuperacao">E-mail</label>
+      <input type="email" id="email-recuperacao" placeholder="sua@email.com"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancelar" onclick="fecharRecuperacao()">Cancelar</button>
+      <button class="btn-enviar" onclick="enviarRecuperacao()">Enviar link</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  (async () => {
+    const { data: { session } } = await _supabase.auth.getSession();
+    if (!session) return;
+    const { data: profile } = await _supabase.from('profiles').select('role,status').eq('id', session.user.id).single();
+    if (!profile) return;
+    if (profile.role === 'admin')       return window.location.href = 'admin.html';
+    if (profile.status === 'active')    return window.location.href = 'painel.html';
+    if (profile.status === 'pending')   return window.location.href = 'aguardando.html';
+  })();
+
+  async function fazerLogin() {
+    const email = document.getElementById('email').value.trim();
+    const senha = document.getElementById('senha').value;
+    const btn   = document.getElementById('btn-login');
+    if (!email || !senha) { showToast('Preencha e-mail e senha.', 'error'); return; }
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner-ring"></div>';
+    try {
+      await signIn(email, senha);
+    } catch (err) {
+      const msg = err.message.includes('Invalid login') ? 'E-mail ou senha incorretos.' : err.message;
+      showToast(msg, 'error');
+      btn.disabled = false;
+      btn.textContent = 'Entrar';
+    }
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') fazerLogin(); });
+
+  function abrirRecuperacao() { document.getElementById('modal-recuperacao').classList.add('open'); }
+  function fecharRecuperacao() { document.getElementById('modal-recuperacao').classList.remove('open'); }
+
+  async function enviarRecuperacao() {
+    const email = document.getElementById('email-recuperacao').value.trim();
+    if (!email) { showToast('Informe o e-mail.', 'error'); return; }
+    try {
+      await resetPassword(email);
+      showToast('Link enviado! Verifique seu e-mail.', 'success');
+      fecharRecuperacao();
+    } catch (err) { showToast(err.message, 'error'); }
+  }
+
+  // Fechar modal clicando fora
+  document.getElementById('modal-recuperacao').addEventListener('click', function(e) {
+    if (e.target === this) fecharRecuperacao();
+  });
+</script>
+</body>
+</html>

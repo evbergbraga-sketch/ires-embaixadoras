@@ -1494,19 +1494,19 @@ async function renderCapacitacao() {
       .cap-header-title { font-size:17px;font-weight:600;color:#2C1018;margin-bottom:16px; }
       .cap-modtag { font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#8B6050;padding:14px 0 8px;display:flex;align-items:center;gap:8px; }
       .cap-modtag::after { content:'';flex:1;height:.5px;background:#E8D9C5; }
-      .cap-aula-row { display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:.5px solid #E8D9C5;cursor:pointer; }
-      .cap-aula-row:last-child { border-bottom:none; }
-      .cap-thumb { width:84px;height:54px;border-radius:9px;flex-shrink:0;overflow:hidden;position:relative;background:#D9C5B0;display:flex;align-items:center;justify-content:center; }
+      .cap-aula-row { display:flex;flex-direction:column;background:#fff;border:.5px solid #E8D9C5;border-radius:12px;overflow:hidden;cursor:pointer;margin-bottom:12px; }
+      .cap-aula-row:last-child { margin-bottom:0; }
+      .cap-thumb { width:100%;aspect-ratio:16/9;flex-shrink:0;overflow:hidden;position:relative;background:#D9C5B0;display:flex;align-items:center;justify-content:center; }
       .cap-thumb img { width:100%;height:100%;object-fit:cover; }
-      .cap-thumb-placeholder { width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:8px;color:rgba(200,169,110,.7);background:linear-gradient(135deg,#3D0E20,#6B1A3A); }
+      .cap-thumb-placeholder { width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;letter-spacing:.05em;color:rgba(200,169,110,.8);background:linear-gradient(135deg,#3D0E20,#6B1A3A); }
       .cap-lock { position:absolute;inset:0;background:rgba(26,10,18,.72);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px; }
-      .cap-play { position:absolute;bottom:5px;right:5px;width:20px;height:20px;border-radius:50%;background:rgba(200,169,110,.92);display:flex;align-items:center;justify-content:center; }
-      .cap-play-tri { width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-left:6px solid #3D0E20;margin-left:1px; }
-      .cap-info { flex:1;min-width:0; }
-      .cap-badge { display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:600;padding:1px 7px;border-radius:999px;margin-bottom:3px;border:.5px solid transparent; }
-      .cap-title { font-size:12px;font-weight:600;color:#2C1018;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-      .cap-meta { font-size:10px;color:#8B6050;margin-top:2px; }
-      .cap-prog { height:2px;background:#E8D9C5;border-radius:99px;margin-top:5px;overflow:hidden; }
+      .cap-play { position:absolute;bottom:8px;right:8px;width:24px;height:24px;border-radius:50%;background:rgba(200,169,110,.92);display:flex;align-items:center;justify-content:center; }
+      .cap-play-tri { width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:8px solid #3D0E20;margin-left:2px; }
+      .cap-info { padding:10px 12px 12px; }
+      .cap-badge { display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:600;padding:2px 7px;border-radius:999px;margin-bottom:5px;border:.5px solid transparent; }
+      .cap-title { font-size:13px;font-weight:600;color:#2C1018;line-height:1.3; }
+      .cap-meta { font-size:11px;color:#8B6050;margin-top:3px; }
+      .cap-prog { height:2px;background:#E8D9C5;border-radius:99px;margin-top:6px;overflow:hidden; }
       .cap-prog-fill { height:100%;background:#C8A96E;border-radius:99px; }
 
       /* PLAYER */
@@ -1541,13 +1541,8 @@ async function renderCapacitacao() {
         .cap-player-wrap { position:relative;flex-direction:row;align-items:flex-start;min-height:500px; }
         .cap-player-left { flex:1;min-width:0; }
         .cap-player-right { width:280px;flex-shrink:0;border-left:.5px solid #E8D9C5;background:#fff;max-height:600px;overflow-y:auto; }
-        .cap-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px; }
-        .cap-aula-row { flex-direction:column;align-items:stretch;background:#fff;border:.5px solid #E8D9C5;border-radius:12px;overflow:hidden;padding:0; }
-        .cap-aula-row:last-child { border-bottom:.5px solid #E8D9C5; }
-        .cap-thumb { width:100%;height:auto;aspect-ratio:16/9;border-radius:0; }
-        .cap-info { padding:10px 12px 10px; }
-        .cap-title { white-space:normal; }
-        .cap-prog { margin-bottom:2px; }
+        .cap-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:16px; }
+        .cap-aula-row { margin-bottom:0; }
       }
     `;
     document.head.appendChild(style);

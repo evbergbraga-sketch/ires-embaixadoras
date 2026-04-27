@@ -304,7 +304,7 @@ async function renderInicio() {
           </div>
           <div>
             <div class="hero-card-name">Olá, ${nome} 👋</div>
-            <div class="hero-card-sub"><span class="hero-status-dot"></span>Embaixadora ativa</div>
+            <div class="hero-card-sub"><span class="hero-status-dot"></span>Embaixadora ${{bronze:'Bronze',prata:'Prata',ouro:'Ouro'}[_perfil.nivel||'bronze']||'Bronze'}</div>
           </div>
         </div>
         <button onclick="irAba('vitrine')" class="btn-primary-new">Ver vitrine →</button>

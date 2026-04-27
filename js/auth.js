@@ -191,12 +191,25 @@ async function toggleNotif(e) {
   const existing = document.getElementById('notif-dropdown');
   if (existing) { existing.remove(); return; }
 
-  const { data } = await _supabase
-    .from('messages')
-    .select('id,subject,body,created_at,type')
-    .eq('is_broadcast', true)
-    .order('created_at', { ascending: false })
-    .limit(4);
+  const perfil = window._perfilAtual || null;
+  const [{ data: avisosDrop }, { data: notifDrop }] = await Promise.all([
+    _supabase.from('messages')
+      .select('id,subject,body,created_at,type')
+      .eq('is_broadcast', true)
+      .order('created_at', { ascending: false })
+      .limit(3),
+    perfil ? _supabase.from('notifications')
+      .select('id,title,body,type,read_at,created_at')
+      .eq('user_id', perfil.id)
+      .eq('type', 'nivel')
+      .is('read_at', null)
+      .order('created_at', { ascending: false })
+      .limit(2) : Promise.resolve({ data: [] }),
+  ]);
+  const data = [
+    ...(notifDrop||[]).map(n => ({ id:n.id, subject:n.title, body:n.body, created_at:n.created_at, type:'nivel' })),
+    ...(avisosDrop||[]),
+  ];
 
   const dropdown = document.createElement('div');
   dropdown.id = 'notif-dropdown';
@@ -213,6 +226,7 @@ async function toggleNotif(e) {
     : `document.getElementById('notif-dropdown').remove(); if(typeof irAba==='function'){irAba('avisos')}else{window.location.href='painel.html#avisos'}`;
 
   const tipoIcone = (tipo) => {
+    if (tipo === 'nivel')   return `<span style="font-size:14px;line-height:1;">🏅</span>`;
     if (tipo === 'video')   return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8c5e38" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>`;
     if (tipo === 'produto') return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2d6645" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`;
     return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5c1a2e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;

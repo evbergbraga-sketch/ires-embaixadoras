@@ -11,6 +11,7 @@ let _abaAtiva  = 'painel';
   const ctx = await requireActive();
   if (!ctx) return;
   _perfil = ctx.profile;
+  window._perfilAtual = ctx.profile;
   await renderTopbar();
 
   const hash     = window.location.hash.replace('#', '');
@@ -63,6 +64,7 @@ async function renderInicio() {
     { data: produtos  },
     { data: modulos   },
     { data: progresso },
+    { data: notificacoes },
   ] = await Promise.all([
     _supabase.from('orders')
       .select('id,total,status,created_at')
@@ -87,6 +89,11 @@ async function renderInicio() {
     _supabase.from('lesson_progress')
       .select('lesson_id')
       .eq('reseller_id', _perfil.id),
+    _supabase.from('notifications')
+      .select('id,title,body,type,read_at,created_at')
+      .eq('user_id', _perfil.id)
+      .order('created_at', { ascending: false })
+      .limit(5),
   ]);
 
   const totalGasto = (pedidos || []).reduce((a, o) => a + Number(o.total), 0);
@@ -182,6 +189,28 @@ async function renderInicio() {
       </div>
     </div>
   ` : '';
+
+
+  // — Notificações de nível não lidas
+  const notifNivel = (notificacoes || []).filter(n => n.type === 'nivel' && !n.read_at);
+
+  // Marcar como lida em background
+  if (notifNivel.length) {
+    _supabase.from('notifications')
+      .update({ read_at: new Date().toISOString() })
+      .in('id', notifNivel.map(n => n.id))
+      .then(() => {});
+  }
+
+  const nivelBannerHTML = notifNivel.length ? notifNivel.map(n => `
+    <div style="background:linear-gradient(135deg,#3D0E20,#6B1A3A);border-radius:14px;padding:16px 18px;margin-bottom:14px;display:flex;align-items:flex-start;gap:14px;">
+      <div style="font-size:28px;flex-shrink:0;line-height:1;">${n.title.startsWith('🥇') ? '🥇' : n.title.startsWith('🥈') ? '🥈' : '🎉'}</div>
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:700;color:#C8A96E;margin-bottom:4px;">${s(n.title.replace(/^[🥇🥈🎉]\s*/,''))}</div>
+        <div style="font-size:12px;color:rgba(200,169,110,.75);line-height:1.5;">${s(n.body)}</div>
+      </div>
+    </div>
+  `).join('') : '';
 
   const metricsHTML = `
     <div class="metrics-home">
@@ -311,6 +340,7 @@ async function renderInicio() {
       </div>
       ${avisosHTML}
       ${produtosHTML}
+      ${nivelBannerHTML}
       ${metricsHTML}
       ${capHTML}
       ${pedidosHTML}

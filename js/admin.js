@@ -1448,7 +1448,25 @@ function abrirFormModulo(id) {
     <h3 style="font-size:16px;font-weight:800;margin-bottom:16px">${id?'Editar módulo':'Novo módulo'}</h3>
     <div class="form-group"><label>Título *</label><input type="text" id="mod-titulo" value="${s(mod?.title||'')||''}" placeholder="Ex: Técnicas de vendas"/></div>
     <div class="form-group"><label>Descrição</label><input type="text" id="mod-desc" value="${s(mod?.description||'')||''}"/></div>
-    <div class="form-group"><label>Foto de capa (URL)</label><input type="url" id="mod-cover" value="${s(mod?.cover_url||'')||''}" placeholder="https://..."/><div style="font-size:11px;color:var(--gray);margin-top:4px">Imagem que aparece como thumbnail do módulo</div></div>
+    <div class="form-group">
+      <label>Foto de capa do módulo</label>
+      <div style="font-size:11px;color:var(--gray);margin-bottom:6px">Use imagem <strong>1280×720px</strong> (proporção 16:9). Ela aparece como thumbnail do módulo.</div>
+      <div style="width:100%;aspect-ratio:16/9;background:var(--creme2);border:1.5px dashed var(--border);border-radius:10px;overflow:hidden;position:relative;margin-bottom:8px;display:flex;align-items:center;justify-content:center;" id="mod-cover-preview-wrap">
+        ${mod?.cover_url
+          ? `<img src="${s(mod.cover_url)}" style="width:100%;height:100%;object-fit:cover;display:block;" id="mod-cover-preview-img"/>`
+          : `<div id="mod-cover-preview-placeholder" style="text-align:center;color:var(--gray);font-size:12px;pointer-events:none;">
+               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="display:block;margin:0 auto 6px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+               Nenhuma imagem selecionada<br><span style="font-size:10px">Proporção 16:9</span>
+             </div>`
+        }
+        <div id="mod-cover-uploading" style="display:none;position:absolute;inset:0;background:rgba(255,255,255,.85);display:none;align-items:center;justify-content:center;"><div class="spinner"></div></div>
+      </div>
+      <input type="file" id="mod-cover-file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="_previewCover('mod')"/>
+      <input type="hidden" id="mod-cover" value="${s(mod?.cover_url||'')||''}"/>
+      <button type="button" onclick="document.getElementById('mod-cover-file').click()" style="width:100%;padding:8px;background:transparent;border:0.5px solid var(--border);border-radius:var(--radius-md);color:var(--pink);font-size:13px;cursor:pointer;">
+        ${mod?.cover_url ? '🔄 Trocar imagem' : '📷 Selecionar imagem'}
+      </button>
+    </div>
     <div class="form-group"><label>Ordem</label><input type="number" id="mod-order" value="${mod?.order||0}" min="0"/></div>
     <div style="display:flex;gap:10px;margin-top:4px">
       <button class="btn btn-outline" style="flex:1" onclick="fecharModal()">Cancelar</button>
@@ -1496,7 +1514,25 @@ function abrirFormAula(aulaId,moduloId) {
         <div class="form-group"><label>Duração (min)</label><input type="number" id="aula-dur" value="${a.duration_seconds?Math.ceil(a.duration_seconds/60):''}" min="1" placeholder="Ex: 12"/></div>
         <div class="form-group"><label>Ordem</label><input type="number" id="aula-order" value="${a.order||0}" min="0"/></div>
       </div>
-      <div class="form-group"><label>Foto de capa (URL)</label><input type="url" id="aula-cover" value="${s(a.cover_url||'')||''}" placeholder="https://..."/><div style="font-size:11px;color:var(--gray);margin-top:4px">Thumbnail da aula exibido no card</div></div>
+      <div class="form-group">
+        <label>Foto de capa da aula</label>
+        <div style="font-size:11px;color:var(--gray);margin-bottom:6px">Use imagem <strong>1280×720px</strong> (proporção 16:9). Aparece como thumbnail da aula.</div>
+        <div style="width:100%;aspect-ratio:16/9;background:var(--creme2);border:1.5px dashed var(--border);border-radius:10px;overflow:hidden;position:relative;margin-bottom:8px;display:flex;align-items:center;justify-content:center;" id="aula-cover-preview-wrap">
+          ${a.cover_url
+            ? `<img src="${s(a.cover_url)}" style="width:100%;height:100%;object-fit:cover;display:block;" id="aula-cover-preview-img"/>`
+            : `<div id="aula-cover-preview-placeholder" style="text-align:center;color:var(--gray);font-size:12px;pointer-events:none;">
+                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="display:block;margin:0 auto 6px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                 Nenhuma imagem selecionada<br><span style="font-size:10px">Proporção 16:9</span>
+               </div>`
+          }
+          <div id="aula-cover-uploading" style="display:none;position:absolute;inset:0;background:rgba(255,255,255,.85);align-items:center;justify-content:center;"><div class="spinner"></div></div>
+        </div>
+        <input type="file" id="aula-cover-file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="_previewCover('aula')"/>
+        <input type="hidden" id="aula-cover" value="${s(a.cover_url||'')||''}"/>
+        <button type="button" onclick="document.getElementById('aula-cover-file').click()" style="width:100%;padding:8px;background:transparent;border:0.5px solid var(--border);border-radius:var(--radius-md);color:var(--pink);font-size:13px;cursor:pointer;">
+          ${a.cover_url ? '🔄 Trocar imagem' : '📷 Selecionar imagem'}
+        </button>
+      </div>
       <div class="form-group"><label>Nível necessário</label><select id="aula-nivel"><option value="bronze" ${(!a.nivel||a.nivel==='bronze')?'selected':''}>Bronze — disponível para todos</option><option value="prata" ${a.nivel==='prata'?'selected':''}>Prata — a partir de 5 pedidos pagos</option><option value="ouro" ${a.nivel==='ouro'?'selected':''}>Ouro — a partir de 15 pedidos pagos</option></select></div>
       <div class="form-group">
         <button type="button" onclick="_previewYoutubeAdmin()" style="width:100%;padding:8px;background:transparent;border:0.5px solid var(--border);border-radius:var(--radius-md);color:var(--pink);font-size:13px;cursor:pointer">▶ Pré-visualizar</button>
@@ -1516,6 +1552,53 @@ function _previewYoutubeAdmin() {
   if(!match){showToast('URL inválida.','error');return;}
   document.getElementById('aula-iframe').src=`https://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1`;
   document.getElementById('aula-preview').style.display='block';
+}
+
+
+// ── Cover image: preview + upload to Supabase Storage ──────────────────
+function _previewCover(prefix) {
+  const fileInput = document.getElementById(prefix + '-cover-file');
+  const file = fileInput?.files?.[0];
+  if (!file) return;
+
+  // Show preview immediately using local URL
+  const localUrl = URL.createObjectURL(file);
+  const wrap = document.getElementById(prefix + '-cover-preview-wrap');
+  if (wrap) {
+    wrap.innerHTML = `<img src="${localUrl}" style="width:100%;height:100%;object-fit:cover;display:block;"/>
+      <div id="${prefix}-cover-uploading" style="display:none;position:absolute;inset:0;background:rgba(255,255,255,.85);align-items:center;justify-content:center;"><div class="spinner"></div></div>`;
+  }
+
+  // Upload to Supabase Storage
+  _uploadCover(prefix, file);
+}
+
+async function _uploadCover(prefix, file) {
+  const uploading = document.getElementById(prefix + '-cover-uploading');
+  if (uploading) uploading.style.display = 'flex';
+
+  const ext  = file.name.split('.').pop().toLowerCase();
+  const path = `${prefix}s/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+
+  const { data, error } = await _supabase.storage
+    .from('capas')
+    .upload(path, file, { upsert: true, contentType: file.type });
+
+  if (uploading) uploading.style.display = 'none';
+
+  if (error) {
+    showToast('Erro no upload: ' + error.message, 'error');
+    return;
+  }
+
+  const { data: urlData } = _supabase.storage.from('capas').getPublicUrl(path);
+  const publicUrl = urlData?.publicUrl || '';
+
+  // Save URL in hidden input
+  const hiddenInput = document.getElementById(prefix + '-cover');
+  if (hiddenInput) hiddenInput.value = publicUrl;
+
+  showToast('Imagem enviada!', 'success');
 }
 
 async function salvarAula(aulaId,moduloId) {

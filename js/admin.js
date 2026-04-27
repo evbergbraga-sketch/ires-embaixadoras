@@ -1446,8 +1446,9 @@ function abrirFormModulo(id) {
   abrirModal(`
     <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
     <h3 style="font-size:16px;font-weight:800;margin-bottom:16px">${id?'Editar módulo':'Novo módulo'}</h3>
-    <div class="form-group"><label>Título *</label><input type="text" id="mod-titulo" value="${mod?.title||''}" placeholder="Ex: Técnicas de vendas"/></div>
-    <div class="form-group"><label>Descrição</label><input type="text" id="mod-desc" value="${mod?.description||''}"/></div>
+    <div class="form-group"><label>Título *</label><input type="text" id="mod-titulo" value="${s(mod?.title||'')||''}" placeholder="Ex: Técnicas de vendas"/></div>
+    <div class="form-group"><label>Descrição</label><input type="text" id="mod-desc" value="${s(mod?.description||'')||''}"/></div>
+    <div class="form-group"><label>Foto de capa (URL)</label><input type="url" id="mod-cover" value="${s(mod?.cover_url||'')||''}" placeholder="https://..."/><div style="font-size:11px;color:var(--gray);margin-top:4px">Imagem que aparece como thumbnail do módulo</div></div>
     <div class="form-group"><label>Ordem</label><input type="number" id="mod-order" value="${mod?.order||0}" min="0"/></div>
     <div style="display:flex;gap:10px;margin-top:4px">
       <button class="btn btn-outline" style="flex:1" onclick="fecharModal()">Cancelar</button>
@@ -1459,11 +1460,12 @@ function abrirFormModulo(id) {
 async function salvarModulo(id) {
   const titulo=document.getElementById('mod-titulo').value.trim();
   const desc=document.getElementById('mod-desc').value.trim();
+  const cover=document.getElementById('mod-cover').value.trim()||null;
   const order=parseInt(document.getElementById('mod-order').value)||0;
   if(!titulo){showToast('Informe o título.','error');return;}
   const btn=document.getElementById('btn-mod');
   btn.disabled=true;btn.innerHTML='<div class="spinner" style="margin:0 auto"></div>';
-  const{error}=id?await _supabase.from('modules').update({title:titulo,description:desc||null,order}).eq('id',id):await _supabase.from('modules').insert({title:titulo,description:desc||null,order,is_active:true});
+  const{error}=id?await _supabase.from('modules').update({title:titulo,description:desc||null,cover_url:cover,order}).eq('id',id):await _supabase.from('modules').insert({title:titulo,description:desc||null,cover_url:cover,order,is_active:true});
   if(error){showToast('Erro: '+error.message,'error');btn.disabled=false;btn.textContent='Salvar';return;}
   showToast(id?'Módulo atualizado!':'Módulo criado!','success');
   fecharModal();renderCapacitacaoAdmin();
@@ -1494,6 +1496,8 @@ function abrirFormAula(aulaId,moduloId) {
         <div class="form-group"><label>Duração (min)</label><input type="number" id="aula-dur" value="${a.duration_seconds?Math.ceil(a.duration_seconds/60):''}" min="1" placeholder="Ex: 12"/></div>
         <div class="form-group"><label>Ordem</label><input type="number" id="aula-order" value="${a.order||0}" min="0"/></div>
       </div>
+      <div class="form-group"><label>Foto de capa (URL)</label><input type="url" id="aula-cover" value="${s(a.cover_url||'')||''}" placeholder="https://..."/><div style="font-size:11px;color:var(--gray);margin-top:4px">Thumbnail da aula exibido no card</div></div>
+      <div class="form-group"><label>Nível necessário</label><select id="aula-nivel"><option value="bronze" ${(!a.nivel||a.nivel==='bronze')?'selected':''}>Bronze — disponível para todos</option><option value="prata" ${a.nivel==='prata'?'selected':''}>Prata — a partir de 5 pedidos pagos</option><option value="ouro" ${a.nivel==='ouro'?'selected':''}>Ouro — a partir de 15 pedidos pagos</option></select></div>
       <div class="form-group">
         <button type="button" onclick="_previewYoutubeAdmin()" style="width:100%;padding:8px;background:transparent;border:0.5px solid var(--border);border-radius:var(--radius-md);color:var(--pink);font-size:13px;cursor:pointer">▶ Pré-visualizar</button>
         <div id="aula-preview" style="margin-top:10px;display:none;border-radius:10px;overflow:hidden"><div style="position:relative;padding-bottom:56.25%;height:0;background:#000"><iframe id="aula-iframe" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none" allowfullscreen></iframe></div></div>
@@ -1520,13 +1524,15 @@ async function salvarAula(aulaId,moduloId) {
   const durMin=parseInt(document.getElementById('aula-dur').value)||0;
   const order=parseInt(document.getElementById('aula-order').value)||0;
   const desc=document.getElementById('aula-desc').value.trim();
+  const coverAula=(document.getElementById('aula-cover')?.value||'').trim()||null;
+  const nivelAula=document.getElementById('aula-nivel')?.value||'bronze';
   if(!titulo){showToast('Informe o título.','error');return;}
   if(!url){showToast('Informe a URL.','error');return;}
   const match=url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/);
   if(!match){showToast('URL do YouTube inválida.','error');return;}
   const btn=document.getElementById('btn-aula');
   btn.disabled=true;btn.innerHTML='<div class="spinner" style="margin:0 auto"></div>';
-  const payload={title:titulo,description:desc||null,video_url:url,duration_seconds:durMin*60,order,module_id:moduloId};
+  const payload={title:titulo,description:desc||null,video_url:url,duration_seconds:durMin*60,order,module_id:moduloId,cover_url:coverAula,nivel:nivelAula};
   const{error}=aulaId?await _supabase.from('lessons').update(payload).eq('id',aulaId):await _supabase.from('lessons').insert({...payload,is_active:true});
   if(error){showToast('Erro: '+error.message,'error');btn.disabled=false;btn.textContent='Salvar aula';return;}
   showToast(aulaId?'Aula atualizada!':'Aula criada!','success');

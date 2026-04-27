@@ -1368,177 +1368,332 @@ function _abrirPreviewCriativo(id) {
 // CAPACITAÇÃO
 // ════════════════════════════════════════════
 async function renderCapacitacao() {
+  const NIVEL_PRATA = 5;
+  const NIVEL_OURO  = 15;
+
+  const meuNivel = _perfil.nivel || 'bronze';
+
+  const ORDEM_NIVEL = { bronze: 0, prata: 1, ouro: 2 };
+
+  function nivelLiberado(nivelAula) {
+    return ORDEM_NIVEL[meuNivel] >= ORDEM_NIVEL[nivelAula || 'bronze'];
+  }
+
+  function nivelLabel(n) {
+    return { bronze: 'Bronze', prata: 'Prata', ouro: 'Ouro' }[n] || 'Bronze';
+  }
+
+  function nivelCor(n) {
+    return {
+      bronze: { bg: '#FFF4E6', text: '#7A4A1A', border: '#CD7F32', dot: '#CD7F32' },
+      prata:  { bg: '#F4F4F4', text: '#444444', border: '#A8A9AD', dot: '#A8A9AD' },
+      ouro:   { bg: '#FFFBE6', text: '#6B4C1A', border: '#C8A96E', dot: '#C8A96E' },
+    }[n] || { bg: '#FFF4E6', text: '#7A4A1A', border: '#CD7F32', dot: '#CD7F32' };
+  }
+
+  function proximoNivel() {
+    if (meuNivel === 'bronze') return { nome: 'Prata', faltam: NIVEL_PRATA };
+    if (meuNivel === 'prata')  return { nome: 'Ouro',  faltam: NIVEL_OURO };
+    return null;
+  }
+
   document.getElementById('conteudo').innerHTML = `
-    <div style="margin-bottom:24px">
-      <h2 style="font-size:20px;font-weight:700;color:var(--nb-text-hi)">Capacitação</h2>
-      <p style="font-size:13px;color:var(--nb-text-low);margin-top:3px">Aprenda a vender mais com os treinamentos IRES</p>
-    </div>
     <div id="loading-cap" class="loading"><div class="spinner"></div> Carregando...</div>
     <div id="conteudo-cap"></div>
   `;
 
-  // Busca módulos + aulas + progresso da embaixadora
   const [
     { data: modulos },
     { data: progresso },
+    { data: pedidosPagos },
   ] = await Promise.all([
     _supabase
       .from('modules')
-      .select('*, lessons(id,title,description,video_url,duration_seconds,"order") ')
+      .select('id, title, description, "order", cover_url, lessons(id,title,description,video_url,duration_seconds,"order",cover_url,nivel)')
       .eq('is_active', true)
       .order('"order"', { ascending: true }),
     _supabase
       .from('lesson_progress')
       .select('lesson_id')
       .eq('reseller_id', _perfil.id),
+    _supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('reseller_id', _perfil.id)
+      .eq('status', 'paid'),
   ]);
 
   document.getElementById('loading-cap').style.display = 'none';
 
-  const concluidas = new Set((progresso || []).map(p => p.lesson_id));
-  const totalAulas = (modulos || []).reduce((a, m) => a + (m.lessons?.length || 0), 0);
-  const totalConc  = concluidas.size;
-  const pct        = totalAulas ? Math.round((totalConc / totalAulas) * 100) : 0;
+  const concluidas  = new Set((progresso || []).map(p => p.lesson_id));
+  const totalPagos  = pedidosPagos?.length ?? 0;
+  const prox        = proximoNivel();
+  const cor         = nivelCor(meuNivel);
+
+  // — Banner de nível
+  const pctNivel = prox
+    ? Math.min(100, Math.round((totalPagos / prox.faltam) * 100))
+    : 100;
+
+  const bannerNivel = `
+    <div style="background:#fff;border:0.5px solid ${cor.border}40;border-radius:14px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:14px;">
+      <div style="width:44px;height:44px;border-radius:50%;background:${cor.bg};border:2px solid ${cor.border};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:${cor.text};flex-shrink:0;text-align:center;line-height:1.2;">${nivelLabel(meuNivel)}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;color:#2C1018;margin-bottom:2px;">Nível ${nivelLabel(meuNivel)}</div>
+        <div style="font-size:11px;color:#8B6050;">${prox ? `${totalPagos} de ${prox.faltam} pedidos para o ${prox.nome}` : 'Nível máximo atingido! 🏆'}</div>
+        ${prox ? `<div style="margin-top:6px;height:3px;background:#EDD9C0;border-radius:99px;overflow:hidden;"><div style="height:100%;width:${pctNivel}%;background:${cor.dot};border-radius:99px;"></div></div>` : ''}
+      </div>
+    </div>
+  `;
 
   if (!modulos?.length) {
-    document.getElementById('conteudo-cap').innerHTML = `
+    document.getElementById('conteudo-cap').innerHTML = bannerNivel + `
       <div class="empty-state">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--gray)" stroke-width="1.5">
-          <polygon points="23 7 16 12 23 17 23 7"/>
-          <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-        </svg>
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--gray)" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
         <p>Nenhum treinamento disponível ainda.<br>Em breve!</p>
       </div>
     `;
     return;
   }
 
-  // Progresso geral
-  let html = `
-    <div style="background:var(--nb-card);border:0.5px solid var(--nb-border-s);border-radius:14px;padding:18px 20px;margin-bottom:24px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div style="font-size:14px;font-weight:600;color:var(--nb-text-hi)">Seu progresso geral</div>
-        <div style="font-size:13px;font-weight:700;color:var(--nb-burg)">${totalConc} de ${totalAulas} aulas</div>
-      </div>
-      <div style="height:6px;background:var(--nb-inset);border-radius:6px;overflow:hidden">
-        <div style="height:6px;background:var(--nb-burg);border-radius:6px;width:${pct}%;transition:width .4s"></div>
-      </div>
-      <div style="font-size:12px;color:var(--nb-text-low);margin-top:6px">${pct}% concluído</div>
-    </div>
-  `;
+  // — Estilo mobile-first (injetado uma vez)
+  if (!document.getElementById('cap-styles')) {
+    const style = document.createElement('style');
+    style.id = 'cap-styles';
+    style.textContent = `
+      .cap-header-title { font-size:17px;font-weight:600;color:#2C1018;margin-bottom:16px; }
+      .cap-modtag { font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#8B6050;padding:14px 0 8px;display:flex;align-items:center;gap:8px; }
+      .cap-modtag::after { content:'';flex:1;height:.5px;background:#E8D9C5; }
+      .cap-aula-row { display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:.5px solid #E8D9C5;cursor:pointer; }
+      .cap-aula-row:last-child { border-bottom:none; }
+      .cap-thumb { width:84px;height:54px;border-radius:9px;flex-shrink:0;overflow:hidden;position:relative;background:#D9C5B0;display:flex;align-items:center;justify-content:center; }
+      .cap-thumb img { width:100%;height:100%;object-fit:cover; }
+      .cap-thumb-placeholder { width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:8px;color:rgba(200,169,110,.7);background:linear-gradient(135deg,#3D0E20,#6B1A3A); }
+      .cap-lock { position:absolute;inset:0;background:rgba(26,10,18,.72);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px; }
+      .cap-play { position:absolute;bottom:5px;right:5px;width:20px;height:20px;border-radius:50%;background:rgba(200,169,110,.92);display:flex;align-items:center;justify-content:center; }
+      .cap-play-tri { width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-left:6px solid #3D0E20;margin-left:1px; }
+      .cap-info { flex:1;min-width:0; }
+      .cap-badge { display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:600;padding:1px 7px;border-radius:999px;margin-bottom:3px;border:.5px solid transparent; }
+      .cap-title { font-size:12px;font-weight:600;color:#2C1018;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+      .cap-meta { font-size:10px;color:#8B6050;margin-top:2px; }
+      .cap-prog { height:2px;background:#E8D9C5;border-radius:99px;margin-top:5px;overflow:hidden; }
+      .cap-prog-fill { height:100%;background:#C8A96E;border-radius:99px; }
 
-  // Módulos
+      /* PLAYER */
+      .cap-player-wrap { position:fixed;inset:0;z-index:9999;background:#F5EFE6;display:flex;flex-direction:column;overflow-y:auto; }
+      .cap-player-header { background:#3D0E20;padding:14px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0; }
+      .cap-back { width:30px;height:30px;border-radius:50%;background:rgba(200,169,110,.15);border:.5px solid rgba(200,169,110,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0; }
+      .cap-back-tri { width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-right:6px solid #C8A96E;margin-right:2px; }
+      .cap-player-modtitle { font-size:12px;font-weight:600;color:#C8A96E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+      .cap-video-wrap { width:100%;background:#0d0508;flex-shrink:0; }
+      .cap-video-inner { position:relative;padding-bottom:56.25%;height:0; }
+      .cap-video-inner iframe { position:absolute;top:0;left:0;width:100%;height:100%;border:none; }
+      .cap-video-prog { height:3px;background:rgba(200,169,110,.2); }
+      .cap-video-pfill { height:100%;width:0;background:#C8A96E; }
+      .cap-aula-detail { background:#fff;padding:14px 16px;border-bottom:.5px solid #E8D9C5; }
+      .cap-aula-detail-mod { font-size:9px;color:#8B6050;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px; }
+      .cap-aula-detail-title { font-size:15px;font-weight:600;color:#2C1018;line-height:1.3;margin-bottom:10px; }
+      .cap-aula-actions { display:flex;gap:14px; }
+      .cap-aula-action { display:flex;align-items:center;gap:5px;font-size:11px;color:#6B1A3A;cursor:pointer;background:none;border:none;font-family:inherit;padding:0; }
+      .cap-playlist { padding:0 16px;background:#F5EFE6; }
+      .cap-playlist-title { font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;padding:12px 0 8px;border-bottom:.5px solid #E8D9C5; }
+      .cap-pl-item { display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:.5px solid #E8D9C5;cursor:pointer; }
+      .cap-pl-num { font-size:10px;color:#8B6050;width:16px;text-align:center;flex-shrink:0; }
+      .cap-pl-thumb { width:56px;height:36px;border-radius:6px;overflow:hidden;position:relative;flex-shrink:0;background:#D9C5B0;display:flex;align-items:center;justify-content:center; }
+      .cap-pl-thumb img { width:100%;height:100%;object-fit:cover; }
+      .cap-pl-info { flex:1;min-width:0; }
+      .cap-pl-title { font-size:11px;font-weight:600;color:#2C1018;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+      .cap-pl-meta { font-size:10px;color:#8B6050;margin-top:1px; }
+      .cap-pl-check { width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+
+      /* Desktop */
+      @media (min-width: 768px) {
+        .cap-player-wrap { position:relative;flex-direction:row;align-items:flex-start;min-height:500px; }
+        .cap-player-left { flex:1;min-width:0; }
+        .cap-player-right { width:280px;flex-shrink:0;border-left:.5px solid #E8D9C5;background:#fff;max-height:600px;overflow-y:auto; }
+        .cap-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px; }
+        .cap-aula-row { flex-direction:column;align-items:stretch;background:#fff;border:.5px solid #E8D9C5;border-radius:12px;overflow:hidden;padding:0; }
+        .cap-aula-row:last-child { border-bottom:.5px solid #E8D9C5; }
+        .cap-thumb { width:100%;height:auto;aspect-ratio:16/9;border-radius:0; }
+        .cap-info { padding:10px 12px 10px; }
+        .cap-title { white-space:normal; }
+        .cap-prog { margin-bottom:2px; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // — Render lista
+  let html = bannerNivel;
+
   modulos.forEach((mod, mi) => {
     const aulas = (mod.lessons || []).sort((a, b) => a.order - b.order);
     const modConc = aulas.filter(a => concluidas.has(a.id)).length;
-    const modPct  = aulas.length ? Math.round((modConc / aulas.length) * 100) : 0;
 
-    html += `
-      <div style="margin-bottom:20px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div>
-            <div style="font-size:15px;font-weight:600;color:var(--nb-text-hi)">
-              Módulo ${mi + 1} — ${mod.title}
+    html += `<div class="cap-modtag">Módulo ${String(mi+1).padStart(2,'0')} · ${s(mod.title)}</div>`;
+    html += `<div class="cap-grid" style="margin-bottom:8px">`;
+
+    aulas.forEach((aula, ai) => {
+      const feita     = concluidas.has(aula.id);
+      const liberada  = nivelLiberado(aula.nivel);
+      const durMin    = aula.duration_seconds ? Math.ceil(aula.duration_seconds / 60) : null;
+      const nivelAula = aula.nivel || 'bronze';
+      const cor       = nivelCor(nivelAula);
+      const pct       = feita ? 100 : 0;
+
+      const thumb = aula.cover_url || mod.cover_url || '';
+
+      const thumbHtml = thumb
+        ? `<img src="${s(thumb)}" alt="${s(aula.title)}" loading="lazy"/>`
+        : `<div class="cap-thumb-placeholder">ires emb.</div>`;
+
+      const lockHtml = !liberada ? `
+        <div class="cap-lock">
+          <svg width="13" height="15" viewBox="0 0 12 14" fill="none"><rect x="1" y="6" width="10" height="8" rx="1.5" fill="none" stroke="#C8A96E" stroke-width="1.2"/><path d="M3 6V4a3 3 0 016 0v2" stroke="#C8A96E" stroke-width="1.2" stroke-linecap="round"/></svg>
+          <div style="font-size:9px;color:rgba(200,169,110,.8);text-align:center;padding:0 6px;">Nível ${nivelLabel(nivelAula)}</div>
+        </div>` : '';
+
+      const playHtml = liberada ? `<div class="cap-play"><div class="cap-play-tri"></div></div>` : '';
+
+      html += `
+        <div class="cap-aula-row" ${liberada ? `onclick="_abrirPlayer('${aula.id}')"` : 'style="cursor:default;opacity:.7"'}>
+          <div class="cap-thumb">
+            ${thumbHtml}
+            ${lockHtml}
+            ${playHtml}
+          </div>
+          <div class="cap-info">
+            <div class="cap-badge" style="background:${cor.bg};color:${cor.text};border-color:${cor.border};">
+              <div style="width:5px;height:5px;border-radius:50%;background:${cor.dot};flex-shrink:0;"></div>
+              ${nivelLabel(nivelAula)}
             </div>
-            ${mod.description ? `<div style="font-size:12px;color:var(--nb-text-low);margin-top:2px">${mod.description}</div>` : ''}
-          </div>
-          <div style="font-size:12px;color:var(--nb-text-low);white-space:nowrap;margin-left:16px">
-            ${modConc}/${aulas.length} · ${modPct}%
+            <div class="cap-title">${s(aula.title)}</div>
+            <div class="cap-meta">${durMin ? durMin + ' min' : ''}${!liberada ? ' · Disponível no ' + nivelLabel(nivelAula) : ''}</div>
+            ${liberada ? `<div class="cap-prog"><div class="cap-prog-fill" style="width:${pct}%"></div></div>` : ''}
           </div>
         </div>
+      `;
+    });
 
-        <div style="display:flex;flex-direction:column;gap:10px">
-          ${aulas.map((aula, ai) => {
-            const feita    = concluidas.has(aula.id);
-            const durMin   = aula.duration_seconds ? Math.ceil(aula.duration_seconds / 60) : null;
-            return `
-              <div style="background:var(--nb-card);border:0.5px solid ${feita ? 'rgba(76,175,122,0.3)' : 'var(--nb-border-s)'};
-                border-radius:12px;overflow:hidden;transition:border-color .15s"
-                id="aula-card-${aula.id}">
-
-                <!-- Header da aula -->
-                <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer"
-                  onclick="_toggleAula('${aula.id}')">
-
-                  <!-- Ícone status -->
-                  <div style="width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-                    background:${feita ? 'var(--nb-green-dim)' : 'var(--nb-inset)'};
-                    border:0.5px solid ${feita ? 'var(--nb-green-bdr)' : 'var(--nb-border-s)'}">
-                    ${feita
-                      ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--nb-green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
-                      : `<svg width="12" height="12" viewBox="0 0 24 24" fill="var(--nb-text-low)" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>`
-                    }
-                  </div>
-
-                  <div style="flex:1;min-width:0">
-                    <div style="font-size:13px;font-weight:600;color:var(--nb-text-hi)">
-                      ${ai + 1}. ${aula.title}
-                    </div>
-                    ${durMin ? `<div style="font-size:11px;color:var(--nb-text-low);margin-top:2px">${durMin} min</div>` : ''}
-                  </div>
-
-                  <svg id="chevron-${aula.id}" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="var(--nb-text-low)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    style="flex-shrink:0;transition:transform .2s">
-                    <polyline points="6 9 12 15 18 9"/>
-                  </svg>
-                </div>
-
-                <!-- Player (expandível) -->
-                <div id="player-${aula.id}" style="display:none;padding:0 16px 16px">
-                  ${aula.description ? `<p style="font-size:13px;color:var(--nb-text-mid);margin-bottom:12px;line-height:1.6">${aula.description}</p>` : ''}
-
-                  <div style="position:relative;padding-bottom:56.25%;height:0;border-radius:10px;overflow:hidden;background:#000">
-                    <iframe
-                      src="${_youtubeEmbedUrl(aula.video_url)}"
-                      style="position:absolute;top:0;left:0;width:100%;height:100%;border:none"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowfullscreen
-                      loading="lazy">
-                    </iframe>
-                  </div>
-
-                  ${!feita ? `
-                    <button onclick="_marcarConcluida('${aula.id}')"
-                      style="margin-top:12px;width:100%;padding:10px;border-radius:9px;
-                        background:var(--nb-green-dim);border:0.5px solid var(--nb-green-bdr);
-                        color:var(--nb-green);font-size:13px;font-weight:600;cursor:pointer;
-                        font-family:'DM Sans',sans-serif;transition:opacity .15s"
-                      onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
-                      ✓ Marcar como concluída
-                    </button>
-                  ` : `
-                    <div style="margin-top:12px;text-align:center;font-size:12px;color:var(--nb-green)">
-                      ✓ Aula concluída
-                    </div>
-                  `}
-                </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      </div>
-    `;
+    html += `</div>`;
   });
 
   document.getElementById('conteudo-cap').innerHTML = html;
+
+  // — Guarda modulos no escopo para o player
+  window._capModulos   = modulos;
+  window._capConcluidas = concluidas;
 }
 
-function _youtubeEmbedUrl(url) {
-  if (!url) return '';
-  // Aceita: youtu.be/ID, youtube.com/watch?v=ID, youtube.com/embed/ID
-  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/);
-  if (match) return `https://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1`;
-  return url; // fallback — retorna a URL original
-}
+function _abrirPlayer(aulaId) {
+  const modulos   = window._capModulos || [];
+  const concluidas = window._capConcluidas || new Set();
 
-function _toggleAula(id) {
-  const player  = document.getElementById(`player-${id}`);
-  const chevron = document.getElementById(`chevron-${id}`);
-  if (!player) return;
-  const aberto = player.style.display !== 'none';
-  player.style.display  = aberto ? 'none' : 'block';
-  if (chevron) chevron.style.transform = aberto ? 'rotate(0deg)' : 'rotate(180deg)';
+  let aulaAtual = null;
+  let modAtual  = null;
+
+  for (const mod of modulos) {
+    const found = (mod.lessons || []).find(a => a.id === aulaId);
+    if (found) { aulaAtual = found; modAtual = mod; break; }
+  }
+  if (!aulaAtual) return;
+
+  const aulas     = (modAtual.lessons || []).sort((a, b) => a.order - b.order);
+  const durMin    = aulaAtual.duration_seconds ? Math.ceil(aulaAtual.duration_seconds / 60) : null;
+  const feita     = concluidas.has(aulaAtual.id);
+  const idxAtual  = aulas.findIndex(a => a.id === aulaId);
+
+  function nivelCor2(n) {
+    return {
+      bronze: { bg:'#FFF4E6', text:'#7A4A1A', border:'#CD7F32', dot:'#CD7F32' },
+      prata:  { bg:'#F4F4F4', text:'#444444', border:'#A8A9AD', dot:'#A8A9AD' },
+      ouro:   { bg:'#FFFBE6', text:'#6B4C1A', border:'#C8A96E', dot:'#C8A96E' },
+    }[n] || { bg:'#FFF4E6', text:'#7A4A1A', border:'#CD7F32', dot:'#CD7F32' };
+  }
+  function nivelLabel2(n) { return {bronze:'Bronze',prata:'Prata',ouro:'Ouro'}[n]||'Bronze'; }
+
+  const embedUrl = _youtubeEmbedUrl(aulaAtual.video_url);
+
+  const playlistHtml = aulas.map((a, i) => {
+    const aCor   = nivelCor2(a.nivel || 'bronze');
+    const aFeita = concluidas.has(a.id);
+    const isNow  = a.id === aulaId;
+    const thumb  = a.cover_url || modAtual.cover_url || '';
+
+    return `
+      <div class="cap-pl-item" onclick="_abrirPlayer('${a.id}')">
+        <div class="cap-pl-num" style="${isNow ? 'color:#C8A96E;font-weight:700;' : ''}">${isNow ? '▶' : i+1}</div>
+        <div class="cap-pl-thumb">
+          ${thumb ? `<img src="${s(thumb)}" loading="lazy"/>` : `<div style="width:100%;height:100%;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:center;justify-content:center;font-size:7px;color:rgba(200,169,110,.6)">ires</div>`}
+        </div>
+        <div class="cap-pl-info">
+          <div class="cap-pl-title" style="${isNow ? 'color:#C8A96E;' : ''}">${s(a.title)}</div>
+          <div class="cap-pl-meta">${a.duration_seconds ? Math.ceil(a.duration_seconds/60)+' min' : ''}</div>
+        </div>
+        <div class="cap-pl-check" style="${aFeita ? 'background:rgba(200,169,110,.15);border:1px solid #C8A96E;color:#C8A96E;font-size:9px;' : 'border:1px solid #E8D9C5;'}">${aFeita ? '✓' : ''}</div>
+      </div>
+    `;
+  }).join('');
+
+  const proximaAula = idxAtual < aulas.length - 1 ? aulas[idxAtual + 1] : null;
+
+  const playerHtml = `
+    <div class="cap-player-wrap" id="cap-player-overlay">
+      <div class="cap-player-left" style="flex:1;min-width:0;">
+        <div class="cap-player-header">
+          <div class="cap-back" onclick="document.getElementById('cap-player-overlay').remove()">
+            <div class="cap-back-tri"></div>
+          </div>
+          <div class="cap-player-modtitle">Módulo ${String(modulos.indexOf(modAtual)+1).padStart(2,'0')} · ${s(modAtual.title)}</div>
+        </div>
+
+        <div class="cap-video-wrap">
+          <div class="cap-video-inner">
+            <iframe src="${embedUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+          </div>
+        </div>
+        <div class="cap-video-prog"><div class="cap-video-pfill"></div></div>
+
+        <div class="cap-aula-detail">
+          <div class="cap-aula-detail-mod">Módulo ${modulos.indexOf(modAtual)+1} · Aula ${idxAtual+1}</div>
+          <div class="cap-aula-detail-title">${s(aulaAtual.title)}</div>
+          ${aulaAtual.description ? `<p style="font-size:12px;color:#8B6050;margin-bottom:10px;line-height:1.6">${s(aulaAtual.description)}</p>` : ''}
+          <div class="cap-aula-actions">
+            ${!feita ? `
+              <button class="cap-aula-action" onclick="_marcarConcluida('${aulaAtual.id}')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Marcar como concluída
+              </button>
+            ` : `
+              <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:#5A8A5A;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Concluída
+              </span>
+            `}
+            ${proximaAula ? `
+              <button class="cap-aula-action" onclick="_abrirPlayer('${proximaAula.id}')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                Próxima aula
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+
+      <div class="cap-player-right">
+        <div class="cap-playlist" style="padding:0 14px;">
+          <div class="cap-playlist-title">Aulas do módulo</div>
+          ${playlistHtml}
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Remove player anterior se existir
+  const old = document.getElementById('cap-player-overlay');
+  if (old) old.remove();
+
+  document.body.insertAdjacentHTML('beforeend', playerHtml);
 }
 
 async function _marcarConcluida(lessonId) {
@@ -1548,5 +1703,13 @@ async function _marcarConcluida(lessonId) {
 
   if (error) { showToast('Erro ao salvar progresso.', 'error'); return; }
   showToast('Aula concluída! 🎉', 'success');
-  renderCapacitacao(); // re-renderiza com progresso atualizado
+
+  // Atualiza local sem re-buscar
+  if (window._capConcluidas) window._capConcluidas.add(lessonId);
+
+  // Reabre o player na mesma aula com estado atualizado
+  _abrirPlayer(lessonId);
+
+  // Re-renderiza a lista em background
+  renderCapacitacao();
 }

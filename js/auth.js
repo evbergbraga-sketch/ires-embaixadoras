@@ -45,7 +45,7 @@ async function signIn(email, password) {
   const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
   // SEC-008: mensagem genérica — não revela se o e-mail existe ou não
   if (error) throw new Error('E-mail ou senha inválidos.');
-  const { data: profile } = await _supabase.from('profiles').select('role, status, full_name').eq('id', data.user.id).single();
+  const { data: profile } = await _supabase.from('profiles').select('role, status, full_name, nivel').eq('id', data.user.id).single();
   if (!profile) throw new Error('Perfil não encontrado.');
   if (profile.role === 'admin') { window.location.href = 'admin.html'; return; }
   if (profile.status === 'pending') { window.location.href = 'aguardando.html'; return; }

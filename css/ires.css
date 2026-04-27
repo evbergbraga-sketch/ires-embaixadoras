@@ -690,9 +690,12 @@ select option { background: var(--creme); color: var(--bord-esc); }
   .order-date { font-size: 10px; }
   .order-items-preview { font-size: 11px; width: 100%; order: 3; color: var(--gray); }
   .order-total { font-size: 13px; }
-  .topbar-right { gap: 8px; }
-  .topbar-right .btn { font-size: 11px; padding: 5px 10px; }
-  #cart-link { padding: 4px 10px !important; font-size: 11px; }
+  /* Mobile topbar: só sino + avatar, sem Carrinho e sem Sair */
+  .topbar-right { gap: 6px; }
+  #cart-link { display: none !important; }
+  .topbar-right [onclick*="signOut"],
+  .topbar-right [onclick*="sair"],
+  .topbar-right [onclick*="Sair"] { display: none !important; }
   .cart-item { padding: 10px; gap: 10px; }
   .cart-thumb { width: 52px; height: 52px; }
   .cart-name { font-size: 12px; }
@@ -1431,6 +1434,16 @@ body.page {
   .main-content { padding: 14px 14px 90px; }
   .hero-card { padding: 14px 16px; }
   .hero-card-name { font-size: 18px; }
+
+  /* Topbar mobile: fixa, sem overflow, só logo + sino + avatar */
+  .topbar { padding: 0 14px; height: 56px; overflow: hidden; }
+  .brand-logo-txt { font-size: 18px; }
+  .brand-sub { display: none; }
+  #cart-link { display: none !important; }
+  .topbar-right [onclick*="signOut"],
+  .topbar-right [onclick*="sair"],
+  .topbar-right [onclick*="Sair"] { display: none !important; }
+  .topbar-right { gap: 4px; flex-shrink: 0; }
 }
 
 /* ── Bottom nav — 6 abas + drawer ── */

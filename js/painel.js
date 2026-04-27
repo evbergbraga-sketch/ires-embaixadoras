@@ -1523,66 +1523,121 @@ async function renderCapacitacao() {
     document.head.appendChild(style);
   }
 
-  // — Render lista
+  // — Guarda modulos no escopo para o player
+  window._capModulos    = modulos;
+  window._capConcluidas = concluidas;
+
+  // — Render: apenas cards de módulo
   let html = bannerNivel;
+  html += `<div class="cap-grid" style="margin-bottom:8px">`;
 
   modulos.forEach((mod, mi) => {
-    const aulas = (mod.lessons || []).sort((a, b) => a.order - b.order);
-    const modConc = aulas.filter(a => concluidas.has(a.id)).length;
+    const aulas    = (mod.lessons || []).sort((a, b) => a.order - b.order);
+    const modConc  = aulas.filter(a => concluidas.has(a.id)).length;
+    const pctMod   = aulas.length ? Math.round((modConc / aulas.length) * 100) : 0;
+    const thumb    = mod.cover_url || '';
 
-    html += `<div class="cap-modtag">Módulo ${String(mi+1).padStart(2,'0')} · ${s(mod.title)}</div>`;
-    html += `<div class="cap-grid" style="margin-bottom:8px">`;
+    const thumbHtml = thumb
+      ? `<img src="${s(thumb)}" alt="${s(mod.title)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;"/>`
+      : `<div class="cap-thumb-placeholder" style="font-size:13px;font-weight:600;letter-spacing:.05em;">Módulo ${String(mi+1).padStart(2,'0')}</div>`;
 
-    aulas.forEach((aula, ai) => {
-      const feita     = concluidas.has(aula.id);
-      const liberada  = nivelLiberado(aula.nivel);
-      const durMin    = aula.duration_seconds ? Math.ceil(aula.duration_seconds / 60) : null;
-      const nivelAula = aula.nivel || 'bronze';
-      const cor       = nivelCor(nivelAula);
-      const pct       = feita ? 100 : 0;
-
-      const thumb = aula.cover_url || mod.cover_url || '';
-
-      const thumbHtml = thumb
-        ? `<img src="${s(thumb)}" alt="${s(aula.title)}" loading="lazy"/>`
-        : `<div class="cap-thumb-placeholder">ires emb.</div>`;
-
-      const lockHtml = !liberada ? `
-        <div class="cap-lock">
-          <svg width="13" height="15" viewBox="0 0 12 14" fill="none"><rect x="1" y="6" width="10" height="8" rx="1.5" fill="none" stroke="#C8A96E" stroke-width="1.2"/><path d="M3 6V4a3 3 0 016 0v2" stroke="#C8A96E" stroke-width="1.2" stroke-linecap="round"/></svg>
-          <div style="font-size:9px;color:rgba(200,169,110,.8);text-align:center;padding:0 6px;">Nível ${nivelLabel(nivelAula)}</div>
-        </div>` : '';
-
-      const playHtml = liberada ? `<div class="cap-play"><div class="cap-play-tri"></div></div>` : '';
-
-      html += `
-        <div class="cap-aula-row" ${liberada ? `onclick="_abrirPlayer('${aula.id}')"` : 'style="cursor:default;opacity:.7"'}>
-          <div class="cap-thumb">
-            ${thumbHtml}
-            ${lockHtml}
-            ${playHtml}
-          </div>
-          <div class="cap-info">
-            <div class="cap-badge" style="background:${cor.bg};color:${cor.text};border-color:${cor.border};">
-              <div style="width:5px;height:5px;border-radius:50%;background:${cor.dot};flex-shrink:0;"></div>
-              ${nivelLabel(nivelAula)}
-            </div>
-            <div class="cap-title">${s(aula.title)}</div>
-            <div class="cap-meta">${durMin ? durMin + ' min' : ''}${!liberada ? ' · Disponível no ' + nivelLabel(nivelAula) : ''}</div>
-            ${liberada ? `<div class="cap-prog"><div class="cap-prog-fill" style="width:${pct}%"></div></div>` : ''}
-          </div>
+    html += `
+      <div class="cap-aula-row" onclick="_abrirModulo('${mod.id}')" style="cursor:pointer;">
+        <div class="cap-thumb" style="width:100%;height:auto;aspect-ratio:16/9;border-radius:9px 9px 0 0;flex-shrink:unset;">
+          ${thumbHtml}
+          <div class="cap-play"><div class="cap-play-tri"></div></div>
         </div>
-      `;
-    });
-
-    html += `</div>`;
+        <div class="cap-info" style="padding:10px 12px 10px;">
+          <div style="font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8B6050;margin-bottom:4px;">Módulo ${String(mi+1).padStart(2,'0')}</div>
+          <div class="cap-title" style="white-space:normal;font-size:13px;">${s(mod.title)}</div>
+          <div class="cap-meta" style="margin-top:3px;">${aulas.length} aula${aulas.length !== 1 ? 's' : ''} · ${pctMod}% concluído</div>
+          <div class="cap-prog" style="margin-top:6px;"><div class="cap-prog-fill" style="width:${pctMod}%"></div></div>
+        </div>
+      </div>
+    `;
   });
 
+  html += `</div>`;
   document.getElementById('conteudo-cap').innerHTML = html;
+}
 
-  // — Guarda modulos no escopo para o player
-  window._capModulos   = modulos;
-  window._capConcluidas = concluidas;
+function _abrirModulo(moduloId) {
+  const modulos    = window._capModulos || [];
+  const concluidas = window._capConcluidas || new Set();
+  const mod        = modulos.find(m => m.id === moduloId);
+  if (!mod) return;
+
+  const meuNivel   = _perfil.nivel || 'bronze';
+  const ORDEM_NIVEL = { bronze: 0, prata: 1, ouro: 2 };
+  function nivelLiberado(n) { return ORDEM_NIVEL[meuNivel] >= ORDEM_NIVEL[n || 'bronze']; }
+  function nivelLabel(n)    { return { bronze:'Bronze', prata:'Prata', ouro:'Ouro' }[n] || 'Bronze'; }
+  function nivelCor(n) {
+    return {
+      bronze: { bg:'#FFF4E6', text:'#7A4A1A', border:'#CD7F32', dot:'#CD7F32' },
+      prata:  { bg:'#F4F4F4', text:'#444444', border:'#A8A9AD', dot:'#A8A9AD' },
+      ouro:   { bg:'#FFFBE6', text:'#6B4C1A', border:'#C8A96E', dot:'#C8A96E' },
+    }[n] || { bg:'#FFF4E6', text:'#7A4A1A', border:'#CD7F32', dot:'#CD7F32' };
+  }
+
+  const aulas = (mod.lessons || []).sort((a, b) => a.order - b.order);
+  const mi    = modulos.indexOf(mod);
+
+  let html = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <button onclick="renderCapacitacao()" style="width:30px;height:30px;border-radius:50%;background:#fff;border:.5px solid #E8D9C5;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B1A3A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div>
+        <div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8B6050;">Módulo ${String(mi+1).padStart(2,'0')}</div>
+        <div style="font-size:15px;font-weight:600;color:#2C1018;line-height:1.2;">${s(mod.title)}</div>
+      </div>
+    </div>
+    <div class="cap-grid">
+  `;
+
+  aulas.forEach((aula) => {
+    const feita     = concluidas.has(aula.id);
+    const liberada  = nivelLiberado(aula.nivel);
+    const durMin    = aula.duration_seconds ? Math.ceil(aula.duration_seconds / 60) : null;
+    const nivelAula = aula.nivel || 'bronze';
+    const cor       = nivelCor(nivelAula);
+    const pct       = feita ? 100 : 0;
+    const thumb     = aula.cover_url || mod.cover_url || '';
+
+    const thumbHtml = thumb
+      ? `<img src="${s(thumb)}" alt="${s(aula.title)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;"/>`
+      : `<div class="cap-thumb-placeholder">ires emb.</div>`;
+
+    const lockHtml = !liberada ? `
+      <div class="cap-lock">
+        <svg width="13" height="15" viewBox="0 0 12 14" fill="none"><rect x="1" y="6" width="10" height="8" rx="1.5" fill="none" stroke="#C8A96E" stroke-width="1.2"/><path d="M3 6V4a3 3 0 016 0v2" stroke="#C8A96E" stroke-width="1.2" stroke-linecap="round"/></svg>
+        <div style="font-size:9px;color:rgba(200,169,110,.8);text-align:center;padding:0 6px;">Nível ${nivelLabel(nivelAula)}</div>
+      </div>` : '';
+
+    const playHtml = liberada ? `<div class="cap-play"><div class="cap-play-tri"></div></div>` : '';
+
+    html += `
+      <div class="cap-aula-row" ${liberada ? `onclick="_abrirPlayer('${aula.id}')"` : 'style="cursor:default;opacity:.7"'}>
+        <div class="cap-thumb" style="width:100%;height:auto;aspect-ratio:16/9;border-radius:9px 9px 0 0;flex-shrink:unset;">
+          ${thumbHtml}
+          ${lockHtml}
+          ${playHtml}
+        </div>
+        <div class="cap-info" style="padding:10px 12px;">
+          <div class="cap-badge" style="background:${cor.bg};color:${cor.text};border-color:${cor.border};">
+            <div style="width:5px;height:5px;border-radius:50%;background:${cor.dot};flex-shrink:0;"></div>
+            ${nivelLabel(nivelAula)}
+          </div>
+          <div class="cap-title" style="white-space:normal;">${s(aula.title)}</div>
+          <div class="cap-meta">${durMin ? durMin + ' min' : ''}${!liberada ? ' · Disponível no ' + nivelLabel(nivelAula) : ''}</div>
+          ${liberada ? `<div class="cap-prog"><div class="cap-prog-fill" style="width:${pct}%"></div></div>` : ''}
+        </div>
+      </div>
+    `;
+  });
+
+  html += `</div>`;
+  document.getElementById('conteudo-cap').innerHTML = html;
 }
 
 function _youtubeEmbedUrl(url) {

@@ -1585,6 +1585,13 @@ async function renderCapacitacao() {
   window._capConcluidas = concluidas;
 }
 
+function _youtubeEmbedUrl(url) {
+  if (!url) return '';
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/);
+  if (match) return `https://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1`;
+  return url;
+}
+
 function _abrirPlayer(aulaId) {
   const modulos   = window._capModulos || [];
   const concluidas = window._capConcluidas || new Set();

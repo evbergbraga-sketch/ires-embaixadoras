@@ -211,7 +211,7 @@ async function renderInicio() {
   }
 
   const nivelBannerHTML = notifNivel.length ? notifNivel.map(n => `
-    <div style="background:${n.type === 'incentivo' ? 'linear-gradient(135deg,#1a3a1a,#2d5e2d)' : 'linear-gradient(135deg,#3D0E20,#6B1A3A)'};border-radius:14px;padding:16px 18px;margin-bottom:14px;display:flex;align-items:flex-start;gap:14px;border:0.5px solid rgba(200,169,110,.2);box-shadow:0 2px 14px rgba(58,14,29,.18);">
+    <div style="background:${n.type === 'incentivo' ? 'linear-gradient(135deg,#1a3a1a,#2d5e2d)' : 'linear-gradient(135deg,#3D0E20,#6B1A3A)'};border-radius:14px;padding:16px 18px;margin-bottom:14px;display:flex;align-items:flex-start;gap:14px;border:0.5px solid rgba(200,169,110,.2);box-shadow:0 4px 20px rgba(58,14,29,.25);animation:slideDown .4s ease;">
       <div style="font-size:28px;flex-shrink:0;line-height:1;">${n.title.startsWith('🥇') ? '🥇' : n.title.startsWith('🥈') ? '🥈' : n.title.startsWith('⭐') ? '⭐' : '🎉'}</div>
       <div style="flex:1;">
         <div style="font-size:14px;font-weight:700;color:#C8A96E;margin-bottom:4px;">${s(n.title.replace(/^[🥇🥈🎉⭐]\s*/,''))}</div>
@@ -1593,7 +1593,7 @@ async function renderCapacitacao() {
   const [
     { data: modulos },
     { data: progresso },
-    { data: pedidosPagos },
+    { count: totalPagosRaw },
     { data: notificacoes },
   ] = await Promise.all([
     _supabase.from('modules')
@@ -1608,7 +1608,7 @@ async function renderCapacitacao() {
   document.getElementById('loading-cap').style.display = 'none';
 
   const concluidas = new Set((progresso||[]).map(p=>p.lesson_id));
-  const totalPagos = pedidosPagos?.length ?? 0;
+  const totalPagos = totalPagosRaw ?? 0;
   const prox       = proximoNivel();
   const cor        = nivelCor(meuNivel);
   const pctNivel   = prox ? Math.min(100,Math.round((totalPagos/prox.faltam)*100)) : 100;
@@ -1656,9 +1656,24 @@ async function renderCapacitacao() {
     const style = document.createElement('style');
     style.id = 'cap-styles';
     style.textContent = `
-      /* Mobile: grid 2 colunas portrait */
-      .cap-scroll-row { display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-bottom:4px; }
-      .cap-mod-card { background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;width:100%; }
+      /* Mobile: grid 2 colunas portrait — sangra até as bordas */
+      .cap-scroll-row {
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:10px;
+        margin:0 -14px;
+        padding:0 14px 4px;
+      }
+      .cap-mod-card {
+        background:#fff;
+        border:.5px solid #E8D9C5;
+        border-radius:14px;
+        overflow:hidden;
+        cursor:pointer;
+        transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;
+        width:100%;
+        min-width:0;
+      }
       .cap-mod-card:hover { transform:translateY(-2px);box-shadow:0 4px 16px rgba(92,26,46,.10);border-color:rgba(92,26,46,.25); }
       .cap-mod-card:active { transform:scale(.97);box-shadow:none; }
       .cap-mod-cover { width:100%;aspect-ratio:3/4;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:flex-end;justify-content:flex-start;flex-shrink:0; }
@@ -1716,6 +1731,10 @@ async function renderCapacitacao() {
       .cap-pl-title { font-size:11px;font-weight:600;color:#2C1018;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
       .cap-pl-meta { font-size:10px;color:#8B6050;margin-top:1px; }
       .cap-pl-check { width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+      @keyframes slideDown {
+        from { opacity:0;transform:translateY(-8px); }
+        to   { opacity:1;transform:translateY(0); }
+      }
       @media (min-width: 768px) {
         .cap-scroll-row { display:grid;grid-template-columns:repeat(4,1fr);gap:16px; }
         .cap-mod-card { width:100%; }

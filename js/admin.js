@@ -431,7 +431,7 @@ function abrirFormProduto(id) {
       </div>`).join('');
     abrirModal(`
       <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
-      <h3 style="font-size:16px;font-weight:800;margin-bottom:16px">${id?'Editar produto':'Novo produto'}</h3>
+      <h3 style="font-size:16px;font-weight:800;margin-bottom:16px;letter-spacing:-0.3px">${id?'Editar produto':'Novo produto'}</h3>
       <div class="form-group"><label>Nome do produto *</label><input type="text" id="prod-nome" value="${s(p.name||'')}" placeholder="Ex: Camiseta IRES"/></div>
       <div class="form-group"><label>Descrição</label><input type="text" id="prod-desc" value="${p.description||''}" placeholder="Ex: 100% algodão · P M G GG"/></div>
       <div class="form-row">
@@ -636,7 +636,7 @@ async function renderComunicados() {
 function abrirFormComunicado() {
   abrirModal(`
     <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
-    <h3 style="font-size:16px;font-weight:800;margin-bottom:16px">Novo comunicado</h3>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:16px;letter-spacing:-0.3px">Novo comunicado</h3>
     <div class="form-group"><label>Título</label><input type="text" id="com-titulo" placeholder="Ex: Novidade na coleção!"/></div>
     <div class="form-group"><label>Mensagem *</label><textarea id="com-corpo" rows="5" placeholder="Escreva o comunicado..." style="resize:vertical"></textarea></div>
     <div class="info-box"><div class="info-box-dot"></div><p>Este comunicado será enviado para <strong>todas as embaixadoras ativas</strong>.</p></div>
@@ -874,7 +874,7 @@ async function renderCategorias() {
 function abrirFormCategoria(id, nome) {
   abrirModal(`
     <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
-    <h3 style="font-size:16px;font-weight:800;margin-bottom:16px">${id?'Editar categoria':'Nova categoria'}</h3>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:16px;letter-spacing:-0.3px">${id?'Editar categoria':'Nova categoria'}</h3>
     <div class="form-group"><label>Nome *</label><input type="text" id="cat-nome" value="${nome||''}" placeholder="Ex: Roupas"/></div>
     <div style="display:flex;gap:10px;margin-top:4px">
       <button class="btn btn-outline" style="flex:1" onclick="fecharModal()">Cancelar</button>
@@ -1073,7 +1073,7 @@ async function abrirEditarEmb(id) {
   const addr = e.address||{};
   abrirModal(`
     <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
-    <h3 style="font-size:16px;font-weight:800;margin-bottom:16px">Editar — ${e.full_name||'Embaixadora'}</h3>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:16px;letter-spacing:-0.3px">Editar — ${e.full_name||'Embaixadora'}</h3>
     <div class="form-group"><label>Nome completo *</label><input type="text" id="adm-nome" value="${e.full_name||''}"/></div>
     <div class="form-row">
       <div class="form-group"><label>WhatsApp</label><input type="tel" id="adm-phone" value="${e.phone||''}"/></div>
@@ -1233,7 +1233,7 @@ function abrirFormCriativo(id) {
 
     abrirModal(`
       <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
-      <h3 style="font-size:16px;font-weight:800;margin-bottom:16px">${id?'Editar criativo':'Novo criativo'}</h3>
+      <h3 style="font-size:16px;font-weight:800;margin-bottom:16px;letter-spacing:-0.3px">${id?'Editar criativo':'Novo criativo'}</h3>
       <div class="form-group"><label>Título *</label><input type="text" id="cri-titulo" value="${c.title||''}" placeholder="Ex: Story lançamento Tiara"/></div>
       <div class="form-row">
         <div class="form-group"><label>Formato *</label><select id="cri-formato"><option value="story" ${c.format==='story'?'selected':''}>Story</option><option value="feed" ${c.format==='feed'?'selected':''}>Feed</option><option value="reels" ${c.format==='reels'?'selected':''}>Reels</option><option value="outro" ${c.format==='outro'?'selected':''}>Outro</option></select></div>
@@ -1445,7 +1445,7 @@ function abrirFormModulo(id) {
   const mod=id?(window._modulosAdm||[]).find(m=>m.id===id):null;
   abrirModal(`
     <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
-    <h3 style="font-size:16px;font-weight:800;margin-bottom:16px">${id?'Editar módulo':'Novo módulo'}</h3>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:16px;letter-spacing:-0.3px">${id?'Editar módulo':'Novo módulo'}</h3>
     <div class="form-group"><label>Título *</label><input type="text" id="mod-titulo" value="${s(mod?.title||'')||''}" placeholder="Ex: Técnicas de vendas"/></div>
     <div class="form-group"><label>Descrição</label><input type="text" id="mod-desc" value="${s(mod?.description||'')||''}"/></div>
     <div class="form-group">
@@ -1502,7 +1502,7 @@ function abrirFormAula(aulaId,moduloId) {
     if(aulaId){const{data}=await _supabase.from('lessons').select('*').eq('id',aulaId).single();a=data||{};}
     abrirModal(`
       <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
-      <h3 style="font-size:16px;font-weight:800;margin-bottom:16px">${aulaId?'Editar aula':'Nova aula'}</h3>
+      <h3 style="font-size:16px;font-weight:800;margin-bottom:16px;letter-spacing:-0.3px">${aulaId?'Editar aula':'Nova aula'}</h3>
       <div class="form-group"><label>Título *</label><input type="text" id="aula-titulo" value="${a.title||''}" placeholder="Ex: Como abordar clientes"/></div>
       <div class="form-group"><label>Descrição</label><input type="text" id="aula-desc" value="${a.description||''}"/></div>
       <div class="form-group">

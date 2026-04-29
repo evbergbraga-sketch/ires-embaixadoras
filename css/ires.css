@@ -338,7 +338,7 @@ select option { background: var(--creme); color: var(--bord-esc); }
 }
 .auth-logo-name em { color: var(--ouro); font-style: normal; }
 
-.auth-title { font-size: 18px; font-weight: 800; color: var(--bord-esc); font-family: 'Playfair Display', Georgia, serif; }
+.auth-title { font-size: 18px; font-weight: 800; color: var(--bord-esc); font-family: 'Playfair Display', Georgia, serif; letter-spacing: -0.4px; }
 .auth-subtitle { font-size: 13px; color: var(--cinza); margin-top: 4px; text-align: center; font-weight: 500; }
 
 .stepper { display: flex; align-items: center; margin-bottom: 24px; }
@@ -661,8 +661,72 @@ select option { background: var(--creme); color: var(--bord-esc); }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.empty-state { text-align: center; padding: 48px 24px; color: var(--gray); }
-.empty-state p { font-size: 14px; margin-top: 8px; }
+/* ── DES-001: Skeleton / Shimmer ── */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #f0e6da 25%, #fdf8f3 50%, #f0e6da 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: 8px;
+}
+.skeleton-card {
+  background: #fff;
+  border: 0.5px solid #e8ddd5;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.skeleton-thumb {
+  width: 100%; aspect-ratio: 16/9;
+  background: linear-gradient(90deg, #f0e6da 25%, #fdf8f3 50%, #f0e6da 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+.skeleton-line {
+  height: 11px; margin: 10px 12px 6px;
+  background: linear-gradient(90deg, #f0e6da 25%, #fdf8f3 50%, #f0e6da 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: 6px;
+}
+.skeleton-line.short { width: 55%; }
+.skeleton-line.xshort { width: 35%; }
+
+/* ── DES-004: Empty states com identidade IRES ── */
+.empty-state {
+  text-align: center;
+  padding: 56px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.empty-state-icon {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: rgba(92,26,46,.07);
+  border: 0.5px solid rgba(92,26,46,.18);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 2px;
+}
+.empty-state-icon svg { width: 22px; height: 22px; stroke: var(--bord); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.empty-state-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--bord-esc);
+  font-family: 'Playfair Display', serif;
+  letter-spacing: -0.2px;
+}
+.empty-state p, .empty-state-body {
+  font-size: 13px;
+  color: var(--cinza);
+  line-height: 1.6;
+  max-width: 260px;
+  margin: 0;
+}
 
 @media (max-width: 600px) {
   .topbar { padding: 0 12px; }
@@ -1328,7 +1392,10 @@ body.page {
   cursor: pointer;
   padding: 4px 0;
   text-decoration: none;
+  transition: transform .1s ease, opacity .1s ease;
+  -webkit-tap-highlight-color: transparent;
 }
+.bnav-tab:active { transform: scale(0.86); opacity: 0.65; }
 .bnav-tab svg {
   width: 21px; height: 21px;
   stroke: rgba(232,201,172,.45); fill: none;
@@ -1477,3 +1544,82 @@ body.page {
 }
 .bnav-tab.active svg  { stroke: var(--ouro-cl); }
 .bnav-tab.active span { color: var(--ouro-cl); font-weight: 700; }
+
+/* ════════════════════════════════════════════
+   DES-002: Dark Mode (prefers-color-scheme)
+   Paleta IRES em dark — bordô profundo,
+   ouro dourado, fundos quase-preto.
+   ════════════════════════════════════════════ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --creme:          #1a0d10;
+    --creme2:         #140b0d;
+    --nb-card:        #1e1215;
+    --nb-inset:       rgba(255,255,255,.04);
+    --borda:          rgba(232,221,213,.10);
+    --border:         rgba(232,221,213,.14);
+    --border2:        rgba(232,221,213,.18);
+    --cinza:          #a89088;
+    --cinza2:         #7a6860;
+    --nb-text-hi:     #f0dcc0;
+    --nb-text-mid:    #d4b8a8;
+    --nb-text-low:    #a89088;
+    --nb-border:      rgba(232,221,213,.10);
+    --nb-border-s:    rgba(232,221,213,.14);
+    --card:           #1e1215;
+    --card2:          #1a1015;
+    --black:          #f0e6da;
+    --white:          #1e0a12;
+  }
+  html, body { background: var(--creme2); color: var(--nb-text-hi); }
+
+  /* Cards e containers */
+  .home-card,
+  .metric-home-card,
+  .auth-card,
+  .modal-box,
+  .hero-card ~ .home-card { background: var(--nb-card) !important; border-color: var(--nb-border-s) !important; }
+
+  /* Inputs */
+  input, select, textarea {
+    background: var(--nb-inset);
+    border-color: var(--nb-border-s);
+    color: var(--nb-text-hi);
+  }
+  input::placeholder, textarea::placeholder { color: var(--cinza2); }
+
+  /* Skeleton em dark */
+  .skeleton,
+  .skeleton-thumb,
+  .skeleton-line {
+    background: linear-gradient(90deg, #2a1518 25%, #321a1e 50%, #2a1518 75%);
+    background-size: 600px 100%;
+  }
+
+  /* Empty state icon */
+  .empty-state-icon {
+    background: rgba(200,169,110,.08);
+    border-color: rgba(200,169,110,.2);
+  }
+  .empty-state-icon svg { stroke: var(--ouro); }
+  .empty-state-title { color: var(--nb-text-hi); }
+
+  /* Capacitação cards */
+  .cap-aula-row { background: var(--nb-card) !important; border-color: var(--nb-border-s) !important; }
+  .cap-prog { background: rgba(232,221,213,.10) !important; }
+  .cap-title { color: var(--nb-text-hi) !important; }
+  .cap-meta  { color: var(--nb-text-low) !important; }
+
+  /* Topbar */
+  .topbar { background: #100810 !important; border-bottom-color: rgba(232,221,213,.10) !important; }
+
+  /* Bottom nav */
+  .bottom-nav-new { background: #100810 !important; border-top-color: rgba(232,221,213,.10) !important; }
+
+  /* Produto cards */
+  .product-card { background: var(--nb-card); border-color: var(--nb-border-s); }
+  .product-name { color: var(--nb-text-hi) !important; }
+
+  /* Métricas */
+  .metric-home-val { color: var(--ouro) !important; }
+}

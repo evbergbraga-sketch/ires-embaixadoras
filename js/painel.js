@@ -203,7 +203,7 @@ async function renderInicio() {
   }
 
   const nivelBannerHTML = notifNivel.length ? notifNivel.map(n => `
-    <div style="background:linear-gradient(135deg,#3D0E20,#6B1A3A);border-radius:14px;padding:16px 18px;margin-bottom:14px;display:flex;align-items:flex-start;gap:14px;">
+    <div style="background:linear-gradient(135deg,#3D0E20,#6B1A3A);border-radius:14px;padding:16px 18px;margin-bottom:14px;display:flex;align-items:flex-start;gap:14px;border:0.5px solid rgba(200,169,110,.2);box-shadow:0 2px 14px rgba(58,14,29,.18);">
       <div style="font-size:28px;flex-shrink:0;line-height:1;">${n.title.startsWith('🥇') ? '🥇' : n.title.startsWith('🥈') ? '🥈' : '🎉'}</div>
       <div style="flex:1;">
         <div style="font-size:14px;font-weight:700;color:#C8A96E;margin-bottom:4px;">${s(n.title.replace(/^[🥇🥈🎉]\s*/,''))}</div>
@@ -1494,7 +1494,9 @@ async function renderCapacitacao() {
       .cap-header-title { font-size:17px;font-weight:600;color:#2C1018;margin-bottom:16px; }
       .cap-modtag { font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#8B6050;padding:14px 0 8px;display:flex;align-items:center;gap:8px; }
       .cap-modtag::after { content:'';flex:1;height:.5px;background:#E8D9C5; }
-      .cap-aula-row { display:flex;flex-direction:column;background:#fff;border:.5px solid #E8D9C5;border-radius:12px;overflow:hidden;cursor:pointer;margin-bottom:12px; }
+      .cap-aula-row { display:flex;flex-direction:column;background:#fff;border:.5px solid #E8D9C5;border-radius:12px;overflow:hidden;cursor:pointer;margin-bottom:12px;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease; }
+      .cap-aula-row:hover { transform:translateY(-2px);box-shadow:0 4px 16px rgba(92,26,46,.10);border-color:rgba(92,26,46,.28); }
+      .cap-aula-row:active { transform:translateY(0);box-shadow:none; }
       .cap-aula-row:last-child { margin-bottom:0; }
       .cap-thumb { width:100%;aspect-ratio:16/9;flex-shrink:0;overflow:hidden;position:relative;background:#D9C5B0;display:flex;align-items:center;justify-content:center; }
       .cap-thumb img { width:100%;height:100%;object-fit:cover; }

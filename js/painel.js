@@ -191,8 +191,8 @@ async function renderInicio() {
   ` : '';
 
 
-  // — Notificações de nível não lidas
-  const notifNivel = (notificacoes || []).filter(n => n.type === 'nivel' && !n.read_at);
+  // — Notificações de nível e incentivo não lidas
+  const notifNivel = (notificacoes || []).filter(n => (n.type === 'nivel' || n.type === 'incentivo') && !n.read_at);
 
   // Marcar como lida em background
   if (notifNivel.length) {
@@ -203,10 +203,10 @@ async function renderInicio() {
   }
 
   const nivelBannerHTML = notifNivel.length ? notifNivel.map(n => `
-    <div style="background:linear-gradient(135deg,#3D0E20,#6B1A3A);border-radius:14px;padding:16px 18px;margin-bottom:14px;display:flex;align-items:flex-start;gap:14px;border:0.5px solid rgba(200,169,110,.2);box-shadow:0 2px 14px rgba(58,14,29,.18);">
-      <div style="font-size:28px;flex-shrink:0;line-height:1;">${n.title.startsWith('🥇') ? '🥇' : n.title.startsWith('🥈') ? '🥈' : '🎉'}</div>
+    <div style="background:${n.type === 'incentivo' ? 'linear-gradient(135deg,#1a3a1a,#2d5e2d)' : 'linear-gradient(135deg,#3D0E20,#6B1A3A)'};border-radius:14px;padding:16px 18px;margin-bottom:14px;display:flex;align-items:flex-start;gap:14px;border:0.5px solid rgba(200,169,110,.2);box-shadow:0 2px 14px rgba(58,14,29,.18);">
+      <div style="font-size:28px;flex-shrink:0;line-height:1;">${n.title.startsWith('🥇') ? '🥇' : n.title.startsWith('🥈') ? '🥈' : n.title.startsWith('⭐') ? '⭐' : '🎉'}</div>
       <div style="flex:1;">
-        <div style="font-size:14px;font-weight:700;color:#C8A96E;margin-bottom:4px;">${s(n.title.replace(/^[🥇🥈🎉]\s*/,''))}</div>
+        <div style="font-size:14px;font-weight:700;color:#C8A96E;margin-bottom:4px;">${s(n.title.replace(/^[🥇🥈🎉⭐]\s*/,''))}</div>
         <div style="font-size:12px;color:rgba(200,169,110,.75);line-height:1.5;">${s(n.body)}</div>
       </div>
     </div>
@@ -1606,13 +1606,13 @@ async function renderCapacitacao() {
   const pctNivel   = prox ? Math.min(100,Math.round((totalPagos/prox.faltam)*100)) : 100;
 
   // Notificacoes de nivel nao lidas
-  const notifNivel = (notificacoes||[]).filter(n=>n.type==='nivel'&&!n.read_at);
+  const notifNivel = (notificacoes||[]).filter(n=>(n.type==='nivel'||n.type==='incentivo')&&!n.read_at);
   if (notifNivel.length) {
     _supabase.from('notifications').update({read_at:new Date().toISOString()}).in('id',notifNivel.map(n=>n.id)).then(()=>{});
   }
   const nivelBannerHTML = notifNivel.length ? notifNivel.map(n=>`
-    <div style="background:linear-gradient(135deg,#3D0E20,#6B1A3A);border-radius:14px;padding:16px 18px;margin-bottom:14px;display:flex;align-items:flex-start;gap:14px;border:.5px solid rgba(200,169,110,.2);box-shadow:0 2px 14px rgba(58,14,29,.18);">
-      <div style="font-size:28px;flex-shrink:0;line-height:1;">${n.title.startsWith('\u{1F947}')?'\u{1F947}':n.title.startsWith('\u{1F948}')?'\u{1F948}':'\u{1F389}'}</div>
+    <div style="background:${n.type==='incentivo'?'linear-gradient(135deg,#1a3a1a,#2d5e2d)':'linear-gradient(135deg,#3D0E20,#6B1A3A)'};border-radius:14px;padding:16px 18px;margin-bottom:14px;display:flex;align-items:flex-start;gap:14px;border:.5px solid rgba(200,169,110,.2);box-shadow:0 2px 14px rgba(58,14,29,.18);">
+      <div style="font-size:28px;flex-shrink:0;line-height:1;">${n.title.startsWith('\u{1F947}')?'\u{1F947}':n.title.startsWith('\u{1F948}')?'\u{1F948}':n.title.startsWith('\u2B50')?'\u2B50':'\u{1F389}'}</div>
       <div style="flex:1;">
         <div style="font-size:14px;font-weight:700;color:#C8A96E;margin-bottom:4px;">${s(n.title)}</div>
         <div style="font-size:12px;color:rgba(200,169,110,.75);line-height:1.5;">${s(n.body)}</div>

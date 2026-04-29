@@ -223,7 +223,7 @@ async function toggleNotif(e) {
     perfil ? _supabase.from('notifications')
       .select('id,title,body,type,read_at,created_at')
       .eq('user_id', perfil.id)
-      .eq('type', 'nivel')
+      .in('type', ['nivel', 'incentivo'])
       .is('read_at', null)
       .order('created_at', { ascending: false })
       .limit(2) : Promise.resolve({ data: [] }),

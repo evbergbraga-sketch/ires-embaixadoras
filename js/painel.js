@@ -1766,7 +1766,7 @@ async function renderCapacitacao() {
 
     html += `
       <div onclick="_abrirModulo('${mod.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;width:calc(50% - 5px);flex-shrink:0;box-sizing:border-box;">
-        <div style="width:100%;height:200px;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
+        <div style="width:100%;height:calc(42vw * 1.33);min-height:180px;max-height:280px;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
           ${thumb ? `<img src="${s(thumb)}" alt="${s(mod.title)}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>` : ''}
           <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.92) 0%,rgba(26,10,18,.3) 50%,transparent 100%);"></div>
           <div class="cap-mod-badge">Mod ${String(mi+1).padStart(2,'0')}</div>

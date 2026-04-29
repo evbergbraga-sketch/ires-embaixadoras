@@ -1656,13 +1656,15 @@ async function renderCapacitacao() {
     const style = document.createElement('style');
     style.id = 'cap-styles';
     style.textContent = `
-      /* Mobile: grid 2 colunas portrait — largura total garantida */
+      /* Mobile: grid 2 colunas portrait — DEFINITIVO */
       .cap-scroll-row {
-        display:grid;
-        grid-template-columns:repeat(2,1fr);
+        display:grid !important;
+        grid-template-columns:repeat(2,1fr) !important;
         gap:10px;
-        width:100%;
-        box-sizing:border-box;
+        width:100% !important;
+        max-width:100% !important;
+        box-sizing:border-box !important;
+        overflow:visible !important;
       }
       .cap-mod-card {
         background:#fff;
@@ -1671,13 +1673,14 @@ async function renderCapacitacao() {
         overflow:hidden;
         cursor:pointer;
         transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;
-        width:100%;
-        min-width:0;
-        box-sizing:border-box;
+        width:100% !important;
+        min-width:0 !important;
+        max-width:100% !important;
+        box-sizing:border-box !important;
       }
       .cap-mod-card:hover { transform:translateY(-2px);box-shadow:0 4px 16px rgba(92,26,46,.10);border-color:rgba(92,26,46,.25); }
       .cap-mod-card:active { transform:scale(.97);box-shadow:none; }
-      .cap-mod-cover { width:100%;aspect-ratio:3/4;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:flex-end;justify-content:flex-start;flex-shrink:0; }
+      .cap-mod-cover { width:100% !important;aspect-ratio:3/4;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:flex-end;justify-content:flex-start;flex-shrink:0;box-sizing:border-box; }
       .cap-mod-cover img { width:100%;height:100%;object-fit:cover; }
       .cap-mod-cover-label { font-size:10px;font-weight:600;color:rgba(200,169,110,.6);letter-spacing:.05em; }
       .cap-mod-badge { position:absolute;top:8px;left:8px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.3);border-radius:6px;padding:2px 7px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.06em;text-transform:uppercase; }

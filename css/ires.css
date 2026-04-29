@@ -1000,6 +1000,12 @@ body.page {
   max-width: none;
   margin: 0;
   width: 100%;
+  box-sizing: border-box;
+}
+
+/* Capacitação: grid não deve ser limitado */
+.cap-scroll-row, .cap-scroll-row * {
+  box-sizing: border-box;
 }
 
 /* ── Card hero da home ── */

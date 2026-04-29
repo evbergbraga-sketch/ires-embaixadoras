@@ -405,7 +405,7 @@ async function renderProdutos() {
           <div style="display:flex;align-items:center;justify-content:space-between">
             <div>
               <div style="font-size:14px;font-weight:800;color:var(--bord-esc)">${formatBRL(p.price)}</div>
-              <div style="font-size:10px;color:var(--gray)">mín. ${p.min_quantity} un.</div>
+              <div style="font-size:10px;color:var(--gray)">mín. ${p.min_quantity} un.${p.sku ? ` · ${s(p.sku)}` : ''}${p.weight_grams ? ` · ${p.weight_grams}g` : ''}</div>
             </div>
             <div style="display:flex;gap:6px">
               <button class="btn btn-sm btn-outline" onclick="abrirFormProduto('${p.id}')">Editar</button>
@@ -437,6 +437,10 @@ function abrirFormProduto(id) {
       <div class="form-row">
         <div class="form-group"><label>Preço (R$) *</label><input type="number" id="prod-preco" value="${p.price||''}" placeholder="38.90" min="0" step="0.01"/></div>
         <div class="form-group"><label>Qtd mínima *</label><input type="number" id="prod-min" value="${p.min_quantity||1}" min="1"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>SKU (código)</label><input type="text" id="prod-sku" value="${s(p.sku||'')}" placeholder="Ex: UN-C01"/></div>
+        <div class="form-group"><label>Peso (gramas)</label><input type="number" id="prod-peso" value="${p.weight_grams||''}" placeholder="Ex: 105" min="0"/><div style="font-size:10px;color:var(--gray);margin-top:3px">Usado para cálculo de frete</div></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label>Estoque (opcional)</label><input type="number" id="prod-estoque" value="${p.stock||''}" placeholder="Deixe vazio = ilimitado"/></div>
@@ -478,12 +482,14 @@ async function salvarProduto(id) {
   const desc   = document.getElementById('prod-desc').value.trim();
   const preco  = parseFloat(document.getElementById('prod-preco').value);
   const min    = parseInt(document.getElementById('prod-min').value);
+  const sku    = document.getElementById('prod-sku').value.trim() || null;
+  const peso   = parseInt(document.getElementById('prod-peso').value) || 0;
   const estoque= document.getElementById('prod-estoque').value;
   const catId  = document.getElementById('prod-cat').value;
   if (!nome)        { showToast('Informe o nome do produto.','error'); return; }
   if (isNaN(preco)) { showToast('Informe o preço.','error'); return; }
   if (min < 1)      { showToast('Quantidade mínima deve ser pelo menos 1.','error'); return; }
-  const payload = { name:nome, description:desc, price:preco, min_quantity:min, stock:estoque?parseInt(estoque):null, category_id:catId||null, images:window._prodImagens||[] };
+  const payload = { name:nome, description:desc, price:preco, min_quantity:min, sku, weight_grams:peso, stock:estoque?parseInt(estoque):null, category_id:catId||null, images:window._prodImagens||[] };
   const { error } = id ? await _supabase.from('products').update(payload).eq('id',id) : await _supabase.from('products').insert({...payload,is_active:true});
   if (error) { showToast('Erro ao salvar produto.','error'); return; }
   showToast(id?'Produto atualizado!':'Produto criado!','success');

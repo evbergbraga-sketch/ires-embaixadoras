@@ -97,7 +97,13 @@ async function renderInicio() {
   ]);
 
   const totalGasto = (pedidos || []).reduce((a, o) => a + Number(o.total), 0);
-  const qtdPedidos = (pedidos || []).length;
+  // Busca contagem real de pedidos pagos (não apenas os últimos 3)
+  const { count: qtdPedidosPagos } = await _supabase
+    .from('orders')
+    .select('id', { count: 'exact', head: true })
+    .eq('reseller_id', _perfil.id)
+    .in('status', ['paid','processing','shipped','delivered']);
+  const qtdPedidos = qtdPedidosPagos || 0;
   const pendentes  = (pedidos || []).filter(o => o.status === 'pending').length;
 
   // Capacitação — dados reais
@@ -241,7 +247,7 @@ async function renderInicio() {
         <div class="metric-home-bar">
           <div class="metric-home-bar-fill" style="width:${Math.min(totalGasto/10,100)}%;background:var(--nb-gold);opacity:.45;"></div>
         </div>
-        <div class="metric-home-sub"><span>últimos ${qtdPedidos} pedidos</span></div>
+        <div class="metric-home-sub"><span>últimos ${(pedidos||[]).length} pedidos</span></div>
       </div>
     </div>
   `;
@@ -1593,7 +1599,7 @@ async function renderCapacitacao() {
       .eq('is_active', true)
       .order('"order"', { ascending: true }),
     _supabase.from('lesson_progress').select('lesson_id').eq('reseller_id', _perfil.id),
-    _supabase.from('orders').select('id',{count:'exact',head:true}).eq('reseller_id',_perfil.id).eq('status','paid'),
+    _supabase.from('orders').select('id',{count:'exact',head:true}).eq('reseller_id',_perfil.id).in('status',['paid','processing','shipped','delivered']),
     _supabase.from('notifications').select('id,title,body,type,read_at,created_at').eq('user_id',_perfil.id).order('created_at',{ascending:false}).limit(5),
   ]);
 
@@ -1651,10 +1657,10 @@ async function renderCapacitacao() {
       .cap-scroll-row { display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:4px; }
       .cap-scroll-row::-webkit-scrollbar { display:none; }
       .cap-scroll-row { scrollbar-width:none; }
-      .cap-mod-card { flex-shrink:0;width:220px;background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;scroll-snap-align:start;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease; }
+      .cap-mod-card { flex-shrink:0;width:160px;background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;scroll-snap-align:start;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease; }
       .cap-mod-card:hover { transform:translateY(-2px);box-shadow:0 4px 16px rgba(92,26,46,.10);border-color:rgba(92,26,46,.25); }
       .cap-mod-card:active { transform:scale(.97);box-shadow:none; }
-      .cap-mod-cover { width:100%;aspect-ratio:16/9;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:center;justify-content:center; }
+      .cap-mod-cover { width:100%;aspect-ratio:3/4;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:center;justify-content:center; }
       .cap-mod-cover img { width:100%;height:100%;object-fit:cover; }
       .cap-mod-cover-label { font-size:10px;font-weight:600;color:rgba(200,169,110,.6);letter-spacing:.05em; }
       .cap-mod-badge { position:absolute;top:8px;left:8px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.3);border-radius:6px;padding:2px 7px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.06em;text-transform:uppercase; }
@@ -1712,8 +1718,8 @@ async function renderCapacitacao() {
       .cap-pl-meta { font-size:10px;color:#8B6050;margin-top:1px; }
       .cap-pl-check { width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
       @media (min-width: 768px) {
-        .cap-scroll-row { flex-wrap:wrap;overflow-x:visible;scroll-snap-type:none;gap:16px; }
-        .cap-mod-card { width:calc(33.333% - 11px); }
+        .cap-scroll-row { flex-wrap:wrap;overflow-x:visible;scroll-snap-type:none;gap:14px; }
+        .cap-mod-card { width:calc(25% - 11px);aspect-ratio:unset; }
         .cap-dots { display:none; }
         .cap-player-wrap { position:relative;flex-direction:row;align-items:flex-start;min-height:500px; }
         .cap-player-left { flex:1;min-width:0; }

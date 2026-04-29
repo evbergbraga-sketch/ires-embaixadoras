@@ -394,7 +394,7 @@ async function renderPedidos() {
 
   const { data, error } = await _supabase
     .from('orders')
-    .select('id,status,total,notes,payment_url,payment_ref,created_at,order_items(quantity,unit_price,subtotal,products(name,images,min_quantity,price))')
+    .select('id,status,total,notes,payment_url,payment_ref,created_at,order_items(quantity,unit_price,subtotal,size,color,products(name,images,min_quantity,price))')
     .eq('reseller_id', _perfil.id)
     .order('created_at', { ascending: false });
 
@@ -483,7 +483,7 @@ async function abrirDetalhePedido(id) {
               ${img ? `<img src="${img}" style="width:100%;height:100%;object-fit:cover"/>` : ''}
             </div>
             <div style="flex:1">
-              <div style="font-size:13px;font-weight:600">${s(i.products?.name)||'Produto'}</div>
+              <div style="font-size:13px;font-weight:600">${s(i.products?.name)||'Produto'}</div>${(i.size||i.color)?`<div style="font-size:10px;color:#8B6050;margin-top:1px">${[i.size,i.color].filter(Boolean).join(' / ')}</div>`:''}
               <div style="font-size:11px;color:var(--gray)">${i.quantity} un. × ${formatBRL(i.unit_price)}</div>
             </div>
             <div style="font-size:13px;font-weight:700">${formatBRL(i.subtotal)}</div>
@@ -968,6 +968,35 @@ function abrirProdutoPainel(id) {
   if (!p) return;
   const modal = document.getElementById('modal-produto');
   const imgs  = Array.isArray(p.images) && p.images.length ? p.images : [];
+  const sizes  = Array.isArray(p.sizes)  && p.sizes.length  ? p.sizes  : [];
+  const colors = Array.isArray(p.colors) && p.colors.length ? p.colors : [];
+
+  const sizesHTML = sizes.length ? `
+    <div style="margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);margin-bottom:8px;">Tamanho</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;" id="pmodal-sizes">
+        ${sizes.map(sz => `
+          <button onclick="_selecionarVariacao('size','${s(sz)}')" id="psize-${s(sz)}"
+            style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:transparent;font-size:12px;font-weight:600;color:var(--bord-esc);cursor:pointer;transition:all .15s;">
+            ${s(sz)}
+          </button>`).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  const colorsHTML = colors.length ? `
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);margin-bottom:8px;">Cor</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;" id="pmodal-colors">
+        ${colors.map(cor => `
+          <button onclick="_selecionarVariacao('color','${s(cor)}')" id="pcolor-${s(cor).replace(/\s/g,'_')}"
+            style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:transparent;font-size:12px;font-weight:600;color:var(--bord-esc);cursor:pointer;transition:all .15s;">
+            ${s(cor)}
+          </button>`).join('')}
+      </div>
+    </div>
+  ` : '';
+
   modal.innerHTML = `
     <div class="card" style="max-width:420px;width:100%;position:relative">
       <button onclick="document.getElementById('modal-produto').style.display='none';document.body.style.overflow=''"
@@ -990,6 +1019,8 @@ function abrirProdutoPainel(id) {
         <div><div style="font-size:22px;font-weight:900">${formatBRL(p.price)}</div><div style="font-size:11px;color:var(--gray)">por unidade</div></div>
         <div class="info-box" style="margin:0;padding:8px 12px"><div class="info-box-dot"></div><p style="font-size:11px">Mínimo <strong>${p.min_quantity} un.</strong></p></div>
       </div>
+      ${sizesHTML}
+      ${colorsHTML}
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
         <label style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:1px">Quantidade</label>
         <button class="qty-btn" onclick="ajustarQtyPainel(-1,${p.min_quantity})">−</button>
@@ -1000,10 +1031,35 @@ function abrirProdutoPainel(id) {
       <button class="btn btn-primary" onclick="adicionarDoModalPainel('${p.id}')">Adicionar ao carrinho</button>
     </div>
   `;
-  window._carouselIdxP  = 0;
+  window._carouselIdxP   = 0;
   window._carouselTotalP = imgs.length;
-  modal.style.display   = 'flex';
+  window._pmodalSize     = null;
+  window._pmodalColor    = null;
+  modal.style.display    = 'flex';
   document.body.style.overflow = 'hidden';
+}
+
+function _selecionarVariacao(tipo, valor) {
+  const prefix = tipo === 'size' ? 'psize-' : 'pcolor-';
+  const key    = tipo === 'size' ? '_pmodalSize' : '_pmodalColor';
+  const safeValor = valor.replace(/\s/g,'_');
+
+  // Reset todos os botões do grupo
+  document.querySelectorAll(`[id^="${prefix}"]`).forEach(btn => {
+    btn.style.background = 'transparent';
+    btn.style.borderColor = 'var(--border)';
+    btn.style.color = 'var(--bord-esc)';
+  });
+
+  // Ativa o selecionado
+  const btn = document.getElementById(`${prefix}${safeValor}`);
+  if (btn) {
+    btn.style.background = 'var(--bord-esc)';
+    btn.style.borderColor = 'var(--bord-esc)';
+    btn.style.color = 'var(--ouro-cl)';
+  }
+
+  window[key] = valor;
 }
 
 function moverCarrosselPainel(dir) {
@@ -1033,10 +1089,22 @@ function ajustarQtyPainel(delta, min) {
   if (p && sub) sub.textContent = formatBRL(p.price*qty);
 }
 function adicionarDoModalPainel(id) {
-  const p   = _todosProdutos.find(x => x.id === id);
-  const qty = parseInt(document.getElementById('pmodal-qty').textContent);
+  const p    = _todosProdutos.find(x => x.id === id);
+  const qty  = parseInt(document.getElementById('pmodal-qty').textContent);
   if (!p) return;
-  addToCart(p, qty);
+
+  const sizes  = Array.isArray(p.sizes)  && p.sizes.length  ? p.sizes  : [];
+  const colors = Array.isArray(p.colors) && p.colors.length ? p.colors : [];
+
+  // Validação client-side (server-side faz o mesmo via trigger)
+  if (sizes.length && !window._pmodalSize) {
+    showToast('Selecione um tamanho.', 'error'); return;
+  }
+  if (colors.length && !window._pmodalColor) {
+    showToast('Selecione uma cor.', 'error'); return;
+  }
+
+  addToCart({ ...p, _size: window._pmodalSize, _color: window._pmodalColor }, qty);
   document.getElementById('modal-produto').style.display = 'none';
   document.body.style.overflow = '';
 }

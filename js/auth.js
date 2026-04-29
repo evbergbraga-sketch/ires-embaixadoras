@@ -174,11 +174,33 @@ function addToCart(product, quantity = null) {
   const cart = getCart();
   const min  = parseInt(product.min_quantity) || 1;
   const qty  = quantity ? parseInt(quantity) : min;
-  const existing = cart.find(i => i.id === product.id);
-  if (existing) { existing.quantity += qty; }
-  else { cart.push({ id:product.id, name:product.name, price:parseFloat(product.price)||0, min_quantity:min, images:product.images, quantity:qty }); }
+  const size  = product._size  || null;
+  const color = product._color || null;
+
+  // Itens com variações diferentes são entradas separadas no carrinho
+  const existing = cart.find(i =>
+    i.id === product.id &&
+    (i.size  || null) === size &&
+    (i.color || null) === color
+  );
+
+  if (existing) {
+    existing.quantity += qty;
+  } else {
+    cart.push({
+      id:           product.id,
+      name:         product.name,
+      price:        parseFloat(product.price)||0,
+      min_quantity: min,
+      images:       product.images,
+      quantity:     qty,
+      size,
+      color,
+    });
+  }
   saveCart(cart);
-  showToast(`${product.name} adicionado ao carrinho!`, 'success');
+  const variacao = [size, color].filter(Boolean).join(' / ');
+  showToast(`${product.name}${variacao ? ` (${variacao})` : ''} adicionado!`, 'success');
   _atualizarBadgeCarrinho();
 }
 

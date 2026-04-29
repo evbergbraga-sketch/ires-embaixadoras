@@ -342,7 +342,7 @@ async function abrirPedido(id) {
     <div style="margin-bottom:16px">
       ${(o.order_items||[]).map(i => `
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--border2);font-size:13px">
-          <span style="color:var(--gray-lighter)">${s(i.products?.name)} × ${i.quantity}</span>
+          <span style="color:var(--gray-lighter)">${s(i.products?.name)} × ${i.quantity}${(i.size||i.color)?' ('+[i.size,i.color].filter(Boolean).join(' / ')+')':''}</span>
           <span style="font-weight:600">${formatBRL(i.subtotal)}</span>
         </div>
       `).join('')}
@@ -442,6 +442,16 @@ function abrirFormProduto(id) {
         <div class="form-group"><label>SKU (código)</label><input type="text" id="prod-sku" value="${s(p.sku||'')}" placeholder="Ex: UN-C01"/></div>
         <div class="form-group"><label>Peso (gramas)</label><input type="number" id="prod-peso" value="${p.weight_grams||''}" placeholder="Ex: 105" min="0"/><div style="font-size:10px;color:var(--gray);margin-top:3px">Usado para cálculo de frete</div></div>
       </div>
+      <div class="form-group">
+        <label>Tamanhos disponíveis</label>
+        <input type="text" id="prod-sizes" value="${(p.sizes||[]).join(', ')}" placeholder="Ex: P, M, G, GG"/>
+        <div style="font-size:10px;color:var(--gray);margin-top:3px">Separe por vírgula. Deixe vazio se não há tamanhos.</div>
+      </div>
+      <div class="form-group">
+        <label>Cores disponíveis</label>
+        <input type="text" id="prod-colors" value="${(p.colors||[]).join(', ')}" placeholder="Ex: Preto, Vermelho, Sandia"/>
+        <div style="font-size:10px;color:var(--gray);margin-top:3px">Separe por vírgula. Deixe vazio se não há cores.</div>
+      </div>
       <div class="form-row">
         <div class="form-group"><label>Estoque (opcional)</label><input type="number" id="prod-estoque" value="${p.stock||''}" placeholder="Deixe vazio = ilimitado"/></div>
         <div class="form-group"><label>Categoria</label>
@@ -486,10 +496,12 @@ async function salvarProduto(id) {
   const peso   = parseInt(document.getElementById('prod-peso').value) || 0;
   const estoque= document.getElementById('prod-estoque').value;
   const catId  = document.getElementById('prod-cat').value;
+  const sizes  = document.getElementById('prod-sizes').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const colors = document.getElementById('prod-colors').value.split(',').map(s=>s.trim()).filter(Boolean);
   if (!nome)        { showToast('Informe o nome do produto.','error'); return; }
   if (isNaN(preco)) { showToast('Informe o preço.','error'); return; }
   if (min < 1)      { showToast('Quantidade mínima deve ser pelo menos 1.','error'); return; }
-  const payload = { name:nome, description:desc, price:preco, min_quantity:min, sku, weight_grams:peso, stock:estoque?parseInt(estoque):null, category_id:catId||null, images:window._prodImagens||[] };
+  const payload = { name:nome, description:desc, price:preco, min_quantity:min, sku, weight_grams:peso, sizes, colors, stock:estoque?parseInt(estoque):null, category_id:catId||null, images:window._prodImagens||[] };
   const { error } = id ? await _supabase.from('products').update(payload).eq('id',id) : await _supabase.from('products').insert({...payload,is_active:true});
   if (error) { showToast('Erro ao salvar produto.','error'); return; }
   showToast(id?'Produto atualizado!':'Produto criado!','success');

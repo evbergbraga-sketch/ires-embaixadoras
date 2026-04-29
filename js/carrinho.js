@@ -55,7 +55,8 @@ function renderCarrinho() {
         </div>
         <div class="cart-info">
           <div class="cart-name">${item.name}</div>
-          <div class="cart-variant">Mínimo: ${item.min_quantity} unidades</div>
+          <div class="cart-variant">${[item.size, item.color].filter(Boolean).join(' / ') || `Mínimo: ${item.min_quantity} unidades`}</div>
+          ${(item.size || item.color) ? `<div style="font-size:10px;color:var(--gray)">Mínimo: ${item.min_quantity} unidades</div>` : ''}
           <div class="cart-qty">
             <button class="qty-btn" onclick="alterarQty(${idx}, -1)">−</button>
             <span class="qty-value" id="qty-${idx}">${item.quantity}</span>
@@ -184,6 +185,8 @@ async function finalizarPedido() {
       quantity:   i.quantity,
       unit_price: i.price,
       subtotal:   i.price * i.quantity,
+      size:       i.size  || null,
+      color:      i.color || null,
     }));
 
     const { error: errItens } = await _supabase

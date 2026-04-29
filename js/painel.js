@@ -1766,7 +1766,7 @@ async function renderCapacitacao() {
 
     html += `
       <div onclick="_abrirModulo('${mod.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;width:calc(50% - 5px);flex-shrink:0;box-sizing:border-box;">
-        <div class="cap-mod-cover-inner" style="width:100%;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
+        <div class="cap-mod-cover-inner" style="width:100%;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);height:0;padding-bottom:0;" id="cover-${mod.id}">
           ${thumb ? `<img src="${s(thumb)}" alt="${s(mod.title)}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>` : ''}
           <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.92) 0%,rgba(26,10,18,.3) 50%,transparent 100%);"></div>
           <div class="cap-mod-badge">Mod ${String(mi+1).padStart(2,'0')}</div>
@@ -1788,13 +1788,22 @@ async function renderCapacitacao() {
 
   document.getElementById('conteudo-cap').innerHTML = html;
 
-  // Seta altura dos cards igual ao desktop — baseado na largura real do card
-  requestAnimationFrame(() => {
+  // Seta altura proporcional baseada na largura real renderizada
+  const _setModuleHeights = () => {
     const covers = document.querySelectorAll('.cap-mod-cover-inner');
     covers.forEach(el => {
-      const w = el.offsetWidth;
-      el.style.height = Math.round(w * 1.33) + 'px';
+      el.style.height = '0';
+      el.style.paddingBottom = '0';
     });
+    covers.forEach(el => {
+      const w = el.offsetWidth;
+      if (w > 0) el.style.height = Math.round(w * 1.4) + 'px';
+    });
+  };
+  requestAnimationFrame(() => {
+    _setModuleHeights();
+    // Segunda tentativa para garantir que o layout finalizou
+    setTimeout(_setModuleHeights, 100);
   });
 
   const scrollEl = document.getElementById('cap-scroll-row');
@@ -1876,17 +1885,7 @@ function _abrirModulo(moduloId) {
   html += `</div>`;
   document.getElementById('conteudo-cap').innerHTML = html;
 
-  // Seta altura dos cards igual ao desktop — baseado na largura real do card
-  requestAnimationFrame(() => {
-    const covers = document.querySelectorAll('.cap-mod-cover-inner');
-    covers.forEach(el => {
-      const w = el.offsetWidth;
-      el.style.height = Math.round(w * 1.33) + 'px';
-    });
-  });
 }
-
-
 
 function _youtubeEmbedUrl(url) {
   if (!url) return '';

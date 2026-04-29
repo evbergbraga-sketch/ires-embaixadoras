@@ -1400,30 +1400,21 @@ function _abrirPreviewCriativo(id) {
 async function renderCapacitacao() {
   const NIVEL_PRATA = 5;
   const NIVEL_OURO  = 15;
+  const meuNivel    = _perfil.nivel || 'bronze';
+  const ORDEM_NIVEL = { bronze:0, prata:1, ouro:2 };
 
-  const meuNivel = _perfil.nivel || 'bronze';
-
-  const ORDEM_NIVEL = { bronze: 0, prata: 1, ouro: 2 };
-
-  function nivelLiberado(nivelAula) {
-    return ORDEM_NIVEL[meuNivel] >= ORDEM_NIVEL[nivelAula || 'bronze'];
-  }
-
-  function nivelLabel(n) {
-    return { bronze: 'Bronze', prata: 'Prata', ouro: 'Ouro' }[n] || 'Bronze';
-  }
-
+  function nivelLiberado(n) { return ORDEM_NIVEL[meuNivel] >= ORDEM_NIVEL[n||'bronze']; }
+  function nivelLabel(n)    { return {bronze:'Bronze',prata:'Prata',ouro:'Ouro'}[n]||'Bronze'; }
   function nivelCor(n) {
     return {
-      bronze: { bg: '#FFF4E6', text: '#7A4A1A', border: '#CD7F32', dot: '#CD7F32' },
-      prata:  { bg: '#F4F4F4', text: '#444444', border: '#A8A9AD', dot: '#A8A9AD' },
-      ouro:   { bg: '#FFFBE6', text: '#6B4C1A', border: '#C8A96E', dot: '#C8A96E' },
-    }[n] || { bg: '#FFF4E6', text: '#7A4A1A', border: '#CD7F32', dot: '#CD7F32' };
+      bronze:{bg:'#FFF4E6',text:'#7A4A1A',border:'#CD7F32',dot:'#CD7F32'},
+      prata: {bg:'#F4F4F4',text:'#444444',border:'#A8A9AD',dot:'#A8A9AD'},
+      ouro:  {bg:'#FFFBE6',text:'#6B4C1A',border:'#C8A96E',dot:'#C8A96E'},
+    }[n]||{bg:'#FFF4E6',text:'#7A4A1A',border:'#CD7F32',dot:'#CD7F32'};
   }
-
   function proximoNivel() {
-    if (meuNivel === 'bronze') return { nome: 'Prata', faltam: NIVEL_PRATA };
-    if (meuNivel === 'prata')  return { nome: 'Ouro',  faltam: NIVEL_OURO };
+    if (meuNivel==='bronze') return {nome:'Prata',faltam:NIVEL_PRATA};
+    if (meuNivel==='prata')  return {nome:'Ouro', faltam:NIVEL_OURO};
     return null;
   }
 
@@ -1436,42 +1427,48 @@ async function renderCapacitacao() {
     { data: modulos },
     { data: progresso },
     { data: pedidosPagos },
+    { data: notificacoes },
   ] = await Promise.all([
-    _supabase
-      .from('modules')
-      .select('id, title, description, "order", cover_url, lessons(id,title,description,video_url,duration_seconds,"order",cover_url,nivel)')
+    _supabase.from('modules')
+      .select('id,title,description,"order",cover_url,lessons(id,title,description,video_url,duration_seconds,"order",cover_url,nivel)')
       .eq('is_active', true)
       .order('"order"', { ascending: true }),
-    _supabase
-      .from('lesson_progress')
-      .select('lesson_id')
-      .eq('reseller_id', _perfil.id),
-    _supabase
-      .from('orders')
-      .select('id', { count: 'exact', head: true })
-      .eq('reseller_id', _perfil.id)
-      .eq('status', 'paid'),
+    _supabase.from('lesson_progress').select('lesson_id').eq('reseller_id', _perfil.id),
+    _supabase.from('orders').select('id',{count:'exact',head:true}).eq('reseller_id',_perfil.id).eq('status','paid'),
+    _supabase.from('notifications').select('id,title,body,type,read_at,created_at').eq('user_id',_perfil.id).order('created_at',{ascending:false}).limit(5),
   ]);
 
   document.getElementById('loading-cap').style.display = 'none';
 
-  const concluidas  = new Set((progresso || []).map(p => p.lesson_id));
-  const totalPagos  = pedidosPagos?.length ?? 0;
-  const prox        = proximoNivel();
-  const cor         = nivelCor(meuNivel);
+  const concluidas = new Set((progresso||[]).map(p=>p.lesson_id));
+  const totalPagos = pedidosPagos?.length ?? 0;
+  const prox       = proximoNivel();
+  const cor        = nivelCor(meuNivel);
+  const pctNivel   = prox ? Math.min(100,Math.round((totalPagos/prox.faltam)*100)) : 100;
 
-  // — Banner de nível
-  const pctNivel = prox
-    ? Math.min(100, Math.round((totalPagos / prox.faltam) * 100))
-    : 100;
+  // Notificacoes de nivel nao lidas
+  const notifNivel = (notificacoes||[]).filter(n=>n.type==='nivel'&&!n.read_at);
+  if (notifNivel.length) {
+    _supabase.from('notifications').update({read_at:new Date().toISOString()}).in('id',notifNivel.map(n=>n.id)).then(()=>{});
+  }
+  const nivelBannerHTML = notifNivel.length ? notifNivel.map(n=>`
+    <div style="background:linear-gradient(135deg,#3D0E20,#6B1A3A);border-radius:14px;padding:16px 18px;margin-bottom:14px;display:flex;align-items:flex-start;gap:14px;border:.5px solid rgba(200,169,110,.2);box-shadow:0 2px 14px rgba(58,14,29,.18);">
+      <div style="font-size:28px;flex-shrink:0;line-height:1;">${n.title.startsWith('\u{1F947}')?'\u{1F947}':n.title.startsWith('\u{1F948}')?'\u{1F948}':'\u{1F389}'}</div>
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:700;color:#C8A96E;margin-bottom:4px;">${s(n.title)}</div>
+        <div style="font-size:12px;color:rgba(200,169,110,.75);line-height:1.5;">${s(n.body)}</div>
+      </div>
+    </div>
+  `).join('') : '';
 
+  // Banner de nivel
   const bannerNivel = `
-    <div style="background:#fff;border:0.5px solid ${cor.border}40;border-radius:14px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:14px;">
+    <div style="background:#fff;border:.5px solid ${cor.border}40;border-radius:14px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:14px;">
       <div style="width:44px;height:44px;border-radius:50%;background:${cor.bg};border:2px solid ${cor.border};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:${cor.text};flex-shrink:0;text-align:center;line-height:1.2;">${nivelLabel(meuNivel)}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:600;color:#2C1018;margin-bottom:2px;">Nível ${nivelLabel(meuNivel)}</div>
-        <div style="font-size:11px;color:#8B6050;">${prox ? `${totalPagos} de ${prox.faltam} pedidos para o ${prox.nome}` : 'Nível máximo atingido! 🏆'}</div>
-        ${prox ? `<div style="margin-top:6px;height:3px;background:#EDD9C0;border-radius:99px;overflow:hidden;"><div style="height:100%;width:${pctNivel}%;background:${cor.dot};border-radius:99px;"></div></div>` : ''}
+        <div style="font-size:13px;font-weight:600;color:#2C1018;margin-bottom:2px;">Nivel ${nivelLabel(meuNivel)}</div>
+        <div style="font-size:11px;color:#8B6050;">${prox?`${totalPagos} de ${prox.faltam} pedidos para o ${prox.nome}`:'Nivel maximo atingido! &#127942;'}</div>
+        ${prox?`<div style="margin-top:6px;height:3px;background:#EDD9C0;border-radius:99px;overflow:hidden;"><div style="height:100%;width:${pctNivel}%;background:${cor.dot};border-radius:99px;"></div></div>`:''}
       </div>
     </div>
   `;
@@ -1479,39 +1476,59 @@ async function renderCapacitacao() {
   if (!modulos?.length) {
     document.getElementById('conteudo-cap').innerHTML = bannerNivel + `
       <div class="empty-state">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--gray)" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-        <p>Nenhum treinamento disponível ainda.<br>Em breve!</p>
+        <div class="empty-state-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--bord)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
+        <div class="empty-state-title">Em breve!</div>
+        <div class="empty-state-body">Os treinamentos estao sendo preparados com carinho para voce.</div>
       </div>
     `;
     return;
   }
 
-  // — Estilo mobile-first (injetado uma vez)
+  // Injeta estilos uma vez
   if (!document.getElementById('cap-styles')) {
     const style = document.createElement('style');
     style.id = 'cap-styles';
     style.textContent = `
-      .cap-header-title { font-size:17px;font-weight:600;color:#2C1018;margin-bottom:16px; }
-      .cap-modtag { font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#8B6050;padding:14px 0 8px;display:flex;align-items:center;gap:8px; }
-      .cap-modtag::after { content:'';flex:1;height:.5px;background:#E8D9C5; }
-      .cap-aula-row { display:flex;flex-direction:column;background:#fff;border:.5px solid #E8D9C5;border-radius:12px;overflow:hidden;cursor:pointer;margin-bottom:12px;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease; }
-      .cap-aula-row:hover { transform:translateY(-2px);box-shadow:0 4px 16px rgba(92,26,46,.10);border-color:rgba(92,26,46,.28); }
-      .cap-aula-row:active { transform:translateY(0);box-shadow:none; }
-      .cap-aula-row:last-child { margin-bottom:0; }
-      .cap-thumb { width:100%;aspect-ratio:16/9;flex-shrink:0;overflow:hidden;position:relative;background:#D9C5B0;display:flex;align-items:center;justify-content:center; }
-      .cap-thumb img { width:100%;height:100%;object-fit:cover; }
-      .cap-thumb-placeholder { width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;letter-spacing:.05em;color:rgba(200,169,110,.8);background:linear-gradient(135deg,#3D0E20,#6B1A3A); }
-      .cap-lock { position:absolute;inset:0;background:rgba(26,10,18,.72);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px; }
-      .cap-play { position:absolute;bottom:8px;right:8px;width:24px;height:24px;border-radius:50%;background:rgba(200,169,110,.92);display:flex;align-items:center;justify-content:center; }
-      .cap-play-tri { width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:8px solid #3D0E20;margin-left:2px; }
-      .cap-info { padding:10px 12px 12px; }
-      .cap-badge { display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:600;padding:2px 7px;border-radius:999px;margin-bottom:5px;border:.5px solid transparent; }
-      .cap-title { font-size:13px;font-weight:600;color:#2C1018;line-height:1.3; }
-      .cap-meta { font-size:11px;color:#8B6050;margin-top:3px; }
-      .cap-prog { height:2px;background:#E8D9C5;border-radius:99px;margin-top:6px;overflow:hidden; }
-      .cap-prog-fill { height:100%;background:#C8A96E;border-radius:99px; }
-
-      /* PLAYER */
+      .cap-scroll-row { display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:4px; }
+      .cap-scroll-row::-webkit-scrollbar { display:none; }
+      .cap-scroll-row { scrollbar-width:none; }
+      .cap-mod-card { flex-shrink:0;width:220px;background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;scroll-snap-align:start;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease; }
+      .cap-mod-card:hover { transform:translateY(-2px);box-shadow:0 4px 16px rgba(92,26,46,.10);border-color:rgba(92,26,46,.25); }
+      .cap-mod-card:active { transform:scale(.97);box-shadow:none; }
+      .cap-mod-cover { width:100%;aspect-ratio:16/9;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:center;justify-content:center; }
+      .cap-mod-cover img { width:100%;height:100%;object-fit:cover; }
+      .cap-mod-cover-label { font-size:10px;font-weight:600;color:rgba(200,169,110,.6);letter-spacing:.05em; }
+      .cap-mod-badge { position:absolute;top:8px;left:8px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.3);border-radius:6px;padding:2px 7px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.06em;text-transform:uppercase; }
+      .cap-mod-play { position:absolute;bottom:8px;right:8px;width:26px;height:26px;border-radius:50%;background:rgba(200,169,110,.92);display:flex;align-items:center;justify-content:center; }
+      .cap-mod-play-tri { width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:8px solid #3D0E20;margin-left:2px; }
+      .cap-mod-body { padding:10px 12px 12px; }
+      .cap-mod-title { font-size:13px;font-weight:600;color:#2C1018;line-height:1.2; }
+      .cap-mod-meta { font-size:10px;color:#8B6050;margin-top:2px; }
+      .cap-mod-prog { height:2px;background:#E8D9C5;border-radius:99px;margin-top:6px;overflow:hidden; }
+      .cap-mod-pfill { height:100%;background:#C8A96E;border-radius:99px; }
+      .cap-dots { display:flex;gap:4px;justify-content:center;padding:8px 0 4px; }
+      .cap-dot { width:5px;height:5px;border-radius:50%;background:#E8D9C5;transition:all .2s ease; }
+      .cap-dot.on { background:#C8A96E;width:14px;border-radius:99px; }
+      .cap-aula-cover { width:100%;aspect-ratio:16/9;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:center;justify-content:center; }
+      .cap-aula-cover img { width:100%;height:100%;object-fit:cover; }
+      .cap-aula-cover-overlay { position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.85) 0%,transparent 55%); }
+      .cap-aula-cover-title { position:absolute;bottom:14px;left:14px;font-size:17px;font-weight:700;color:#fff;font-family:'Playfair Display',serif;letter-spacing:-.3px;max-width:70%; }
+      .cap-aula-cover-meta { position:absolute;bottom:17px;right:14px;font-size:10px;color:rgba(200,169,110,.85); }
+      .cap-aula-row { display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:.5px solid #E8D9C5;cursor:pointer;transition:opacity .15s; }
+      .cap-aula-row:last-child { border-bottom:none; }
+      .cap-aula-row:active { opacity:.65; }
+      .cap-aula-thumb { width:72px;height:46px;border-radius:8px;flex-shrink:0;overflow:hidden;position:relative;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:center;justify-content:center; }
+      .cap-aula-thumb img { width:100%;height:100%;object-fit:cover; }
+      .cap-aula-thumb-label { font-size:8px;font-weight:600;color:rgba(200,169,110,.6); }
+      .cap-aula-play { position:absolute;bottom:4px;right:4px;width:18px;height:18px;border-radius:50%;background:rgba(200,169,110,.9);display:flex;align-items:center;justify-content:center; }
+      .cap-aula-tri { width:0;height:0;border-top:3px solid transparent;border-bottom:3px solid transparent;border-left:5px solid #3D0E20;margin-left:1px; }
+      .cap-aula-lock { position:absolute;inset:0;background:rgba(26,10,18,.72);border-radius:8px;display:flex;align-items:center;justify-content:center; }
+      .cap-aula-info { flex:1;min-width:0; }
+      .cap-aula-badge { display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:600;padding:1px 6px;border-radius:999px;margin-bottom:3px;border:.5px solid transparent; }
+      .cap-aula-title { font-size:12px;font-weight:600;color:#2C1018;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+      .cap-aula-meta { font-size:10px;color:#8B6050;margin-top:1px; }
+      .cap-aula-prog { height:2px;background:#E8D9C5;border-radius:99px;margin-top:4px;overflow:hidden; }
+      .cap-aula-pfill { height:100%;background:#C8A96E;border-radius:99px; }
       .cap-player-wrap { position:fixed;inset:0;z-index:9999;background:#F5EFE6;display:flex;flex-direction:column;overflow-y:auto; }
       .cap-player-header { background:#3D0E20;padding:14px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0; }
       .cap-back { width:30px;height:30px;border-radius:50%;background:rgba(200,169,110,.15);border:.5px solid rgba(200,169,110,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0; }
@@ -1520,8 +1537,6 @@ async function renderCapacitacao() {
       .cap-video-wrap { width:100%;background:#0d0508;flex-shrink:0; }
       .cap-video-inner { position:relative;padding-bottom:56.25%;height:0; }
       .cap-video-inner iframe { position:absolute;top:0;left:0;width:100%;height:100%;border:none; }
-      .cap-video-prog { height:3px;background:rgba(200,169,110,.2); }
-      .cap-video-pfill { height:100%;width:0;background:#C8A96E; }
       .cap-aula-detail { background:#fff;padding:14px 16px;border-bottom:.5px solid #E8D9C5; }
       .cap-aula-detail-mod { font-size:9px;color:#8B6050;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px; }
       .cap-aula-detail-title { font-size:15px;font-weight:600;color:#2C1018;line-height:1.3;margin-bottom:10px; }
@@ -1537,55 +1552,61 @@ async function renderCapacitacao() {
       .cap-pl-title { font-size:11px;font-weight:600;color:#2C1018;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
       .cap-pl-meta { font-size:10px;color:#8B6050;margin-top:1px; }
       .cap-pl-check { width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
-
-      /* Desktop */
       @media (min-width: 768px) {
+        .cap-scroll-row { flex-wrap:wrap;overflow-x:visible;scroll-snap-type:none;gap:16px; }
+        .cap-mod-card { width:calc(33.333% - 11px); }
+        .cap-dots { display:none; }
         .cap-player-wrap { position:relative;flex-direction:row;align-items:flex-start;min-height:500px; }
         .cap-player-left { flex:1;min-width:0; }
         .cap-player-right { width:280px;flex-shrink:0;border-left:.5px solid #E8D9C5;background:#fff;max-height:600px;overflow-y:auto; }
-        .cap-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:16px; }
-        .cap-aula-row { margin-bottom:0; }
       }
     `;
     document.head.appendChild(style);
   }
 
-  // — Guarda modulos no escopo para o player
   window._capModulos    = modulos;
   window._capConcluidas = concluidas;
 
-  // — Render: apenas cards de módulo
-  let html = bannerNivel;
-  html += `<div class="cap-grid" style="margin-bottom:8px">`;
+  let html = nivelBannerHTML + bannerNivel;
+  html += `<div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;margin-bottom:10px;">Modulos</div>`;
+  html += `<div class="cap-scroll-row" id="cap-scroll-row">`;
 
   modulos.forEach((mod, mi) => {
-    const aulas    = (mod.lessons || []).sort((a, b) => a.order - b.order);
-    const modConc  = aulas.filter(a => concluidas.has(a.id)).length;
-    const pctMod   = aulas.length ? Math.round((modConc / aulas.length) * 100) : 0;
-    const thumb    = mod.cover_url || '';
-
-    const thumbHtml = thumb
-      ? `<img src="${s(thumb)}" alt="${s(mod.title)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;"/>`
-      : `<div class="cap-thumb-placeholder" style="font-size:13px;font-weight:600;letter-spacing:.05em;">Módulo ${String(mi+1).padStart(2,'0')}</div>`;
+    const aulas   = (mod.lessons||[]).sort((a,b)=>a.order-b.order);
+    const modConc = aulas.filter(a=>concluidas.has(a.id)).length;
+    const pctMod  = aulas.length ? Math.round((modConc/aulas.length)*100) : 0;
+    const thumb   = mod.cover_url || '';
 
     html += `
-      <div class="cap-aula-row" onclick="_abrirModulo('${mod.id}')" style="cursor:pointer;">
-        <div class="cap-thumb" style="width:100%;height:auto;aspect-ratio:16/9;border-radius:9px 9px 0 0;flex-shrink:unset;">
-          ${thumbHtml}
-          <div class="cap-play"><div class="cap-play-tri"></div></div>
+      <div class="cap-mod-card" onclick="_abrirModulo('${mod.id}')">
+        <div class="cap-mod-cover">
+          ${thumb ? `<img src="${s(thumb)}" alt="${s(mod.title)}" loading="lazy"/>` : `<div class="cap-mod-cover-label">Modulo ${String(mi+1).padStart(2,'0')}</div>`}
+          <div class="cap-mod-badge">Modulo ${String(mi+1).padStart(2,'0')}</div>
+          <div class="cap-mod-play"><div class="cap-mod-play-tri"></div></div>
         </div>
-        <div class="cap-info" style="padding:10px 12px 10px;">
-          <div style="font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8B6050;margin-bottom:4px;">Módulo ${String(mi+1).padStart(2,'0')}</div>
-          <div class="cap-title" style="white-space:normal;font-size:13px;">${s(mod.title)}</div>
-          <div class="cap-meta" style="margin-top:3px;">${aulas.length} aula${aulas.length !== 1 ? 's' : ''} · ${pctMod}% concluído</div>
-          <div class="cap-prog" style="margin-top:6px;"><div class="cap-prog-fill" style="width:${pctMod}%"></div></div>
+        <div class="cap-mod-body">
+          <div class="cap-mod-title">${s(mod.title)}</div>
+          <div class="cap-mod-meta">${aulas.length} aula${aulas.length!==1?'s':''} &middot; ${pctMod}% concluido</div>
+          <div class="cap-mod-prog"><div class="cap-mod-pfill" style="width:${pctMod}%"></div></div>
         </div>
       </div>
     `;
   });
 
   html += `</div>`;
+  html += `<div class="cap-dots" id="cap-dots">`;
+  modulos.forEach((_,i) => { html += `<div class="cap-dot${i===0?' on':''}"></div>`; });
+  html += `</div>`;
+
   document.getElementById('conteudo-cap').innerHTML = html;
+
+  const scrollEl = document.getElementById('cap-scroll-row');
+  if (scrollEl) {
+    scrollEl.addEventListener('scroll', () => {
+      const idx = Math.round(scrollEl.scrollLeft / 232);
+      document.querySelectorAll('.cap-dot').forEach((d,i) => d.classList.toggle('on', i===idx));
+    }, { passive: true });
+  }
 }
 
 function _abrirModulo(moduloId) {
@@ -1594,71 +1615,63 @@ function _abrirModulo(moduloId) {
   const mod        = modulos.find(m => m.id === moduloId);
   if (!mod) return;
 
-  const meuNivel   = _perfil.nivel || 'bronze';
-  const ORDEM_NIVEL = { bronze: 0, prata: 1, ouro: 2 };
-  function nivelLiberado(n) { return ORDEM_NIVEL[meuNivel] >= ORDEM_NIVEL[n || 'bronze']; }
-  function nivelLabel(n)    { return { bronze:'Bronze', prata:'Prata', ouro:'Ouro' }[n] || 'Bronze'; }
+  const meuNivel    = _perfil.nivel || 'bronze';
+  const ORDEM_NIVEL = { bronze:0, prata:1, ouro:2 };
+  function nivelLiberado(n) { return ORDEM_NIVEL[meuNivel] >= ORDEM_NIVEL[n||'bronze']; }
+  function nivelLabel(n)    { return {bronze:'Bronze',prata:'Prata',ouro:'Ouro'}[n]||'Bronze'; }
   function nivelCor(n) {
     return {
-      bronze: { bg:'#FFF4E6', text:'#7A4A1A', border:'#CD7F32', dot:'#CD7F32' },
-      prata:  { bg:'#F4F4F4', text:'#444444', border:'#A8A9AD', dot:'#A8A9AD' },
-      ouro:   { bg:'#FFFBE6', text:'#6B4C1A', border:'#C8A96E', dot:'#C8A96E' },
-    }[n] || { bg:'#FFF4E6', text:'#7A4A1A', border:'#CD7F32', dot:'#CD7F32' };
+      bronze:{bg:'#FFF4E6',text:'#7A4A1A',border:'#CD7F32',dot:'#CD7F32'},
+      prata: {bg:'#F4F4F4',text:'#444444',border:'#A8A9AD',dot:'#A8A9AD'},
+      ouro:  {bg:'#FFFBE6',text:'#6B4C1A',border:'#C8A96E',dot:'#C8A96E'},
+    }[n]||{bg:'#FFF4E6',text:'#7A4A1A',border:'#CD7F32',dot:'#CD7F32'};
   }
 
-  const aulas = (mod.lessons || []).sort((a, b) => a.order - b.order);
-  const mi    = modulos.indexOf(mod);
+  const aulas   = (mod.lessons||[]).sort((a,b)=>a.order-b.order);
+  const mi      = modulos.indexOf(mod);
+  const thumb   = mod.cover_url || '';
+  const modConc = aulas.filter(a=>concluidas.has(a.id)).length;
+  const pctMod  = aulas.length ? Math.round((modConc/aulas.length)*100) : 0;
 
   let html = `
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-      <button onclick="renderCapacitacao()" style="width:30px;height:30px;border-radius:50%;background:#fff;border:.5px solid #E8D9C5;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B1A3A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    <div class="cap-aula-cover" style="margin:-14px -14px 0;width:calc(100% + 28px);">
+      ${thumb ? `<img src="${s(thumb)}" alt="${s(mod.title)}" loading="lazy"/>` : ''}
+      <div class="cap-aula-cover-overlay"></div>
+      <button onclick="renderCapacitacao()" style="position:absolute;top:12px;left:12px;width:30px;height:30px;border-radius:50%;background:rgba(26,10,18,.5);border:.5px solid rgba(200,169,110,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
-      <div>
-        <div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8B6050;">Módulo ${String(mi+1).padStart(2,'0')}</div>
-        <div style="font-size:15px;font-weight:600;color:#2C1018;line-height:1.2;">${s(mod.title)}</div>
-      </div>
+      <div class="cap-aula-cover-title">${s(mod.title)}</div>
+      <div class="cap-aula-cover-meta">${aulas.length} aula${aulas.length!==1?'s':''} &middot; ${pctMod}%</div>
     </div>
-    <div class="cap-grid">
+    <div style="margin-top:16px;">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;margin-bottom:8px;">Aulas</div>
   `;
 
   aulas.forEach((aula) => {
     const feita     = concluidas.has(aula.id);
     const liberada  = nivelLiberado(aula.nivel);
-    const durMin    = aula.duration_seconds ? Math.ceil(aula.duration_seconds / 60) : null;
-    const nivelAula = aula.nivel || 'bronze';
+    const durMin    = aula.duration_seconds ? Math.ceil(aula.duration_seconds/60) : null;
+    const nivelAula = aula.nivel||'bronze';
     const cor       = nivelCor(nivelAula);
     const pct       = feita ? 100 : 0;
-    const thumb     = aula.cover_url || mod.cover_url || '';
-
-    const thumbHtml = thumb
-      ? `<img src="${s(thumb)}" alt="${s(aula.title)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;"/>`
-      : `<div class="cap-thumb-placeholder">ires emb.</div>`;
-
-    const lockHtml = !liberada ? `
-      <div class="cap-lock">
-        <svg width="13" height="15" viewBox="0 0 12 14" fill="none"><rect x="1" y="6" width="10" height="8" rx="1.5" fill="none" stroke="#C8A96E" stroke-width="1.2"/><path d="M3 6V4a3 3 0 016 0v2" stroke="#C8A96E" stroke-width="1.2" stroke-linecap="round"/></svg>
-        <div style="font-size:9px;color:rgba(200,169,110,.8);text-align:center;padding:0 6px;">Nível ${nivelLabel(nivelAula)}</div>
-      </div>` : '';
-
-    const playHtml = liberada ? `<div class="cap-play"><div class="cap-play-tri"></div></div>` : '';
+    const aulaCover = aula.cover_url||mod.cover_url||'';
 
     html += `
-      <div class="cap-aula-row" ${liberada ? `onclick="_abrirPlayer('${aula.id}')"` : 'style="cursor:default;opacity:.7"'}>
-        <div class="cap-thumb" style="width:100%;height:auto;aspect-ratio:16/9;border-radius:9px 9px 0 0;flex-shrink:unset;">
-          ${thumbHtml}
-          ${lockHtml}
-          ${playHtml}
+      <div class="cap-aula-row" ${liberada?`onclick="_abrirPlayer('${aula.id}')"`:'style="cursor:default;opacity:.6"'}>
+        <div class="cap-aula-thumb">
+          ${aulaCover ? `<img src="${s(aulaCover)}" loading="lazy"/>` : `<div class="cap-aula-thumb-label">ires emb.</div>`}
+          ${liberada ? `<div class="cap-aula-play"><div class="cap-aula-tri"></div></div>` : `<div class="cap-aula-lock"><svg width="11" height="13" viewBox="0 0 12 14" fill="none"><rect x="1" y="6" width="10" height="8" rx="1.5" fill="none" stroke="#C8A96E" stroke-width="1.2"/><path d="M3 6V4a3 3 0 016 0v2" stroke="#C8A96E" stroke-width="1.2" stroke-linecap="round"/></svg></div>`}
         </div>
-        <div class="cap-info" style="padding:10px 12px;">
-          <div class="cap-badge" style="background:${cor.bg};color:${cor.text};border-color:${cor.border};">
+        <div class="cap-aula-info">
+          <div class="cap-aula-badge" style="background:${cor.bg};color:${cor.text};border-color:${cor.border};">
             <div style="width:5px;height:5px;border-radius:50%;background:${cor.dot};flex-shrink:0;"></div>
             ${nivelLabel(nivelAula)}
           </div>
-          <div class="cap-title" style="white-space:normal;">${s(aula.title)}</div>
-          <div class="cap-meta">${durMin ? durMin + ' min' : ''}${!liberada ? ' · Disponível no ' + nivelLabel(nivelAula) : ''}</div>
-          ${liberada ? `<div class="cap-prog"><div class="cap-prog-fill" style="width:${pct}%"></div></div>` : ''}
+          <div class="cap-aula-title">${s(aula.title)}</div>
+          <div class="cap-aula-meta">${durMin?durMin+' min':''}${!liberada?' &middot; '+nivelLabel(nivelAula):''}</div>
+          ${liberada?`<div class="cap-aula-prog"><div class="cap-aula-pfill" style="width:${pct}%"></div></div>`:''}
         </div>
+        ${feita?`<div style="width:18px;height:18px;border-radius:50%;background:rgba(200,169,110,.15);border:1px solid #C8A96E;display:flex;align-items:center;justify-content:center;font-size:9px;color:#C8A96E;flex-shrink:0;">&#10003;</div>`:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D9C5B0" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>`}
       </div>
     `;
   });
@@ -1666,6 +1679,8 @@ function _abrirModulo(moduloId) {
   html += `</div>`;
   document.getElementById('conteudo-cap').innerHTML = html;
 }
+
+
 
 function _youtubeEmbedUrl(url) {
   if (!url) return '';

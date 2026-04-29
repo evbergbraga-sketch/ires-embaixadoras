@@ -1501,6 +1501,8 @@ body.page {
   .main-content { padding: 14px 14px 90px; }
   .hero-card { padding: 14px 16px; }
   .hero-card-name { font-size: 18px; }
+  /* Garante que o grid de capacitação use 100% da largura disponível */
+  #conteudo { width: 100%; min-width: 0; }
 
   /* Topbar mobile: fixa, sem overflow, só logo + sino + avatar */
   .topbar { padding: 0 14px; height: 56px; overflow: hidden; }

@@ -1656,13 +1656,13 @@ async function renderCapacitacao() {
     const style = document.createElement('style');
     style.id = 'cap-styles';
     style.textContent = `
-      /* Mobile: grid 2 colunas portrait — sangra até as bordas */
+      /* Mobile: grid 2 colunas portrait — largura total garantida */
       .cap-scroll-row {
         display:grid;
-        grid-template-columns:1fr 1fr;
+        grid-template-columns:repeat(2,1fr);
         gap:10px;
-        margin:0 -14px;
-        padding:0 14px 4px;
+        width:100%;
+        box-sizing:border-box;
       }
       .cap-mod-card {
         background:#fff;
@@ -1673,6 +1673,7 @@ async function renderCapacitacao() {
         transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;
         width:100%;
         min-width:0;
+        box-sizing:border-box;
       }
       .cap-mod-card:hover { transform:translateY(-2px);box-shadow:0 4px 16px rgba(92,26,46,.10);border-color:rgba(92,26,46,.25); }
       .cap-mod-card:active { transform:scale(.97);box-shadow:none; }
@@ -1736,7 +1737,7 @@ async function renderCapacitacao() {
         to   { opacity:1;transform:translateY(0); }
       }
       @media (min-width: 768px) {
-        .cap-scroll-row { display:grid;grid-template-columns:repeat(4,1fr);gap:16px; }
+        .cap-scroll-row { display:grid;grid-template-columns:repeat(4,1fr);gap:16px;width:100%; }
         .cap-mod-card { width:100%; }
         .cap-dots { display:none; }
         .cap-player-wrap { position:relative;flex-direction:row;align-items:flex-start;min-height:500px; }

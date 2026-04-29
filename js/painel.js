@@ -1797,7 +1797,7 @@ async function renderCapacitacao() {
     });
     covers.forEach(el => {
       const w = el.offsetWidth;
-      if (w > 0) el.style.height = Math.round(w * 2.2) + 'px';
+      if (w > 0) el.style.height = Math.round(w * 1.7) + 'px';
     });
   };
   requestAnimationFrame(() => {

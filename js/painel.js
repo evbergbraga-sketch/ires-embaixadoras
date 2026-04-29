@@ -200,12 +200,14 @@ async function renderInicio() {
   // — Notificações de nível e incentivo não lidas
   const notifNivel = (notificacoes || []).filter(n => (n.type === 'nivel' || n.type === 'incentivo') && !n.read_at);
 
-  // Marcar como lida em background
+  // Marca como lida 3s após exibição (dá tempo de ver o banner)
   if (notifNivel.length) {
-    _supabase.from('notifications')
-      .update({ read_at: new Date().toISOString() })
-      .in('id', notifNivel.map(n => n.id))
-      .then(() => {});
+    setTimeout(() => {
+      _supabase.from('notifications')
+        .update({ read_at: new Date().toISOString() })
+        .in('id', notifNivel.map(n => n.id))
+        .then(() => {});
+    }, 3000);
   }
 
   const nivelBannerHTML = notifNivel.length ? notifNivel.map(n => `
@@ -1654,13 +1656,12 @@ async function renderCapacitacao() {
     const style = document.createElement('style');
     style.id = 'cap-styles';
     style.textContent = `
-      .cap-scroll-row { display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:4px; }
-      .cap-scroll-row::-webkit-scrollbar { display:none; }
-      .cap-scroll-row { scrollbar-width:none; }
-      .cap-mod-card { flex-shrink:0;width:160px;background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;scroll-snap-align:start;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease; }
+      /* Mobile: grid 2 colunas portrait */
+      .cap-scroll-row { display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-bottom:4px; }
+      .cap-mod-card { background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;width:100%; }
       .cap-mod-card:hover { transform:translateY(-2px);box-shadow:0 4px 16px rgba(92,26,46,.10);border-color:rgba(92,26,46,.25); }
       .cap-mod-card:active { transform:scale(.97);box-shadow:none; }
-      .cap-mod-cover { width:100%;aspect-ratio:3/4;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:center;justify-content:center; }
+      .cap-mod-cover { width:100%;aspect-ratio:3/4;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:flex-end;justify-content:flex-start;flex-shrink:0; }
       .cap-mod-cover img { width:100%;height:100%;object-fit:cover; }
       .cap-mod-cover-label { font-size:10px;font-weight:600;color:rgba(200,169,110,.6);letter-spacing:.05em; }
       .cap-mod-badge { position:absolute;top:8px;left:8px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.3);border-radius:6px;padding:2px 7px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.06em;text-transform:uppercase; }
@@ -1671,9 +1672,7 @@ async function renderCapacitacao() {
       .cap-mod-meta { font-size:10px;color:#8B6050;margin-top:2px; }
       .cap-mod-prog { height:2px;background:#E8D9C5;border-radius:99px;margin-top:6px;overflow:hidden; }
       .cap-mod-pfill { height:100%;background:#C8A96E;border-radius:99px; }
-      .cap-dots { display:flex;gap:4px;justify-content:center;padding:8px 0 4px; }
-      .cap-dot { width:5px;height:5px;border-radius:50%;background:#E8D9C5;transition:all .2s ease; }
-      .cap-dot.on { background:#C8A96E;width:14px;border-radius:99px; }
+      .cap-dots { display:none; }
       .cap-aula-cover { width:100%;aspect-ratio:16/9;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:center;justify-content:center; }
       .cap-aula-cover img { width:100%;height:100%;object-fit:cover; }
       .cap-aula-cover-overlay { position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.85) 0%,transparent 55%); }
@@ -1718,8 +1717,8 @@ async function renderCapacitacao() {
       .cap-pl-meta { font-size:10px;color:#8B6050;margin-top:1px; }
       .cap-pl-check { width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
       @media (min-width: 768px) {
-        .cap-scroll-row { flex-wrap:wrap;overflow-x:visible;scroll-snap-type:none;gap:14px; }
-        .cap-mod-card { width:calc(25% - 11px);aspect-ratio:unset; }
+        .cap-scroll-row { display:grid;grid-template-columns:repeat(4,1fr);gap:16px; }
+        .cap-mod-card { width:100%; }
         .cap-dots { display:none; }
         .cap-player-wrap { position:relative;flex-direction:row;align-items:flex-start;min-height:500px; }
         .cap-player-left { flex:1;min-width:0; }
@@ -1745,15 +1744,16 @@ async function renderCapacitacao() {
     html += `
       <div class="cap-mod-card" onclick="_abrirModulo('${mod.id}')">
         <div class="cap-mod-cover">
-          ${thumb ? `<img src="${s(thumb)}" alt="${s(mod.title)}" loading="lazy"/>` : `<div class="cap-mod-cover-label">Modulo ${String(mi+1).padStart(2,'0')}</div>`}
-          <div class="cap-mod-badge">Modulo ${String(mi+1).padStart(2,'0')}</div>
-          <div class="cap-mod-play"><div class="cap-mod-play-tri"></div></div>
+          ${thumb ? `<img src="${s(thumb)}" alt="${s(mod.title)}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>` : ''}
+          <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.92) 0%,rgba(26,10,18,.3) 50%,transparent 100%);"></div>
+          <div class="cap-mod-badge">Mod ${String(mi+1).padStart(2,'0')}</div>
+          <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 10px;">
+            <div style="font-size:13px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:3px;">${s(mod.title)}</div>
+            <div style="font-size:10px;color:rgba(200,169,110,.8);">${aulas.length} aula${aulas.length!==1?'s':''}</div>
+          </div>
+          <div class="cap-mod-play" style="bottom:auto;right:10px;top:50%;transform:translateY(-50%);opacity:.85;"><div class="cap-mod-play-tri"></div></div>
         </div>
-        <div class="cap-mod-body">
-          <div class="cap-mod-title">${s(mod.title)}</div>
-          <div class="cap-mod-meta">${aulas.length} aula${aulas.length!==1?'s':''} &middot; ${pctMod}% concluido</div>
-          <div class="cap-mod-prog"><div class="cap-mod-pfill" style="width:${pctMod}%"></div></div>
-        </div>
+        <div class="cap-mod-prog" style="margin:0;border-radius:0;"><div class="cap-mod-pfill" style="width:${pctMod}%"></div></div>
       </div>
     `;
   });

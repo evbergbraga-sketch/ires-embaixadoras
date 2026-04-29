@@ -1740,7 +1740,8 @@ async function renderCapacitacao() {
         to   { opacity:1;transform:translateY(0); }
       }
       @media (min-width: 768px) {
-        #cap-scroll-row { grid-template-columns:repeat(4,1fr) !important;gap:16px !important; }
+        #cap-scroll-row { gap:16px !important; }
+        #cap-scroll-row > div { width:calc(25% - 12px) !important; }
         .cap-dots { display:none; }
         .cap-player-wrap { position:relative;flex-direction:row;align-items:flex-start;min-height:500px; }
         .cap-player-left { flex:1;min-width:0; }
@@ -1755,7 +1756,7 @@ async function renderCapacitacao() {
 
   let html = nivelBannerHTML + bannerNivel;
   html += `<div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;margin-bottom:10px;">Modulos</div>`;
-  html += `<div id="cap-scroll-row" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:100%;box-sizing:border-box;">`;
+  html += `<div id="cap-scroll-row" style="display:flex;flex-wrap:wrap;gap:10px;width:100%;box-sizing:border-box;">`;
 
   modulos.forEach((mod, mi) => {
     const aulas   = (mod.lessons||[]).sort((a,b)=>a.order-b.order);
@@ -1764,8 +1765,8 @@ async function renderCapacitacao() {
     const thumb   = mod.cover_url || '';
 
     html += `
-      <div onclick="_abrirModulo('${mod.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;width:100%;min-width:0;box-sizing:border-box;">
-        <div style="width:100%;aspect-ratio:3/4;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:flex-end;justify-content:flex-start;">
+      <div onclick="_abrirModulo('${mod.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;width:calc(50% - 5px);flex-shrink:0;box-sizing:border-box;">
+        <div style="width:100%;padding-bottom:133%;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
           ${thumb ? `<img src="${s(thumb)}" alt="${s(mod.title)}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>` : ''}
           <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.92) 0%,rgba(26,10,18,.3) 50%,transparent 100%);"></div>
           <div class="cap-mod-badge">Mod ${String(mi+1).padStart(2,'0')}</div>

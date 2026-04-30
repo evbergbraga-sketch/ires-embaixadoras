@@ -255,37 +255,50 @@ async function renderInicio() {
     </div>
   `;
 
-  // Capacitação com dados reais
-  const capHTML = totalAulas > 0 ? `
-    <div class="home-card home-cap" onclick="irAba('capacitacao')" style="cursor:pointer">
-      <div class="home-card-header">
-        <div class="home-card-label">
-          <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-          Capacitação
-        </div>
-        <span class="home-card-link">Ver tudo →</span>
-      </div>
-      ${primeiraAula ? `
-        <div class="aula-row-new">
-          <button class="play-btn-new">
-            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          </button>
-          <div style="flex:1;min-width:0;">
-            <div class="aula-title-new">${primeiraAula.title}</div>
-            <div class="aula-meta-new">Módulo 1${durMin ? ' · ' + durMin + ' min' : ''}</div>
+  // Capacitação — cards com capa do módulo + % conclusão
+  const capModulosVisiveis = (modulos||[]).slice(0,3);
+  const capHTML = capModulosVisiveis.length > 0 ? (() => {
+    const cardsHTML = capModulosVisiveis.map((mod, mi) => {
+      const aulasDoMod = (mod.lessons||[]);
+      const concMod    = aulasDoMod.filter(a => concluidas.has(a.id)).length;
+      const pctMod     = aulasDoMod.length ? Math.round((concMod/aulasDoMod.length)*100) : 0;
+      const thumb      = mod.cover_url || '';
+      return `
+        <div onclick="irAba('capacitacao')" style="flex-shrink:0;width:130px;border-radius:12px;overflow:hidden;cursor:pointer;background:#fff;border:.5px solid #E8D9C5;">
+          <div style="width:100%;height:90px;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
+            ${thumb ? `<img src="${s(thumb)}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;" loading="lazy"/>` : ''}
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.85) 0%,transparent 55%);"></div>
+            <div style="position:absolute;top:6px;left:6px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.3);border-radius:5px;padding:2px 6px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.06em;">MOD ${String(mi+1).padStart(2,'0')}</div>
+            <div style="position:absolute;bottom:6px;left:6px;right:6px;">
+              <div style="height:3px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden;"><div style="height:100%;width:${pctMod}%;background:#C8A96E;border-radius:99px;"></div></div>
+              <div style="font-size:9px;color:rgba(200,169,110,.9);margin-top:3px;font-weight:600;">${pctMod}%</div>
+            </div>
           </div>
-          ${concluidas.has(primeiraAula.id)
-            ? `<span class="aula-badge-new" style="background:var(--nb-green-dim);color:var(--nb-green);border-color:var(--nb-green-bdr)">Concluída</span>`
-            : `<span class="aula-badge-new">Assistir</span>`}
+          <div style="padding:7px 9px 9px;">
+            <div style="font-size:11px;font-weight:600;color:#2C1018;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s(mod.title)}</div>
+            <div style="font-size:10px;color:#8B6050;margin-top:2px;">${aulasDoMod.length} aula${aulasDoMod.length!==1?'s':''}</div>
+          </div>
+        </div>`;
+    }).join('');
+    return `
+      <div class="home-card home-cap" style="overflow:hidden;">
+        <div class="home-card-header">
+          <div class="home-card-label">
+            <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            Capacitação
+          </div>
+          <a href="#" onclick="irAba('capacitacao'); return false" class="home-card-link">Ver tudo →</a>
         </div>
-      ` : ''}
-      <div class="prog-track-new"><div class="prog-fill-new" style="width:${pctCap}%;"></div></div>
-      <div class="prog-row-new">
-        <span>${totalConc} de ${totalAulas} aulas</span>
-        <span style="color:${pctCap>0?'var(--nb-burg)':'var(--nb-text-low)'}">${pctCap}%</span>
-      </div>
-    </div>
-  ` : `
+        <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;-webkit-overflow-scrolling:touch;">${cardsHTML}</div>
+        <div style="margin-top:10px;height:3px;background:#E8D9C5;border-radius:99px;overflow:hidden;">
+          <div style="height:100%;width:${pctCap}%;background:#C8A96E;border-radius:99px;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:11px;color:#8B6050;">
+          <span>${totalConc} de ${totalAulas} aulas</span>
+          <span style="font-weight:600;color:${pctCap>0?'#6B1A3A':'#8B6050'}">${pctCap}%</span>
+        </div>
+      </div>`;
+  })() : `
     <div class="home-card home-cap">
       <div class="home-card-header">
         <div class="home-card-label">

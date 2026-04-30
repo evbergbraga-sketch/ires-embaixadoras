@@ -873,14 +873,14 @@ async function renderVitrine() {
         <div class="lbl">produtos</div>
       </div>
     </div>
-    <div class="filters" style="margin-bottom:16px">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <div class="filters" style="margin-bottom:16px;">
+      <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;-webkit-overflow-scrolling:touch;align-items:center;">
         <div class="filter-pill active" id="filtro-todos" onclick="setFiltroCatPainel(this,'')">Todos</div>
         <div id="filtros-cat" style="display:contents"></div>
+        <input type="text" id="busca-vitrine" placeholder="Buscar produto..."
+          style="flex-shrink:0;background:var(--creme);border:0.5px solid var(--borda);border-radius:20px;padding:7px 16px;font-size:13px;color:var(--bord-esc);outline:none;min-width:160px;"
+          oninput="filtrarProdutosPainel()"/>
       </div>
-      <input type="text" id="busca-vitrine" placeholder="Buscar produto..."
-        style="background:var(--creme);border:0.5px solid var(--borda);border-radius:20px;padding:7px 16px;font-size:13px;color:var(--bord-esc);outline:none;width:200px"
-        oninput="filtrarProdutosPainel()"/>
     </div>
     <div id="loading-vitrine" class="loading"><div class="spinner"></div> Carregando...</div>
     <div class="products-grid" id="grid-vitrine" style="display:none"></div>

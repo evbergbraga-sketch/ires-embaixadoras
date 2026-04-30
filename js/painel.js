@@ -265,7 +265,7 @@ async function renderInicio() {
       const thumb      = mod.cover_url || '';
       return `
         <div onclick="irAba('capacitacao')" style="flex-shrink:0;width:130px;border-radius:12px;overflow:hidden;cursor:pointer;background:#fff;border:.5px solid #E8D9C5;">
-          <div style="width:100%;height:90px;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
+          <div style="width:100%;aspect-ratio:16/9;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
             ${thumb ? `<img src="${s(thumb)}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;" loading="lazy"/>` : ''}
             <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.85) 0%,transparent 55%);"></div>
             <div style="position:absolute;top:6px;left:6px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.3);border-radius:5px;padding:2px 6px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.06em;">MOD ${String(mi+1).padStart(2,'0')}</div>

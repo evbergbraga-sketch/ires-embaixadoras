@@ -424,14 +424,14 @@ select option { background: var(--creme); color: var(--bord-esc); }
 .product-card:hover .product-img img { transform: scale(1.04); }
 .product-tag { position: absolute; top: 8px; left: 8px; }
 .product-info { padding: 12px; }
-.product-name { font-size: 12px; font-weight: 700; color: var(--bord-esc); margin-bottom: 4px; }
-.product-desc { font-size: 11px; color: var(--cinza); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.product-name { font-size: 13px; font-weight: 600; color: var(--bord-esc); margin-bottom: 4px; }
+.product-desc { font-size: 12px; color: var(--cinza); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .product-variants { display: flex; gap: 4px; margin-bottom: 8px; }
 .variant-dot { width: 10px; height: 10px; border-radius: 50%; border: 0.5px solid var(--borda); cursor: pointer; }
 .variant-dot.active { border-color: var(--bord); }
 .product-bottom { display: flex; align-items: center; justify-content: space-between; }
 .product-price { font-size: 14px; font-weight: 800; color: var(--bord); }
-.product-min { font-size: 9.5px; color: var(--cinza2); margin-top: 2px; }
+.product-min { font-size: 10px; color: var(--cinza2); margin-top: 2px; }
 
 .btn-add {
   width: 28px; height: 28px;
@@ -455,9 +455,9 @@ select option { background: var(--creme); color: var(--bord-esc); }
 .filters::-webkit-scrollbar { display: none; }
 
 .filter-pill {
-  padding: 5px 14px;
+  padding: 8px 16px;
   border-radius: var(--radius-full);
-  font-size: 11px; font-weight: 600;
+  font-size: 13px; font-weight: 600;
   border: 0.5px solid var(--borda);
   color: var(--cinza);
   cursor: pointer; white-space: nowrap;
@@ -744,7 +744,7 @@ select option { background: var(--creme); color: var(--bord-esc); }
   .product-price { font-size: 13px; }
   .product-min { font-size: 9px; }
   .filters { padding: 10px 12px; gap: 6px; }
-  .filter-pill { font-size: 10px; padding: 4px 10px; }
+  .filter-pill { font-size: 13px; padding: 8px 16px; }
   .search-input { width: 120px !important; }
   .metrics-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .metric-value { font-size: 18px; }

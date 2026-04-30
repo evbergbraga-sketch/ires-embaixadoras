@@ -886,7 +886,7 @@ async function renderVitrine() {
     <div style="background:#fff;border:0.5px solid ${corBorder};border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:10px;margin-bottom:12px;">
       <div style="width:8px;height:8px;border-radius:50%;background:${corDot};flex-shrink:0;"></div>
       <div style="font-size:12px;font-weight:500;color:#3D0E20;flex-shrink:0;">${nivelLabel}</div>
-      <div style="flex:1;height:8px;background:#EDD9C0;border-radius:99px;overflow:hidden;">
+      <div style="flex:1;height:5px;background:#EDD9C0;border-radius:99px;overflow:hidden;">
         <div style="height:100%;width:${pct}%;background:${corDot};border-radius:99px;transition:width .4s ease;"></div>
       </div>
       <div style="font-size:10px;color:#A0622A;white-space:nowrap;flex-shrink:0;">${prox ? `${totalPagos}/${prox.faltam} para ${prox.nome}` : 'Nível máximo 🏆'}</div>
@@ -1671,7 +1671,7 @@ async function renderCapacitacao() {
       <div style="flex:1;min-width:0;">
         <div style="font-size:13px;font-weight:600;color:#2C1018;margin-bottom:2px;">Nivel ${nivelLabel(meuNivel)}</div>
         <div style="font-size:11px;color:#8B6050;">${prox?`${totalPagos} de ${prox.faltam} pedidos para o ${prox.nome}`:'Nivel maximo atingido! &#127942;'}</div>
-        ${prox?`<div style="margin-top:6px;height:3px;background:#EDD9C0;border-radius:99px;overflow:hidden;"><div style="height:100%;width:${pctNivel}%;background:${cor.dot};border-radius:99px;"></div></div>`:''}
+        ${prox?`<div style="margin-top:6px;height:5px;background:#EDD9C0;border-radius:99px;overflow:hidden;"><div style="height:100%;width:${pctNivel}%;background:${cor.dot};border-radius:99px;"></div></div>`:''}
       </div>
     </div>
   `;

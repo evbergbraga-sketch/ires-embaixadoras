@@ -844,6 +844,11 @@ body.page {
   flex-shrink: 0;
   line-height: 1;
 }
+.brand-logo-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
 .brand-logo-img {
   width: 36px; height: 36px;
   border-radius: 50%;
@@ -854,10 +859,11 @@ body.page {
 .brand-logo-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .brand-logo-txt {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 22px;
+  font-size: 19px;
   font-weight: 700;
   color: var(--ouro-cl);
   letter-spacing: 0.3px;
+  line-height: 1;
 }
 .brand-logo-txt em { color: var(--ouro); font-style: normal; }
 .brand-name-new em {
@@ -866,15 +872,20 @@ body.page {
 }
 .brand-sub {
   font-family: 'DM Sans', sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  color: rgba(232,201,172,.55);
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  padding: 2px 8px;
-  background: rgba(92,26,46,.35);
-  border: 0.5px solid rgba(196,154,122,.18);
-  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(200,169,110,.45);
+  letter-spacing: 0.5px;
+  text-transform: lowercase;
+}
+/* Separador | entre ires. e embaixadoras */
+.brand-sub::before {
+  content: '|';
+  margin-right: 8px;
+  color: rgba(200,169,110,.2);
+  font-size: 16px;
+  font-weight: 300;
+  vertical-align: middle;
 }
 
 /* ── Nav desktop ── */
@@ -1432,6 +1443,10 @@ body.page {
 
   /* Topbar mais alta no desktop */
   .topbar { height: 62px; padding: 0 clamp(20px, 3vw, 48px); }
+  .brand-logo-stack { flex-direction: column; gap: 1px; }
+  .brand-logo-txt { font-size: 19px; }
+  .brand-sub::before { display: none; }
+  .brand-sub { font-size: 10px; font-weight: 500; color: rgba(200,169,110,.45); letter-spacing: .8px; text-transform: uppercase; }
 
   /* Bento grid na home — ocupa 100% da largura disponível */
   .home-bento {
@@ -1513,7 +1528,10 @@ body.page {
   /* Topbar mobile: fixa, sem overflow, só logo + sino + avatar */
   .topbar { padding: 0 14px; height: 56px; overflow: hidden; }
   .brand-logo-txt { font-size: 18px; }
-  .brand-sub { display: none; }
+  /* Mobile: ires. | embaixadoras inline */
+  .brand-logo-stack { flex-direction: row; align-items: center; gap: 8px; }
+  .brand-logo-txt { font-size: 17px; }
+  .brand-sub { font-size: 11px; }
   #cart-link { display: none !important; }
   .topbar-right [onclick*="signOut"],
   .topbar-right [onclick*="sair"],

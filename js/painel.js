@@ -1031,9 +1031,10 @@ function abrirProdutoPainel(id) {
                 <span style="font-size:14px;font-weight:500;color:#2C1018;">${s(cor)}</span>
                 <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
                   id="vi-${s(cor).replace(/\s/g,'_')}-"
+                  data-size="" data-color="${s(cor).replace(/"/g,'&quot;')}"
                   placeholder="0"
                   style="width:64px;height:40px;text-align:center;font-size:16px;font-weight:600;color:#2C1018;background:#fff;border:.5px solid #E8D9C5;border-radius:8px;outline:none;-webkit-appearance:none;"
-                  oninput="_varInput(this,'',${JSON.stringify(cor)})"/>
+                  oninput="_varInput(this)"/>
               </div>
             `).join('')}
           </div>
@@ -1051,9 +1052,10 @@ function abrirProdutoPainel(id) {
                 <span style="font-size:14px;font-weight:600;color:#2C1018;">${s(sz)}</span>
                 <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
                   id="vi-${s(sz)}-"
+                  data-size="${s(sz)}" data-color=""
                   placeholder="0"
                   style="width:64px;height:40px;text-align:center;font-size:16px;font-weight:600;color:#2C1018;background:#fff;border:.5px solid #E8D9C5;border-radius:8px;outline:none;-webkit-appearance:none;"
-                  oninput="_varInput(this,'${s(sz)}','')"/>
+                  oninput="_varInput(this)"/>
               </div>
             `).join('')}
           </div>
@@ -1080,9 +1082,10 @@ function abrirProdutoPainel(id) {
                     <td style="padding:5px 4px;text-align:center;">
                       <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
                         id="vi-${s(sz)}-${s(cor).replace(/\s/g,'_')}"
+                        data-size="${s(sz)}" data-color="${s(cor).replace(/"/g,'&quot;')}"
                         placeholder="0"
                         style="width:52px;height:40px;text-align:center;font-size:16px;font-weight:600;color:#2C1018;background:#fff;border:.5px solid #E8D9C5;border-radius:8px;outline:none;-webkit-appearance:none;display:block;margin:0 auto;"
-                        oninput="_varInput(this,'${s(sz)}',${JSON.stringify(cor)})"/>
+                        oninput="_varInput(this)"/>
                     </td>
                   `).join('')}
                 </tr>
@@ -1151,8 +1154,10 @@ function abrirProdutoPainel(id) {
   document.body.style.overflow = 'hidden';
 }
 
-function _varInput(el, size, color) {
-  const qty = Math.max(0, parseInt(el.value) || 0);
+function _varInput(el) {
+  const size  = el.dataset.size  || '';
+  const color = el.dataset.color || '';
+  const qty   = Math.max(0, parseInt(el.value) || 0);
   el.value = qty || '';
   const key = `${size}|${color}`;
   window._pmodalVars[key] = qty;

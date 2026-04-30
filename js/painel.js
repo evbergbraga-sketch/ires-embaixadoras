@@ -79,6 +79,7 @@ async function renderInicio() {
     _supabase.from('products')
       .select('id,name,price,min_quantity,images,categories(name)')
       .eq('is_active', true)
+      .order('has_images', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
       .limit(6),
     _supabase.from('modules')
@@ -932,7 +933,7 @@ async function renderVitrine() {
 
   const [{ data: cats }, { data: prods }] = await Promise.all([
     _supabase.from('categories').select('id,name').order('name'),
-    _supabase.from('products').select('*, categories(name)').eq('is_active',true).order('created_at',{ascending:false}),
+    _supabase.from('products').select('*, categories(name)').eq('is_active',true).order('has_images', { ascending: false, nullsFirst: false }).order('created_at',{ascending:false}),
   ]);
 
   _todosProdutos = prods || [];

@@ -886,7 +886,7 @@ async function renderVitrine() {
     <div style="background:#fff;border:0.5px solid ${corBorder};border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:10px;margin-bottom:12px;">
       <div style="width:8px;height:8px;border-radius:50%;background:${corDot};flex-shrink:0;"></div>
       <div style="font-size:12px;font-weight:500;color:#3D0E20;flex-shrink:0;">${nivelLabel}</div>
-      <div style="flex:1;height:3px;background:#EDD9C0;border-radius:99px;overflow:hidden;">
+      <div style="flex:1;height:6px;background:#EDD9C0;border-radius:99px;overflow:hidden;">
         <div style="height:100%;width:${pct}%;background:${corDot};border-radius:99px;transition:width .4s ease;"></div>
       </div>
       <div style="font-size:10px;color:#A0622A;white-space:nowrap;flex-shrink:0;">${prox ? `${totalPagos}/${prox.faltam} para ${prox.nome}` : 'Nível máximo 🏆'}</div>
@@ -894,7 +894,7 @@ async function renderVitrine() {
     <div style="position:relative;margin-bottom:10px;">
       <div id="filters-row" style="display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;padding-right:40px;scrollbar-width:none;-webkit-overflow-scrolling:touch;align-items:center;">
         <div class="filter-pill active" id="filtro-todos" onclick="setFiltroCatPainel(this,'')">Todos</div>
-        <div id="filtros-cat" style="display:contents"></div>
+        <div id="filtros-cat" style="display:flex;gap:7px;flex-shrink:0;"></div>
       </div>
       <div id="filters-fade" style="position:absolute;top:0;right:0;bottom:0;width:48px;background:linear-gradient(to right,transparent,var(--creme) 75%);pointer-events:none;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B6050" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>

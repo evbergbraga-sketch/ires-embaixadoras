@@ -1571,3 +1571,17 @@ body.page {
 .bnav-tab.active svg  { stroke: var(--ouro-cl); }
 .bnav-tab.active span { color: var(--ouro-cl); font-weight: 700; }
 
+
+/* iOS Safari — previne zoom automático em inputs (font-size mínimo 16px) */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  input[type="tel"],
+  input[type="url"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

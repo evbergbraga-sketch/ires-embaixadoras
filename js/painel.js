@@ -1016,75 +1016,73 @@ function abrirProdutoPainel(id) {
   const colors = Array.isArray(p.colors) && p.colors.length ? p.colors : [];
   const hasVariations = sizes.length > 0 || colors.length > 0;
 
-  // ── Grade de variações: qty por linha (tamanho × cor) ──
-  function buildVariationGrid() {
+  // Grid de variações com inputs digitáveis
+  function buildGrid() {
     if (!hasVariations) return '';
 
-    // Caso: só tamanho, sem cor
-    if (sizes.length && !colors.length) {
-      return `
-        <div style="margin-bottom:16px;">
-          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);margin-bottom:10px;">Tamanho e quantidade</div>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            ${sizes.map(sz => `
-              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--creme2);border-radius:8px;">
-                <span style="font-size:13px;font-weight:600;color:var(--bord-esc);min-width:40px;">${s(sz)}</span>
-                <div style="display:flex;align-items:center;gap:8px;">
-                  <button onclick="_varQty('${s(sz)}','',false)" style="width:26px;height:26px;border-radius:50%;border:1px solid var(--border);background:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">−</button>
-                  <span id="vqty-${s(sz)}-" style="min-width:20px;text-align:center;font-size:13px;font-weight:700;color:var(--bord-esc);">0</span>
-                  <button onclick="_varQty('${s(sz)}','',true)" style="width:26px;height:26px;border-radius:50%;border:1px solid var(--border);background:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">+</button>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `;
-    }
-
-    // Caso: só cor, sem tamanho
+    // Só cor
     if (colors.length && !sizes.length) {
       return `
-        <div style="margin-bottom:16px;">
-          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);margin-bottom:10px;">Cor e quantidade</div>
+        <div style="margin-bottom:14px;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#8B6050;margin-bottom:10px;">Cor · Quantidade</div>
           <div style="display:flex;flex-direction:column;gap:8px;">
             ${colors.map(cor => `
-              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--creme2);border-radius:8px;">
-                <span style="font-size:13px;font-weight:600;color:var(--bord-esc);">${s(cor)}</span>
-                <div style="display:flex;align-items:center;gap:8px;">
-                  <button onclick="_varQty('',${JSON.stringify(cor)},false)" style="width:26px;height:26px;border-radius:50%;border:1px solid var(--border);background:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">−</button>
-                  <span id="vqty--${s(cor).replace(/\s/g,'_')}" style="min-width:20px;text-align:center;font-size:13px;font-weight:700;color:var(--bord-esc);">0</span>
-                  <button onclick="_varQty('',${JSON.stringify(cor)},true)" style="width:26px;height:26px;border-radius:50%;border:1px solid var(--border);background:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">+</button>
-                </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#F5EFE6;border-radius:8px;">
+                <span style="font-size:14px;font-weight:500;color:#2C1018;">${s(cor)}</span>
+                <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                  id="vi-${s(cor).replace(/\s/g,'_')}-"
+                  placeholder="0"
+                  style="width:64px;height:40px;text-align:center;font-size:16px;font-weight:600;color:#2C1018;background:#fff;border:.5px solid #E8D9C5;border-radius:8px;outline:none;-webkit-appearance:none;"
+                  oninput="_varInput(this,'',${JSON.stringify(cor)})"/>
               </div>
             `).join('')}
           </div>
-        </div>
-      `;
+        </div>`;
     }
 
-    // Caso: tamanho + cor — grade completa
+    // Só tamanho
+    if (sizes.length && !colors.length) {
+      return `
+        <div style="margin-bottom:14px;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#8B6050;margin-bottom:10px;">Tamanho · Quantidade</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            ${sizes.map(sz => `
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#F5EFE6;border-radius:8px;">
+                <span style="font-size:14px;font-weight:600;color:#2C1018;">${s(sz)}</span>
+                <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                  id="vi-${s(sz)}-"
+                  placeholder="0"
+                  style="width:64px;height:40px;text-align:center;font-size:16px;font-weight:600;color:#2C1018;background:#fff;border:.5px solid #E8D9C5;border-radius:8px;outline:none;-webkit-appearance:none;"
+                  oninput="_varInput(this,'${s(sz)}','')"/>
+              </div>
+            `).join('')}
+          </div>
+        </div>`;
+    }
+
+    // Tamanho + Cor — tabela com inputs
     return `
-      <div style="margin-bottom:16px;">
-        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);margin-bottom:10px;">Tamanho / Cor — quantidade por combinacao</div>
-        <div style="overflow-x:auto;">
-          <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <div style="margin-bottom:14px;">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#8B6050;margin-bottom:10px;">Quantidade por tamanho e cor</div>
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+          <table style="width:100%;border-collapse:collapse;min-width:${sizes.length * 70 + 80}px;">
             <thead>
               <tr>
-                <th style="text-align:left;padding:6px 8px;color:var(--gray);font-weight:600;border-bottom:1px solid var(--border);">Cor</th>
-                ${sizes.map(sz => `<th style="text-align:center;padding:6px 8px;color:var(--bord-esc);font-weight:700;border-bottom:1px solid var(--border);">${s(sz)}</th>`).join('')}
+                <th style="text-align:left;padding:5px 8px;font-size:11px;font-weight:700;color:#8B6050;border-bottom:.5px solid #E8D9C5;">Cor</th>
+                ${sizes.map(sz => `<th style="text-align:center;padding:5px 6px;font-size:11px;font-weight:700;color:#3D0E20;border-bottom:.5px solid #E8D9C5;">${s(sz)}</th>`).join('')}
               </tr>
             </thead>
             <tbody>
               ${colors.map(cor => `
-                <tr style="border-bottom:.5px solid var(--border);">
-                  <td style="padding:8px 8px;color:var(--bord-esc);font-weight:600;white-space:nowrap;">${s(cor)}</td>
+                <tr style="border-bottom:.5px solid #F0EAE2;">
+                  <td style="padding:7px 8px;font-size:13px;font-weight:500;color:#2C1018;white-space:nowrap;">${s(cor)}</td>
                   ${sizes.map(sz => `
-                    <td style="text-align:center;padding:6px 4px;">
-                      <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
-                        <button onclick="_varQty('${s(sz)}',${JSON.stringify(cor)},false)" style="width:22px;height:22px;border-radius:50%;border:1px solid var(--border);background:#fff;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">−</button>
-                        <span id="vqty-${s(sz)}-${s(cor).replace(/\s/g,'_')}" style="min-width:18px;text-align:center;font-weight:700;color:var(--bord-esc);">0</span>
-                        <button onclick="_varQty('${s(sz)}',${JSON.stringify(cor)},true)" style="width:22px;height:22px;border-radius:50%;border:1px solid var(--border);background:#fff;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">+</button>
-                      </div>
+                    <td style="padding:5px 4px;text-align:center;">
+                      <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                        id="vi-${s(sz)}-${s(cor).replace(/\s/g,'_')}"
+                        placeholder="0"
+                        style="width:52px;height:40px;text-align:center;font-size:16px;font-weight:600;color:#2C1018;background:#fff;border:.5px solid #E8D9C5;border-radius:8px;outline:none;-webkit-appearance:none;display:block;margin:0 auto;"
+                        oninput="_varInput(this,'${s(sz)}',${JSON.stringify(cor)})"/>
                     </td>
                   `).join('')}
                 </tr>
@@ -1092,57 +1090,53 @@ function abrirProdutoPainel(id) {
             </tbody>
           </table>
         </div>
-      </div>
-    `;
-  }
-
-  // ── Sem variações: seletor simples de quantidade ──
-  function buildSimpleQty() {
-    if (hasVariations) return '';
-    return `
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-        <label style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:1px;">Quantidade</label>
-        <button class="qty-btn" onclick="ajustarQtyPainel(-1,${p.min_quantity})">-</button>
-        <span class="qty-value" id="pmodal-qty">${p.min_quantity}</span>
-        <button class="qty-btn" onclick="ajustarQtyPainel(1,${p.min_quantity})">+</button>
-        <span style="font-size:12px;color:var(--pink);font-weight:700" id="pmodal-sub">${formatBRL(p.price*p.min_quantity)}</span>
-      </div>
-    `;
+      </div>`;
   }
 
   modal.innerHTML = `
     <div class="card" style="max-width:480px;width:100%;position:relative;max-height:90vh;overflow-y:auto;">
       <button onclick="document.getElementById('modal-produto').style.display='none';document.body.style.overflow=''"
-        style="position:absolute;top:12px;right:12px;z-index:10;background:var(--bord);border:none;color:var(--ouro-cl);cursor:pointer;font-size:18px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center">x</button>
+        style="position:absolute;top:12px;right:12px;z-index:10;background:var(--bord);border:none;color:var(--ouro-cl);cursor:pointer;font-size:18px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;">&#x2715;</button>
 
-      <div style="background:var(--black);border-radius:var(--radius-md);margin-bottom:16px;overflow:hidden;position:relative;">
-        ${imgs.length ? `
-          <div id="carousel-track" style="display:flex;transition:transform 0.3s ease">
-            ${imgs.map(url=>`<div style="min-width:100%;flex-shrink:0"><img src="${url}" style="width:100%;height:auto;display:block;max-height:280px;object-fit:contain"/></div>`).join('')}
+      ${imgs.length ? `
+        <div style="background:var(--black);border-radius:var(--radius-md);margin-bottom:14px;overflow:hidden;position:relative;">
+          <div id="carousel-track" style="display:flex;transition:transform 0.3s ease;">
+            ${imgs.map(url=>`<div style="min-width:100%;flex-shrink:0"><img src="${url}" style="width:100%;height:auto;display:block;max-height:260px;object-fit:contain"/></div>`).join('')}
           </div>
           ${imgs.length>1 ? `
-            <button onclick="moverCarrosselPainel(-1)" style="position:absolute;left:8px;top:40%;background:var(--bord-esc);border:none;color:var(--ouro-cl);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">&#8249;</button>
-            <button onclick="moverCarrosselPainel(1)" style="position:absolute;right:8px;top:40%;background:var(--bord-esc);border:none;color:var(--ouro-cl);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">&#8250;</button>
-          ` : ''}
-        ` : `<div style="height:180px;display:flex;align-items:center;justify-content:center"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>`}
-      </div>
+            <button onclick="moverCarrosselPainel(-1)" style="position:absolute;left:8px;top:40%;background:rgba(61,14,32,.7);border:none;color:#C8A96E;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:18px;">&#8249;</button>
+            <button onclick="moverCarrosselPainel(1)" style="position:absolute;right:8px;top:40%;background:rgba(61,14,32,.7);border:none;color:#C8A96E;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:18px;">&#8250;</button>` : ''}
+        </div>
+        ${imgs.length>1 ? `<div style="display:flex;gap:5px;margin-bottom:12px;overflow-x:auto;">${imgs.map((url,i)=>`<img src="${url}" onclick="moverParaSlidePainel(${i})" id="pthumb-${i}" style="width:46px;height:46px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid ${i===0?'var(--pink)':'transparent'};flex-shrink:0;"/>`).join('')}</div>` : ''}
+      ` : ''}
 
-      ${imgs.length>1 ? `<div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto">${imgs.map((url,i)=>`<img src="${url}" onclick="moverParaSlidePainel(${i})" id="pthumb-${i}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid ${i===0?'var(--pink)':'transparent'};flex-shrink:0"/>`).join('')}</div>` : ''}
-
-      <h3 style="font-size:16px;font-weight:800;margin-bottom:4px;">${s(p.name)}</h3>
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:4px;letter-spacing:-0.3px;">${s(p.name)}</h3>
       ${p.description ? `<p style="font-size:12px;color:var(--gray);margin-bottom:12px;line-height:1.5;">${s(p.description)}</p>` : ''}
 
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding:10px 14px;background:var(--creme2);border-radius:10px;">
-        <div><div style="font-size:20px;font-weight:900;">${formatBRL(p.price)}</div><div style="font-size:11px;color:var(--gray);">por unidade</div></div>
-        <div style="font-size:11px;color:var(--gray);text-align:right;">Minimo <strong style="color:var(--bord-esc);">${p.min_quantity} un.</strong></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;background:#F5EFE6;border-radius:10px;padding:10px 14px;margin-bottom:14px;">
+        <div>
+          <div style="font-size:20px;font-weight:900;">${formatBRL(p.price)}</div>
+          <div style="font-size:11px;color:var(--gray);">por unidade</div>
+        </div>
+        <div style="font-size:11px;color:var(--gray);text-align:right;">Mínimo <strong style="color:var(--bord-esc);">${p.min_quantity} un.</strong></div>
       </div>
 
-      ${buildVariationGrid()}
-      ${buildSimpleQty()}
+      ${hasVariations ? buildGrid() : `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <label style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:1px;">Quantidade</label>
+          <button class="qty-btn" onclick="ajustarQtyPainel(-1,${p.min_quantity})">-</button>
+          <span class="qty-value" id="pmodal-qty">${p.min_quantity}</span>
+          <button class="qty-btn" onclick="ajustarQtyPainel(1,${p.min_quantity})">+</button>
+          <span style="font-size:12px;color:var(--pink);font-weight:700;" id="pmodal-sub">${formatBRL(p.price*p.min_quantity)}</span>
+        </div>
+      `}
 
-      <div id="pmodal-total-wrap" style="display:none;padding:10px 14px;background:var(--creme2);border-radius:10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-size:12px;color:var(--gray);">Total selecionado</span>
-        <span id="pmodal-total-val" style="font-size:16px;font-weight:800;color:var(--bord-esc);">${formatBRL(0)}</span>
+      <div id="pmodal-total-wrap" style="display:${hasVariations?'flex':'none'};justify-content:space-between;align-items:center;padding:10px 14px;background:#F5EFE6;border-radius:10px;margin-bottom:12px;">
+        <div style="font-size:12px;color:var(--gray);">Total selecionado</div>
+        <div style="text-align:right;">
+          <div id="pmodal-total-val" style="font-size:16px;font-weight:800;color:var(--bord-esc);">${formatBRL(0)}</div>
+          <div id="pmodal-total-units" style="font-size:10px;color:var(--gray);">0 unidades</div>
+        </div>
       </div>
 
       <button class="btn btn-primary" onclick="adicionarDoModalPainel('${p.id}')">Adicionar ao carrinho</button>
@@ -1151,39 +1145,38 @@ function abrirProdutoPainel(id) {
 
   window._carouselIdxP   = 0;
   window._carouselTotalP = imgs.length;
-  window._pmodalVars     = {}; // { 'G|Preto': 2, 'M|Vermelho': 1, ... }
+  window._pmodalVars     = {};
   window._pmodalProdId   = id;
   modal.style.display    = 'flex';
   document.body.style.overflow = 'hidden';
 }
 
-function _varQty(size, color, add) {
-  const key    = `${size}|${color}`;
-  const elId   = `vqty-${size}-${(color||'').replace(/\s/g,'_')}`;
-  const el     = document.getElementById(elId);
-  if (!el) return;
+function _varInput(el, size, color) {
+  const qty = Math.max(0, parseInt(el.value) || 0);
+  el.value = qty || '';
+  const key = `${size}|${color}`;
+  window._pmodalVars[key] = qty;
 
-  const current = window._pmodalVars[key] || 0;
-  const next    = add ? current + 1 : Math.max(0, current - 1);
-  window._pmodalVars[key] = next;
-  el.textContent = next;
-
-  // Destaca visualmente a linha se tem quantidade
-  el.style.color = next > 0 ? 'var(--pink)' : 'var(--bord-esc)';
+  // Destaque visual
+  el.style.borderColor  = qty > 0 ? '#C8A96E' : '#E8D9C5';
+  el.style.background   = qty > 0 ? '#FFFBE6' : '#fff';
+  el.style.color        = qty > 0 ? '#3D0E20' : '#2C1018';
 
   // Atualiza total
   const p = _todosProdutos.find(x => x.id === window._pmodalProdId);
   if (!p) return;
-  const totalQty = Object.values(window._pmodalVars).reduce((a,b) => a+b, 0);
+  const totalQty = Object.values(window._pmodalVars).reduce((a,b)=>a+b,0);
   const totalVal = totalQty * parseFloat(p.price);
   const wrap = document.getElementById('pmodal-total-wrap');
   const valEl = document.getElementById('pmodal-total-val');
-  if (wrap) wrap.style.display = totalQty > 0 ? 'flex' : 'none';
+  const unEl  = document.getElementById('pmodal-total-units');
+  if (wrap) wrap.style.display = 'flex';
   if (valEl) valEl.textContent = formatBRL(totalVal);
+  if (unEl)  unEl.textContent  = totalQty + ' unidade' + (totalQty !== 1 ? 's' : '');
 }
 
 function moverCarrosselPainel(dir) {
-  const total = window._carouselTotalP||1;
+  const total = window._carouselTotalP || 1;
   window._carouselIdxP = ((window._carouselIdxP||0)+dir+total)%total;
   moverParaSlidePainel(window._carouselIdxP);
 }
@@ -1209,32 +1202,23 @@ function ajustarQtyPainel(delta, min) {
   if (p && sub) sub.textContent = formatBRL(p.price*qty);
 }
 function adicionarDoModalPainel(id) {
-  const p      = _todosProdutos.find(x => x.id === id);
+  const p = _todosProdutos.find(x => x.id === id);
   if (!p) return;
   const sizes  = Array.isArray(p.sizes)  && p.sizes.length  ? p.sizes  : [];
   const colors = Array.isArray(p.colors) && p.colors.length ? p.colors : [];
   const hasVariations = sizes.length > 0 || colors.length > 0;
 
   if (hasVariations) {
-    // Modo grade: adiciona todos os itens com qty > 0
-    const vars   = window._pmodalVars || {};
-    const itens  = Object.entries(vars).filter(([,qty]) => qty > 0);
-
-    if (!itens.length) { showToast('Informe a quantidade para pelo menos uma variacao.','error'); return; }
-
-    // Valida quantidade minima total
-    const totalQty = itens.reduce((acc,[,qty]) => acc+qty, 0);
-    if (totalQty < p.min_quantity) {
-      showToast(`Quantidade minima: ${p.min_quantity} unidades no total.`,'error'); return;
-    }
-
+    const vars  = window._pmodalVars || {};
+    const itens = Object.entries(vars).filter(([,qty]) => qty > 0);
+    if (!itens.length) { showToast('Informe a quantidade para pelo menos uma variação.','error'); return; }
+    const totalQty = itens.reduce((acc,[,qty])=>acc+qty, 0);
+    if (totalQty < p.min_quantity) { showToast(`Quantidade mínima: ${p.min_quantity} unidades no total.`,'error'); return; }
     itens.forEach(([key, qty]) => {
       const [size, color] = key.split('|');
       addToCart({ ...p, _size: size||null, _color: color||null }, qty);
     });
-
   } else {
-    // Modo simples
     const qty = parseInt(document.getElementById('pmodal-qty')?.textContent || p.min_quantity);
     addToCart(p, qty);
   }
@@ -1242,6 +1226,7 @@ function adicionarDoModalPainel(id) {
   document.getElementById('modal-produto').style.display = 'none';
   document.body.style.overflow = '';
 }
+
 
 
 // ════════════════════════════════════════════

@@ -315,7 +315,7 @@ async function renderInicio() {
   setTimeout(() => {
     document.querySelectorAll('.dash-mod-cover').forEach(el => {
       const w = el.offsetWidth;
-      if (w > 0) el.style.height = Math.round(w * 0.5625) + 'px'; // 16:9
+      if (w > 0) el.style.height = Math.round(w * 0.9) + 'px';
     });
   }, 100);
 

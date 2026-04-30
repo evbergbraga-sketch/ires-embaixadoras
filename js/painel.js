@@ -937,7 +937,8 @@ async function renderVitrine() {
 
   _todosProdutos = prods || [];
   document.getElementById('loading-vitrine').style.display = 'none';
-  document.getElementById('total-produtos').textContent = _todosProdutos.length;
+  const totalEl = document.getElementById('total-produtos');
+  if (totalEl) totalEl.textContent = _todosProdutos.length;
 
   const filtrosCat = document.getElementById('filtros-cat');
   (cats||[]).forEach(c => {

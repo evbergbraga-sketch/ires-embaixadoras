@@ -862,29 +862,53 @@ let _todosProdutos = [];
 let _categoriaAtiva = '';
 
 async function renderVitrine() {
+  const meuNivel  = _perfil.nivel || 'bronze';
+  const NIVEL_PRATA = 5;
+  const NIVEL_OURO  = 15;
+  const corDot = meuNivel === 'ouro' ? '#C8A96E' : meuNivel === 'prata' ? '#A8A9AD' : '#CD7F32';
+  const corBorder = meuNivel === 'ouro' ? 'rgba(200,169,110,.3)' : meuNivel === 'prata' ? 'rgba(168,169,173,.3)' : 'rgba(205,127,50,.3)';
+  const nivelLabel = {bronze:'Bronze',prata:'Prata',ouro:'Ouro'}[meuNivel];
+
+  // Conta pedidos pagos para barra de progresso
+  const { count: totalPagosVitrine } = await _supabase
+    .from('orders')
+    .select('id', { count: 'exact', head: true })
+    .eq('reseller_id', _perfil.id)
+    .in('status', ['paid','processing','shipped','delivered']);
+
+  const totalPagos = totalPagosVitrine || 0;
+  const prox = meuNivel === 'bronze' ? { nome:'Prata', faltam: NIVEL_PRATA }
+             : meuNivel === 'prata'  ? { nome:'Ouro',  faltam: NIVEL_OURO  }
+             : null;
+  const pct = prox ? Math.min(100, Math.round((totalPagos / prox.faltam) * 100)) : 100;
+
   document.getElementById('conteudo').innerHTML = `
-    <div class="vitrine-hero" style="margin-bottom:16px">
-      <div>
-        <h2>Bem-vinda, <span style="color:#fff;font-weight:900">${_perfil.full_name?.split(' ')[0]||'Embaixadora'}</span></h2>
-        <p style="font-size:13px;color:var(--gray)">Produtos exclusivos para embaixadoras IRES</p>
+    <div style="background:#fff;border:0.5px solid ${corBorder};border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <div style="width:8px;height:8px;border-radius:50%;background:${corDot};flex-shrink:0;"></div>
+      <div style="font-size:12px;font-weight:500;color:#3D0E20;flex-shrink:0;">${nivelLabel}</div>
+      <div style="flex:1;height:3px;background:#EDD9C0;border-radius:99px;overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:${corDot};border-radius:99px;transition:width .4s ease;"></div>
       </div>
-      <div class="vitrine-hero-badge">
-        <div class="num" id="total-produtos">...</div>
-        <div class="lbl">produtos</div>
-      </div>
+      <div style="font-size:10px;color:#A0622A;white-space:nowrap;flex-shrink:0;">${prox ? `${totalPagos}/${prox.faltam} para ${prox.nome}` : 'Nível máximo 🏆'}</div>
     </div>
-    <div class="filters" style="margin-bottom:16px;">
-      <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;-webkit-overflow-scrolling:touch;align-items:center;">
+    <div style="position:relative;margin-bottom:10px;">
+      <div id="filters-row" style="display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;padding-right:40px;scrollbar-width:none;-webkit-overflow-scrolling:touch;align-items:center;">
         <div class="filter-pill active" id="filtro-todos" onclick="setFiltroCatPainel(this,'')">Todos</div>
         <div id="filtros-cat" style="display:contents"></div>
-        <input type="text" id="busca-vitrine" placeholder="Buscar produto..."
-          style="flex-shrink:0;background:var(--creme);border:0.5px solid var(--borda);border-radius:20px;padding:7px 16px;font-size:13px;color:var(--bord-esc);outline:none;min-width:160px;"
-          oninput="filtrarProdutosPainel()"/>
+      </div>
+      <div id="filters-fade" style="position:absolute;top:0;right:0;bottom:0;width:48px;background:linear-gradient(to right,transparent,var(--creme) 75%);pointer-events:none;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B6050" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
     </div>
+    <input type="text" id="busca-vitrine" placeholder="Buscar produto..."
+      style="width:100%;background:#fff;border:0.5px solid #E8D9C5;border-radius:20px;padding:7px 14px;font-size:13px;color:#2C1018;outline:none;margin-bottom:14px;"
+      oninput="filtrarProdutosPainel()"/>
     <div id="loading-vitrine" class="loading"><div class="spinner"></div> Carregando...</div>
     <div class="products-grid" id="grid-vitrine" style="display:none"></div>
-    <div class="empty-state" id="empty-vitrine" style="display:none"><p>Nenhum produto encontrado.</p></div>
+    <div class="empty-state" id="empty-vitrine" style="display:none">
+      <div class="empty-state-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--bord)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
+      <div class="empty-state-title">Nenhum produto encontrado</div>
+    </div>
   `;
 
   if (!document.getElementById('modal-produto')) {
@@ -894,6 +918,17 @@ async function renderVitrine() {
     m.onclick = (e) => { if (e.target === m) { m.style.display='none'; document.body.style.overflow=''; } };
     document.body.appendChild(m);
   }
+
+  // Oculta seta quando scroll chega ao fim
+  setTimeout(() => {
+    const row = document.getElementById('filters-row');
+    const fade = document.getElementById('filters-fade');
+    if (row && fade) {
+      row.addEventListener('scroll', () => {
+        fade.style.opacity = (row.scrollLeft + row.clientWidth >= row.scrollWidth - 10) ? '0' : '1';
+      }, { passive: true });
+    }
+  }, 300);
 
   const [{ data: cats }, { data: prods }] = await Promise.all([
     _supabase.from('categories').select('id,name').order('name'),

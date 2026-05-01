@@ -1793,8 +1793,8 @@ async function renderCapacitacao() {
         .cap-mod-card { width:calc(25% - 12px) !important;flex-shrink:0 !important; }
         .cap-mod-cover { height:auto !important;aspect-ratio:3/4 !important; }
         .cap-dots { display:none; }
-        .cap-player-wrap { position:relative;flex-direction:row;align-items:flex-start;min-height:500px; }
-        .cap-player-left { flex:1;min-width:0; }
+        .cap-player-wrap { position:relative;flex-direction:row;align-items:flex-start;max-width:1100px;margin:0 auto; }
+        .cap-player-left { flex:1;min-width:0;max-width:780px; }
         .cap-player-right { width:280px;flex-shrink:0;border-left:.5px solid #E8D9C5;background:#fff;max-height:600px;overflow-y:auto; }
       }
     `;
@@ -2117,16 +2117,16 @@ function _abrirPlayer(aulaId) {
         <div class="cap-video-wrap" id="cap-video-wrap-${aulaId}">
           <div class="cap-video-inner" id="cap-video-inner-${aulaId}">
             ${aulaAtual.cover_url || modAtual.cover_url ? `
-              <div id="yt-poster-${aulaId}" onclick="_loadYTPlayer('${aulaId}','${embedUrl}')"
-                style="position:absolute;inset:0;cursor:pointer;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+              <div id="yt-poster-${aulaId}" onclick="_loadYTPlayer('${aulaId}','${embedUrl}')" role="button" tabindex="0"
+                style="position:absolute;inset:0;cursor:pointer;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden;-webkit-tap-highlight-color:transparent;touch-action:manipulation;">
                 <img src="${s(aulaAtual.cover_url||modAtual.cover_url||'')}" style="width:100%;height:100%;object-fit:cover;opacity:.85;"/>
                 <div style="position:absolute;width:64px;height:64px;border-radius:50%;background:rgba(61,14,32,.85);border:2px solid rgba(200,169,110,.6);display:flex;align-items:center;justify-content:center;">
                   <div style="width:0;height:0;border-top:10px solid transparent;border-bottom:10px solid transparent;border-left:18px solid #C8A96E;margin-left:4px;"></div>
                 </div>
               </div>
             ` : `
-              <div id="yt-poster-${aulaId}" onclick="_loadYTPlayer('${aulaId}','${embedUrl}')"
-                style="position:absolute;inset:0;cursor:pointer;background:#0d0508;display:flex;align-items:center;justify-content:center;">
+              <div id="yt-poster-${aulaId}" onclick="_loadYTPlayer('${aulaId}','${embedUrl}')" role="button" tabindex="0"
+                style="position:absolute;inset:0;cursor:pointer;background:#0d0508;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;touch-action:manipulation;">
                 <div style="width:64px;height:64px;border-radius:50%;background:rgba(61,14,32,.85);border:2px solid rgba(200,169,110,.6);display:flex;align-items:center;justify-content:center;">
                   <div style="width:0;height:0;border-top:10px solid transparent;border-bottom:10px solid transparent;border-left:18px solid #C8A96E;margin-left:4px;"></div>
                 </div>

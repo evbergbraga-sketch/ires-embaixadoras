@@ -1793,7 +1793,7 @@ async function renderCapacitacao() {
         .cap-mod-card { width:calc(25% - 12px) !important;flex-shrink:0 !important; }
         .cap-mod-cover { height:auto !important;aspect-ratio:3/4 !important; }
         .cap-dots { display:none; }
-        .cap-player-wrap { position:relative;flex-direction:row;align-items:flex-start;max-width:1000px;margin:0 auto; }
+        .cap-player-wrap { position:relative;flex-direction:row;align-items:flex-start;max-width:1100px;margin:0 auto; }
         .cap-player-left { flex:1;min-width:0;max-width:780px; }
         .cap-player-right { width:260px;flex-shrink:0;border-left:.5px solid #E8D9C5;background:#fff;max-height:600px;overflow-y:auto; }
       }

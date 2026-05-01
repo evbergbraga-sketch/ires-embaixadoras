@@ -1790,7 +1790,7 @@ async function renderCapacitacao() {
       }
       @media (min-width: 768px) {
         .cap-scroll-row { flex-wrap:wrap !important;overflow-x:visible !important;scroll-snap-type:none !important;gap:16px !important; }
-        .cap-mod-card { width:calc(25% - 12px) !important;flex-shrink:0 !important; }
+        .cap-mod-card { width:calc(33.333% - 12px) !important;flex-shrink:0 !important; }
         .cap-mod-cover { height:auto !important;aspect-ratio:3/4 !important; }
         .cap-dots { display:none; }
         .cap-player-wrap { position:relative;flex-direction:row;align-items:flex-start;max-width:1500px;margin:0 auto; }

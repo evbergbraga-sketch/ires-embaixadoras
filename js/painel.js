@@ -1841,13 +1841,15 @@ async function renderCapacitacao() {
   // Seta altura proporcional baseada na largura real renderizada
   const _setModuleHeights = () => {
     const covers = document.querySelectorAll('.cap-mod-cover-inner');
+    const isDesktop = window.innerWidth >= 768;
+    const multiplier = isDesktop ? 1.33 : 2.0; // 4:3 no desktop, 1:2 no mobile
     covers.forEach(el => {
       el.style.height = '0';
       el.style.paddingBottom = '0';
     });
     covers.forEach(el => {
       const w = el.offsetWidth;
-      if (w > 0) el.style.height = Math.round(w * 2.0) + 'px';
+      if (w > 0) el.style.height = Math.round(w * multiplier) + 'px';
     });
   };
   requestAnimationFrame(() => {

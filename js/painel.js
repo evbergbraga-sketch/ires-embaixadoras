@@ -1704,31 +1704,33 @@ async function renderCapacitacao() {
     const style = document.createElement('style');
     style.id = 'cap-styles';
     style.textContent = `
-      /* Mobile: grid 2 colunas portrait — DEFINITIVO */
+      /* Cards 3:4 portrait — scroll horizontal */
       .cap-scroll-row {
-        display:grid !important;
-        grid-template-columns:repeat(2,1fr) !important;
-        gap:10px;
+        display:flex !important;
+        gap:12px !important;
+        overflow-x:auto !important;
+        scroll-snap-type:x mandatory !important;
+        -webkit-overflow-scrolling:touch !important;
+        padding-bottom:4px !important;
+        scrollbar-width:none !important;
         width:100% !important;
-        max-width:100% !important;
         box-sizing:border-box !important;
-        overflow:visible !important;
       }
+      .cap-scroll-row::-webkit-scrollbar { display:none; }
       .cap-mod-card {
+        flex-shrink:0 !important;
+        width:155px !important;
         background:#fff;
         border:.5px solid #E8D9C5;
         border-radius:14px;
         overflow:hidden;
         cursor:pointer;
-        transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;
-        width:100% !important;
-        min-width:0 !important;
-        max-width:100% !important;
-        box-sizing:border-box !important;
+        scroll-snap-align:start;
+        transition:transform .15s ease,box-shadow .15s ease;
       }
-      .cap-mod-card:hover { transform:translateY(-2px);box-shadow:0 4px 16px rgba(92,26,46,.10);border-color:rgba(92,26,46,.25); }
-      .cap-mod-card:active { transform:scale(.97);box-shadow:none; }
-      .cap-mod-cover { width:100% !important;aspect-ratio:3/4;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:flex-end;justify-content:flex-start;flex-shrink:0;box-sizing:border-box; }
+      .cap-mod-card:hover { transform:translateY(-2px);box-shadow:0 4px 16px rgba(92,26,46,.10); }
+      .cap-mod-card:active { transform:scale(.97); }
+      .cap-mod-cover { width:100%;height:207px;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:flex-end;justify-content:flex-start; }
       .cap-mod-cover img { width:100%;height:100%;object-fit:cover; }
       .cap-mod-cover-label { font-size:10px;font-weight:600;color:rgba(200,169,110,.6);letter-spacing:.05em; }
       .cap-mod-badge { position:absolute;top:8px;left:8px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.3);border-radius:6px;padding:2px 7px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.06em;text-transform:uppercase; }
@@ -1788,8 +1790,8 @@ async function renderCapacitacao() {
         to   { opacity:1;transform:translateY(0); }
       }
       @media (min-width: 768px) {
-        #cap-scroll-row { gap:16px !important; }
-        #cap-scroll-row > div { width:calc(25% - 12px) !important; }
+        .cap-scroll-row { flex-wrap:wrap !important;overflow-x:visible !important;scroll-snap-type:none !important; }
+        .cap-mod-card { width:calc(25% - 10px) !important; }
         .cap-dots { display:none; }
         .cap-player-wrap { position:relative;flex-direction:row;align-items:flex-start;min-height:500px; }
         .cap-player-left { flex:1;min-width:0; }
@@ -1813,7 +1815,7 @@ async function renderCapacitacao() {
     const thumb   = mod.cover_url || '';
 
     html += `
-      <div onclick="_abrirModulo('${mod.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;width:calc(72% - 5px);flex-shrink:0;box-sizing:border-box;scroll-snap-align:start;">
+      <div onclick="_abrirModulo('${mod.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;width:155px;flex-shrink:0;scroll-snap-align:start;">
         <div class="cap-mod-cover-inner" style="width:100%;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);height:0;padding-bottom:0;" id="cover-${mod.id}">
           ${thumb ? `<img src="${s(thumb)}" alt="${s(mod.title)}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>` : ''}
           <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.92) 0%,rgba(26,10,18,.3) 50%,transparent 100%);"></div>
@@ -1887,18 +1889,43 @@ function _abrirModulo(moduloId) {
   const modConc = aulas.filter(a=>concluidas.has(a.id)).length;
   const pctMod  = aulas.length ? Math.round((modConc/aulas.length)*100) : 0;
 
+  // Primeira aula não concluída (para o botão "Continuar")
+  const proximaAula = aulas.find(a => !concluidas.has(a.id) && nivelLiberado(a.nivel)) || aulas[0];
+
   let html = `
-    <div class="cap-aula-cover" style="margin:-14px -14px 0;width:calc(100% + 28px);">
-      ${thumb ? `<img src="${s(thumb)}" alt="${s(mod.title)}" loading="lazy"/>` : ''}
-      <div class="cap-aula-cover-overlay"></div>
-      <button onclick="renderCapacitacao()" style="position:absolute;top:12px;left:12px;width:30px;height:30px;border-radius:50%;background:rgba(26,10,18,.5);border:.5px solid rgba(200,169,110,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <div class="cap-aula-cover-title">${s(mod.title)}</div>
-      <div class="cap-aula-cover-meta">${aulas.length} aula${aulas.length!==1?'s':''} &middot; ${pctMod}%</div>
+    <!-- Hero do módulo com capa contida -->
+    <div style="border-radius:14px;overflow:hidden;margin-bottom:14px;position:relative;">
+      <div style="width:100%;height:200px;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
+        ${thumb ? `<img src="${s(thumb)}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;" loading="lazy"/>` : ''}
+        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.92) 0%,transparent 50%);"></div>
+        <button onclick="renderCapacitacao()" style="position:absolute;top:12px;left:12px;width:32px;height:32px;border-radius:50%;background:rgba(26,10,18,.55);border:.5px solid rgba(200,169,110,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div style="position:absolute;bottom:14px;left:14px;right:14px;">
+          <div style="font-size:19px;font-weight:700;color:#fff;font-family:'Playfair Display',serif;letter-spacing:-.3px;margin-bottom:3px;">${s(mod.title)}</div>
+          <div style="font-size:11px;color:rgba(200,169,110,.8);">${aulas.length} aula${aulas.length!==1?'s':''} · ${pctMod}% concluído</div>
+          <div style="margin-top:7px;height:3px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden;">
+            <div style="height:100%;width:${pctMod}%;background:#C8A96E;border-radius:99px;"></div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div style="margin-top:16px;">
-      <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;margin-bottom:8px;">Aulas</div>
+
+    ${proximaAula ? `
+    <!-- Botão continuar -->
+    <div onclick="_abrirPlayer('${proximaAula.id}')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#3D0E20;border-radius:12px;cursor:pointer;margin-bottom:14px;">
+      <div style="width:36px;height:36px;border-radius:50%;background:rgba(200,169,110,.15);border:1px solid rgba(200,169,110,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <div style="width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:10px solid #C8A96E;margin-left:2px;"></div>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;color:#C8A96E;margin-bottom:2px;">${modConc > 0 ? 'Continuar de onde parei' : 'Começar módulo'}</div>
+        <div style="font-size:11px;color:rgba(200,169,110,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s(proximaAula.title)}</div>
+      </div>
+    </div>
+    ` : ''}
+
+    <!-- Lista de aulas -->
+    <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;margin-bottom:8px;">Aulas</div>
   `;
 
   aulas.forEach((aula) => {
@@ -1907,7 +1934,6 @@ function _abrirModulo(moduloId) {
     const durMin    = aula.duration_seconds ? Math.ceil(aula.duration_seconds/60) : null;
     const nivelAula = aula.nivel||'bronze';
     const cor       = nivelCor(nivelAula);
-    const pct       = feita ? 100 : 0;
     const aulaCover = aula.cover_url||mod.cover_url||'';
 
     html += `
@@ -1923,22 +1949,23 @@ function _abrirModulo(moduloId) {
           </div>
           <div class="cap-aula-title">${s(aula.title)}</div>
           <div class="cap-aula-meta">${durMin?durMin+' min':''}${!liberada?' &middot; '+nivelLabel(nivelAula):''}</div>
-          ${liberada?`<div class="cap-aula-prog"><div class="cap-aula-pfill" style="width:${pct}%"></div></div>`:''}
         </div>
-        ${feita?`<div style="width:18px;height:18px;border-radius:50%;background:rgba(200,169,110,.15);border:1px solid #C8A96E;display:flex;align-items:center;justify-content:center;font-size:9px;color:#C8A96E;flex-shrink:0;">&#10003;</div>`:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D9C5B0" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>`}
+        ${feita
+          ? `<div style="width:20px;height:20px;border-radius:50%;background:rgba(200,169,110,.15);border:1px solid #C8A96E;display:flex;align-items:center;justify-content:center;font-size:10px;color:#C8A96E;flex-shrink:0;">&#10003;</div>`
+          : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D9C5B0" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>`
+        }
       </div>
     `;
   });
 
-  html += `</div>`;
   document.getElementById('conteudo-cap').innerHTML = html;
-
 }
+
 
 function _youtubeEmbedUrl(url) {
   if (!url) return '';
   const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/);
-  if (match) return `https://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1`;
+  if (match) return `https://www.youtube-nocookie.com/embed/${match[1]}?rel=0&modestbranding=1&controls=1&showinfo=0&iv_load_policy=3&cc_load_policy=0`;
   return url;
 }
 

@@ -1895,7 +1895,7 @@ function _abrirModuloModal(moduloId) {
   // Criar overlay modal
   const overlay = document.createElement('div');
   overlay.id = 'mod-modal-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:16px;';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:20px;';
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
 
   const aulasHTML = aulas.map(aula => {
@@ -1919,7 +1919,7 @@ function _abrirModuloModal(moduloId) {
   }).join('');
 
   overlay.innerHTML = `
-    <div style="background:#fff;border-radius:16px;overflow:hidden;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;position:relative;">
+    <div style="background:#fff;border-radius:16px;overflow:hidden;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;position:relative;">
       <!-- Hero 16:9 -->
       <div style="width:100%;aspect-ratio:16/9;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
         ${modalThumb ? `<img src="${s(modalThumb)}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;" loading="lazy"/>` : ''}

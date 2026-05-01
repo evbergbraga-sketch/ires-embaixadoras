@@ -1049,7 +1049,10 @@ function abrirProdutoPainel(id) {
           <div style="display:flex;flex-direction:column;gap:8px;">
             ${colors.map(cor => `
               <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#F5EFE6;border-radius:8px;">
-                <span style="font-size:14px;font-weight:500;color:#2C1018;">${s(cor)}</span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="width:20px;height:20px;border-radius:4px;flex-shrink:0;background:${_corHex(cor)};border:.5px solid rgba(0,0,0,.15);"></div>
+                  <span style="font-size:14px;font-weight:500;color:#2C1018;">${s(cor)}</span>
+                </div>
                 <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
                   id="vi-${s(cor).replace(/\s/g,'_')}-"
                   data-size="" data-color="${s(cor).replace(/"/g,'&quot;')}"
@@ -1098,7 +1101,12 @@ function abrirProdutoPainel(id) {
             <tbody>
               ${colors.map(cor => `
                 <tr style="border-bottom:.5px solid #F0EAE2;">
-                  <td style="padding:7px 8px;font-size:13px;font-weight:500;color:#2C1018;white-space:nowrap;">${s(cor)}</td>
+                  <td style="padding:7px 8px;white-space:nowrap;">
+                    <div style="display:flex;align-items:center;gap:7px;">
+                      <div style="width:18px;height:18px;border-radius:4px;flex-shrink:0;background:${_corHex(cor)};border:.5px solid rgba(0,0,0,.15);"></div>
+                      <span style="font-size:13px;font-weight:500;color:#2C1018;">${s(cor)}</span>
+                    </div>
+                  </td>
                   ${sizes.map(sz => `
                     <td style="padding:5px 4px;text-align:center;">
                       <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
@@ -1293,6 +1301,7 @@ async function renderPerfil() {
         <div class="form-group"><label>WhatsApp *</label><input type="tel" id="pf-phone" value="${p.phone||''}" placeholder="(21) 99999-9999" oninput="mascaraTel(this)"/></div>
         <div class="form-group"><label>E-mail *</label><input type="email" id="pf-email" value="${p.email||''}"/></div>
       </div>
+      <div class="form-group"><label>Data de nascimento</label><input type="date" id="pf-birth" value="${p.birth_date||''}" style="max-width:200px;"/></div>
     </div>
     <div class="card" style="margin-bottom:16px">
       <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px">Endereço de entrega</div>
@@ -1390,7 +1399,7 @@ async function salvarPerfil() {
     cidade:      document.getElementById('pf-cidade').value.trim(),
     estado:      document.getElementById('pf-estado').value.trim(),
   };
-  const { error } = await _supabase.from('profiles').update({ full_name:nome, phone, email, address }).eq('id',_perfil.id);
+  const { error } = await _supabase.from('profiles').update({ full_name:nome, phone, email, birth_date: document.getElementById('pf-birth').value || null, address }).eq('id',_perfil.id);
   if (error) { showToast('Erro: '+error.message,'error'); btn.disabled=false; btn.textContent='Salvar alterações'; return; }
   _perfil.full_name=nome; _perfil.phone=phone; _perfil.email=email; _perfil.address=address;
   showToast('Perfil atualizado!', 'success');
@@ -2040,6 +2049,21 @@ function _abrirModulo(moduloId) {
   document.getElementById('conteudo-cap').innerHTML = html;
 }
 
+
+// Converte nome de cor em hex
+function _corHex(nome) {
+  const mapa = {
+    'preto':'#1a1a1a','branco':'#f0f0f0','vermelho':'#e63946',
+    'azul':'#2176ae','verde':'#2dc653','amarelo':'#ffd60a',
+    'rosa':'#ff6b9d','roxo':'#7b2d8b','laranja':'#f4a261',
+    'cinza':'#9e9e9e','marrom':'#795548','bege':'#f5e6d3',
+    'sandia':'#ff6b6b','lilas':'#c084fc','lilás':'#c084fc',
+    'romance':'#ffb3c6','aço':'#90a4ae','marinho':'#1b3a6b',
+    'chumbo':'#616161','verde água':'#00b4d8','azul claro':'#90caf9',
+    'azul marinho':'#1b3a6b','cinza chumbo':'#616161',
+  };
+  return mapa[nome.toLowerCase()] || '#888';
+}
 
 function _loadYTPlayer(aulaId) {
   const inner    = document.getElementById('cap-video-inner-' + aulaId);

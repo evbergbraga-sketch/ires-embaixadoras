@@ -1781,8 +1781,8 @@ async function renderCapacitacao() {
       .cap-pl-thumb { width:56px;height:36px;border-radius:6px;overflow:hidden;position:relative;flex-shrink:0;background:#D9C5B0;display:flex;align-items:center;justify-content:center; }
       .cap-pl-thumb img { width:100%;height:100%;object-fit:cover; }
       .cap-pl-info { flex:1;min-width:0; }
-      .cap-pl-title { font-size:11px;font-weight:600;color:#2C1018;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-      .cap-pl-meta { font-size:10px;color:#8B6050;margin-top:1px; }
+      .cap-pl-title { font-size:13px;font-weight:600;color:#2C1018;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+      .cap-pl-meta { font-size:12px;color:#8B6050;margin-top:1px; }
       .cap-pl-check { width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
       @keyframes slideDown {
         from { opacity:0;transform:translateY(-8px); }

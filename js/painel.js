@@ -1729,7 +1729,7 @@ async function renderCapacitacao() {
       }
       .cap-mod-card:hover { transform:translateY(-2px);box-shadow:0 4px 16px rgba(92,26,46,.10); }
       .cap-mod-card:active { transform:scale(.97); }
-      .cap-mod-cover { width:100%;aspect-ratio:4/3;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:flex-end;justify-content:flex-start; }
+      .cap-mod-cover { width:100%;aspect-ratio:4/2;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:flex-end;justify-content:flex-start; }
       .cap-mod-cover img { width:100%;height:100%;object-fit:cover; }
       .cap-mod-cover-label { font-size:10px;font-weight:600;color:rgba(200,169,110,.6);letter-spacing:.05em; }
       .cap-mod-badge { position:absolute;top:8px;left:8px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.3);border-radius:6px;padding:2px 7px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.06em;text-transform:uppercase; }

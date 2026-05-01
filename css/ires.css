@@ -754,9 +754,10 @@ select option { background: var(--creme); color: var(--bord-esc); }
   .order-date { font-size: 10px; }
   .order-items-preview { font-size: 11px; width: 100%; order: 3; color: var(--gray); }
   .order-total { font-size: 13px; }
-  /* Mobile topbar: só sino + avatar, sem Carrinho e sem Sair */
+  /* Mobile topbar: carrinho compacto + sino + avatar, sem Sair */
   .topbar-right { gap: 6px; }
-  #cart-link { display: none !important; }
+  #cart-link { display: flex !important; padding: 4px 8px !important; font-size: 11px !important; }
+  #cart-link .cart-txt { display: none !important; }
   .topbar-right [onclick*="signOut"],
   .topbar-right [onclick*="sair"],
   .topbar-right [onclick*="Sair"] { display: none !important; }
@@ -1532,7 +1533,8 @@ body.page {
   .brand-logo-stack { flex-direction: row; align-items: center; gap: 8px; }
   .brand-logo-txt { font-size: 17px; }
   .brand-sub { font-size: 11px; }
-  #cart-link { display: none !important; }
+  #cart-link { display: flex !important; padding: 4px 8px !important; font-size: 11px !important; }
+  #cart-link .cart-txt { display: none !important; }
   .topbar-right [onclick*="signOut"],
   .topbar-right [onclick*="sair"],
   .topbar-right [onclick*="Sair"] { display: none !important; }

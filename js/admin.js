@@ -1485,6 +1485,25 @@ function abrirFormModulo(id) {
         ${mod?.cover_url ? '🔄 Trocar imagem' : '📷 Selecionar imagem'}
       </button>
     </div>
+    <div class="form-group">
+      <label>Foto do modal (16:9) <span style="font-size:10px;color:var(--gray);font-weight:400;">— aparece ao clicar no módulo</span></label>
+      <div style="font-size:11px;color:var(--gray);margin-bottom:6px;">Use imagem <strong>1280×720px</strong> (proporção 16:9). Aparece no modal quando a embaixadora clica no módulo.</div>
+      <div style="width:100%;aspect-ratio:16/9;background:var(--creme2);border:1.5px dashed var(--border);border-radius:10px;overflow:hidden;position:relative;margin-bottom:8px;display:flex;align-items:center;justify-content:center;" id="mod-modal-cover-preview-wrap">
+        ${mod?.modal_cover_url
+          ? `<img src="${s(mod.modal_cover_url)}" style="width:100%;height:100%;object-fit:cover;display:block;" id="mod-modal-cover-preview-img"/>`
+          : `<div id="mod-modal-cover-preview-placeholder" style="text-align:center;color:var(--gray);font-size:12px;pointer-events:none;">
+               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="display:block;margin:0 auto 6px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+               Nenhuma imagem selecionada<br><span style="font-size:10px">16:9 — ex: 1280×720px</span>
+             </div>`
+        }
+        <div id="mod-modal-cover-uploading" style="display:none;position:absolute;inset:0;background:rgba(255,255,255,.85);align-items:center;justify-content:center;"><div class="spinner"></div></div>
+      </div>
+      <input type="file" id="mod-modal-cover-file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="_previewCover('mod-modal')"/>
+      <input type="hidden" id="mod-modal-cover" value="${s(mod?.modal_cover_url||'')||''}"/>
+      <button type="button" onclick="document.getElementById('mod-modal-cover-file').click()" style="width:100%;padding:8px;background:transparent;border:0.5px solid var(--border);border-radius:var(--radius-md);color:var(--pink);font-size:13px;cursor:pointer;">
+        ${mod?.modal_cover_url ? '🔄 Trocar imagem do modal' : '📷 Selecionar imagem do modal'}
+      </button>
+    </div>
     <div class="form-group"><label>Ordem</label><input type="number" id="mod-order" value="${mod?.order||0}" min="0"/></div>
     <div style="display:flex;gap:10px;margin-top:4px">
       <button class="btn btn-outline" style="flex:1" onclick="fecharModal()">Cancelar</button>
@@ -1497,11 +1516,12 @@ async function salvarModulo(id) {
   const titulo=document.getElementById('mod-titulo').value.trim();
   const desc=document.getElementById('mod-desc').value.trim();
   const cover=document.getElementById('mod-cover').value.trim()||null;
+  const modalCover=document.getElementById('mod-modal-cover').value.trim()||null;
   const order=parseInt(document.getElementById('mod-order').value)||0;
   if(!titulo){showToast('Informe o título.','error');return;}
   const btn=document.getElementById('btn-mod');
   btn.disabled=true;btn.innerHTML='<div class="spinner" style="margin:0 auto"></div>';
-  const{error}=id?await _supabase.from('modules').update({title:titulo,description:desc||null,cover_url:cover,order}).eq('id',id):await _supabase.from('modules').insert({title:titulo,description:desc||null,cover_url:cover,order,is_active:true});
+  const{error}=id?await _supabase.from('modules').update({title:titulo,description:desc||null,cover_url:cover,modal_cover_url:modalCover,order}).eq('id',id):await _supabase.from('modules').insert({title:titulo,description:desc||null,cover_url:cover,modal_cover_url:modalCover,order,is_active:true});
   if(error){showToast('Erro: '+error.message,'error');btn.disabled=false;btn.textContent='Salvar';return;}
   showToast(id?'Módulo atualizado!':'Módulo criado!','success');
   fecharModal();renderCapacitacaoAdmin();

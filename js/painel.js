@@ -266,7 +266,7 @@ async function renderInicio() {
       return `
         <div onclick="irAba('capacitacao')" style="flex-shrink:0;width:130px;border-radius:12px;overflow:hidden;cursor:pointer;background:#fff;border:.5px solid #E8D9C5;">
           <div class="dash-mod-cover" style="width:100%;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
-            ${thumb ? `<img src="${s(thumb)}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;" loading="lazy"/>` : ''}
+            ${modalThumb ? `<img src="${s(modalThumb)}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;" loading="lazy"/>` : (thumb ? `<img src="${s(thumb)}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;" loading="lazy"/>` : '')}
             <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.85) 0%,transparent 55%);"></div>
             <div style="position:absolute;top:6px;left:6px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.3);border-radius:5px;padding:2px 6px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.06em;">MOD ${String(mi+1).padStart(2,'0')}</div>
             <div style="position:absolute;bottom:6px;left:6px;right:6px;">
@@ -1645,7 +1645,7 @@ async function renderCapacitacao() {
     { data: notificacoes },
   ] = await Promise.all([
     _supabase.from('modules')
-      .select('id,title,description,"order",cover_url,lessons(id,title,description,video_url,duration_seconds,"order",cover_url,nivel)')
+      .select('id,title,description,"order",cover_url,modal_cover_url,lessons(id,title,description,video_url,duration_seconds,"order",cover_url,nivel)')
       .eq('is_active', true)
       .order('"order"', { ascending: true }),
     _supabase.from('lesson_progress').select('lesson_id').eq('reseller_id', _perfil.id),
@@ -1816,7 +1816,7 @@ async function renderCapacitacao() {
     const thumb   = mod.cover_url || '';
 
     html += `
-      <div onclick="_abrirModulo('${mod.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;width:155px;flex-shrink:0;scroll-snap-align:start;">
+      <div onclick="_abrirModuloModal('${mod.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;width:155px;flex-shrink:0;scroll-snap-align:start;">
         <div class="cap-mod-cover-inner" style="width:100%;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);height:0;padding-bottom:0;" id="cover-${mod.id}">
           ${thumb ? `<img src="${s(thumb)}" alt="${s(mod.title)}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>` : ''}
           <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.92) 0%,rgba(26,10,18,.3) 50%,transparent 100%);"></div>
@@ -1866,6 +1866,82 @@ async function renderCapacitacao() {
   }
 }
 
+function _abrirModuloModal(moduloId) {
+  const modulos    = window._capModulos || [];
+  const concluidas = window._capConcluidas || new Set();
+  const mod        = modulos.find(m => m.id === moduloId);
+  if (!mod) return;
+
+  const aulas      = (mod.lessons||[]).sort((a,b)=>a.order-b.order);
+  const mi         = modulos.indexOf(mod);
+  const modalThumb = mod.modal_cover_url || mod.cover_url || '';
+  const modConc    = aulas.filter(a=>concluidas.has(a.id)).length;
+  const pctMod     = aulas.length ? Math.round((modConc/aulas.length)*100) : 0;
+  const meuNivel   = _perfil.nivel || 'bronze';
+  const ORDEM_NIVEL = { bronze:0, prata:1, ouro:2 };
+  function nivelLiberado(n) { return ORDEM_NIVEL[meuNivel] >= ORDEM_NIVEL[n||'bronze']; }
+  const proximaAula = aulas.find(a => !concluidas.has(a.id) && nivelLiberado(a.nivel)) || aulas[0];
+
+  // Criar overlay modal
+  const overlay = document.createElement('div');
+  overlay.id = 'mod-modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:16px;';
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+  const aulasHTML = aulas.map(aula => {
+    const feita    = concluidas.has(aula.id);
+    const liberada = nivelLiberado(aula.nivel);
+    const durMin   = aula.duration_seconds ? Math.ceil(aula.duration_seconds/60) : null;
+    const aulaCover = aula.cover_url || '';
+    return `
+      <div onclick="${liberada ? `_abrirPlayer('${aula.id}');document.getElementById('mod-modal-overlay')?.remove()` : ''}"
+        style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:.5px solid #F0EAE2;cursor:${liberada?'pointer':'default'};${!liberada?'opacity:.55;':''}">
+        <div style="width:68px;height:44px;border-radius:8px;overflow:hidden;position:relative;flex-shrink:0;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
+          ${aulaCover ? `<img src="${s(aulaCover)}" style="width:100%;height:100%;object-fit:cover;" loading="lazy"/>` : ''}
+          ${liberada ? `<div style="position:absolute;bottom:3px;right:3px;width:16px;height:16px;border-radius:50%;background:rgba(200,169,110,.9);display:flex;align-items:center;justify-content:center;"><div style="width:0;height:0;border-top:3px solid transparent;border-bottom:3px solid transparent;border-left:5px solid #3D0E20;margin-left:1px;"></div></div>` : `<div style="position:absolute;inset:0;background:rgba(26,10,18,.7);display:flex;align-items:center;justify-content:center;"><svg width="10" height="12" viewBox="0 0 12 14" fill="none"><rect x="1" y="6" width="10" height="8" rx="1.5" fill="none" stroke="#C8A96E" stroke-width="1.2"/><path d="M3 6V4a3 3 0 016 0v2" stroke="#C8A96E" stroke-width="1.2" stroke-linecap="round"/></svg></div>`}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:600;color:#2C1018;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s(aula.title)}</div>
+          <div style="font-size:10px;color:#8B6050;margin-top:1px;">${durMin?durMin+' min':''}${!liberada?' · Nível bloqueado':''}</div>
+        </div>
+        ${feita ? `<div style="width:18px;height:18px;border-radius:50%;background:rgba(200,169,110,.15);border:1px solid #C8A96E;display:flex;align-items:center;justify-content:center;font-size:9px;color:#C8A96E;flex-shrink:0;">✓</div>` : ''}
+      </div>`;
+  }).join('');
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:16px;overflow:hidden;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;position:relative;">
+      <!-- Hero 16:9 -->
+      <div style="width:100%;aspect-ratio:16/9;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
+        ${modalThumb ? `<img src="${s(modalThumb)}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;" loading="lazy"/>` : ''}
+        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.5) 0%,transparent 60%);"></div>
+        <button onclick="document.getElementById('mod-modal-overlay').remove()"
+          style="position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:50%;background:rgba(26,10,18,.6);border:.5px solid rgba(200,169,110,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#C8A96E;">✕</button>
+      </div>
+      <!-- Conteúdo -->
+      <div style="padding:16px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;margin-bottom:3px;">Módulo ${String(mi+1).padStart(2,'0')}</div>
+        <div style="font-size:19px;font-weight:700;color:#2C1018;font-family:'Playfair Display',serif;letter-spacing:-.3px;margin-bottom:3px;line-height:1.2;">${s(mod.title)}</div>
+        <div style="font-size:12px;color:#8B6050;margin-bottom:14px;">${aulas.length} aula${aulas.length!==1?'s':''} · ${pctMod}% concluído</div>
+        ${proximaAula ? `
+        <div onclick="_abrirPlayer('${proximaAula.id}');document.getElementById('mod-modal-overlay')?.remove()"
+          style="display:flex;align-items:center;gap:10px;padding:11px 16px;background:#3D0E20;border-radius:10px;cursor:pointer;margin-bottom:14px;">
+          <div style="width:30px;height:30px;border-radius:50%;background:rgba(200,169,110,.15);border:1px solid rgba(200,169,110,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <div style="width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:8px solid #C8A96E;margin-left:2px;"></div>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:#C8A96E;">${modConc>0?'Continuar de onde parei':'Começar módulo'}</div>
+            <div style="font-size:10px;color:rgba(200,169,110,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s(proximaAula.title)}</div>
+          </div>
+        </div>` : ''}
+        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;margin-bottom:8px;">Aulas</div>
+        ${aulasHTML}
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+}
+
 function _abrirModulo(moduloId) {
   const modulos    = window._capModulos || [];
   const concluidas = window._capConcluidas || new Set();
@@ -1886,7 +1962,8 @@ function _abrirModulo(moduloId) {
 
   const aulas   = (mod.lessons||[]).sort((a,b)=>a.order-b.order);
   const mi      = modulos.indexOf(mod);
-  const thumb   = mod.cover_url || '';
+  const thumb      = mod.cover_url || '';
+  const modalThumb = mod.modal_cover_url || mod.cover_url || '';
   const modConc = aulas.filter(a=>concluidas.has(a.id)).length;
   const pctMod  = aulas.length ? Math.round((modConc/aulas.length)*100) : 0;
 
@@ -1897,7 +1974,7 @@ function _abrirModulo(moduloId) {
     <!-- Hero do módulo com capa contida -->
     <div style="border-radius:14px;overflow:hidden;margin-bottom:14px;position:relative;">
       <div style="width:100%;aspect-ratio:16/9;max-height:420px;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
-        ${thumb ? `<img src="${s(thumb)}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;" loading="lazy"/>` : ''}
+        ${modalThumb ? `<img src="${s(modalThumb)}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;" loading="lazy"/>` : (thumb ? `<img src="${s(thumb)}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;" loading="lazy"/>` : '')}
         <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.92) 0%,transparent 50%);"></div>
         <button onclick="renderCapacitacao()" style="position:absolute;top:12px;left:12px;width:32px;height:32px;border-radius:50%;background:rgba(26,10,18,.55);border:.5px solid rgba(200,169,110,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>

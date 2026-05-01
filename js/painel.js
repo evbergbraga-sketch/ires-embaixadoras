@@ -2041,10 +2041,11 @@ function _abrirModulo(moduloId) {
 }
 
 
-function _loadYTPlayer(aulaId, embedUrl) {
-  const inner = document.getElementById('cap-video-inner-' + aulaId);
-  if (!inner) return;
-  inner.innerHTML = `<iframe src="${embedUrl}&autoplay=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;background:#000;"></iframe>`;
+function _loadYTPlayer(aulaId) {
+  const inner    = document.getElementById('cap-video-inner-' + aulaId);
+  const embedUrl = (window._ytEmbedUrls || {})[aulaId];
+  if (!inner || !embedUrl) return;
+  inner.innerHTML = '<iframe src="' + embedUrl + '&autoplay=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;background:#000;"></iframe>';
 }
 
 function _youtubeEmbedUrl(url) {
@@ -2082,6 +2083,9 @@ function _abrirPlayer(aulaId) {
   function nivelLabel2(n) { return {bronze:'Bronze',prata:'Prata',ouro:'Ouro'}[n]||'Bronze'; }
 
   const embedUrl = _youtubeEmbedUrl(aulaAtual.video_url);
+  // Store embed URL in JS — never expose in HTML attributes (prevents iOS prefetch)
+  window._ytEmbedUrls = window._ytEmbedUrls || {};
+  window._ytEmbedUrls[aulaId] = embedUrl;
 
   const playlistHtml = aulas.map((a, i) => {
     const aCor   = nivelCor2(a.nivel || 'bronze');
@@ -2119,7 +2123,8 @@ function _abrirPlayer(aulaId) {
         <div class="cap-video-wrap" id="cap-video-wrap-${aulaId}">
           <div class="cap-video-inner" id="cap-video-inner-${aulaId}">
             ${aulaAtual.cover_url || modAtual.cover_url ? `
-              <div id="yt-poster-${aulaId}" onclick="_loadYTPlayer('${aulaId}','${embedUrl}')" role="button" tabindex="0"
+              <div id="yt-poster-${aulaId}" data-aula="${aulaId}" role="button" tabindex="0"
+                onclick="_loadYTPlayer(this.dataset.aula)"
                 style="position:absolute;inset:0;cursor:pointer;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden;-webkit-tap-highlight-color:transparent;touch-action:manipulation;">
                 <img src="${s(aulaAtual.cover_url||modAtual.cover_url||'')}" style="width:100%;height:100%;object-fit:cover;opacity:.85;"/>
                 <div style="position:absolute;width:64px;height:64px;border-radius:50%;background:rgba(61,14,32,.85);border:2px solid rgba(200,169,110,.6);display:flex;align-items:center;justify-content:center;">
@@ -2127,7 +2132,8 @@ function _abrirPlayer(aulaId) {
                 </div>
               </div>
             ` : `
-              <div id="yt-poster-${aulaId}" onclick="_loadYTPlayer('${aulaId}','${embedUrl}')" role="button" tabindex="0"
+              <div id="yt-poster-${aulaId}" data-aula="${aulaId}" role="button" tabindex="0"
+                onclick="_loadYTPlayer(this.dataset.aula)"
                 style="position:absolute;inset:0;cursor:pointer;background:#0d0508;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;touch-action:manipulation;">
                 <div style="width:64px;height:64px;border-radius:50%;background:rgba(61,14,32,.85);border:2px solid rgba(200,169,110,.6);display:flex;align-items:center;justify-content:center;">
                   <div style="width:0;height:0;border-top:10px solid transparent;border-bottom:10px solid transparent;border-left:18px solid #C8A96E;margin-left:4px;"></div>

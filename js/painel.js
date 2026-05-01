@@ -1730,7 +1730,7 @@ async function renderCapacitacao() {
       }
       .cap-mod-card:hover { transform:translateY(-2px);box-shadow:0 4px 16px rgba(92,26,46,.10); }
       .cap-mod-card:active { transform:scale(.97); }
-      .cap-mod-cover { width:100%;height:207px;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:flex-end;justify-content:flex-start; }
+      .cap-mod-cover { width:100%;aspect-ratio:3/4;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:flex-end;justify-content:flex-start; }
       .cap-mod-cover img { width:100%;height:100%;object-fit:cover; }
       .cap-mod-cover-label { font-size:10px;font-weight:600;color:rgba(200,169,110,.6);letter-spacing:.05em; }
       .cap-mod-badge { position:absolute;top:8px;left:8px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.3);border-radius:6px;padding:2px 7px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.06em;text-transform:uppercase; }
@@ -1790,8 +1790,9 @@ async function renderCapacitacao() {
         to   { opacity:1;transform:translateY(0); }
       }
       @media (min-width: 768px) {
-        .cap-scroll-row { flex-wrap:wrap !important;overflow-x:visible !important;scroll-snap-type:none !important; }
-        .cap-mod-card { width:calc(25% - 10px) !important; }
+        .cap-scroll-row { flex-wrap:wrap !important;overflow-x:visible !important;scroll-snap-type:none !important;gap:16px !important; }
+        .cap-mod-card { width:calc(25% - 12px) !important;flex-shrink:0 !important; }
+        .cap-mod-cover { height:auto !important;aspect-ratio:3/4 !important; }
         .cap-dots { display:none; }
         .cap-player-wrap { position:relative;flex-direction:row;align-items:flex-start;min-height:500px; }
         .cap-player-left { flex:1;min-width:0; }
@@ -1895,7 +1896,7 @@ function _abrirModulo(moduloId) {
   let html = `
     <!-- Hero do módulo com capa contida -->
     <div style="border-radius:14px;overflow:hidden;margin-bottom:14px;position:relative;">
-      <div style="width:100%;height:200px;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
+      <div style="width:100%;aspect-ratio:16/9;max-height:420px;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
         ${thumb ? `<img src="${s(thumb)}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;" loading="lazy"/>` : ''}
         <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.92) 0%,transparent 50%);"></div>
         <button onclick="renderCapacitacao()" style="position:absolute;top:12px;left:12px;width:32px;height:32px;border-radius:50%;background:rgba(26,10,18,.55);border:.5px solid rgba(200,169,110,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;">
@@ -1961,6 +1962,12 @@ function _abrirModulo(moduloId) {
   document.getElementById('conteudo-cap').innerHTML = html;
 }
 
+
+function _loadYTPlayer(aulaId, embedUrl) {
+  const inner = document.getElementById('cap-video-inner-' + aulaId);
+  if (!inner) return;
+  inner.innerHTML = `<iframe src="${embedUrl}&autoplay=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;background:#000;"></iframe>`;
+}
 
 function _youtubeEmbedUrl(url) {
   if (!url) return '';
@@ -2031,9 +2038,24 @@ function _abrirPlayer(aulaId) {
           <div class="cap-player-modtitle">Módulo ${String(modulos.indexOf(modAtual)+1).padStart(2,'0')} · ${s(modAtual.title)}</div>
         </div>
 
-        <div class="cap-video-wrap">
-          <div class="cap-video-inner">
-            <iframe src="${embedUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+        <div class="cap-video-wrap" id="cap-video-wrap-${aulaId}">
+          <div class="cap-video-inner" id="cap-video-inner-${aulaId}">
+            ${aulaAtual.cover_url || modAtual.cover_url ? `
+              <div id="yt-poster-${aulaId}" onclick="_loadYTPlayer('${aulaId}','${embedUrl}')"
+                style="position:absolute;inset:0;cursor:pointer;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                <img src="${s(aulaAtual.cover_url||modAtual.cover_url||'')}" style="width:100%;height:100%;object-fit:cover;opacity:.85;"/>
+                <div style="position:absolute;width:64px;height:64px;border-radius:50%;background:rgba(61,14,32,.85);border:2px solid rgba(200,169,110,.6);display:flex;align-items:center;justify-content:center;">
+                  <div style="width:0;height:0;border-top:10px solid transparent;border-bottom:10px solid transparent;border-left:18px solid #C8A96E;margin-left:4px;"></div>
+                </div>
+              </div>
+            ` : `
+              <div id="yt-poster-${aulaId}" onclick="_loadYTPlayer('${aulaId}','${embedUrl}')"
+                style="position:absolute;inset:0;cursor:pointer;background:#0d0508;display:flex;align-items:center;justify-content:center;">
+                <div style="width:64px;height:64px;border-radius:50%;background:rgba(61,14,32,.85);border:2px solid rgba(200,169,110,.6);display:flex;align-items:center;justify-content:center;">
+                  <div style="width:0;height:0;border-top:10px solid transparent;border-bottom:10px solid transparent;border-left:18px solid #C8A96E;margin-left:4px;"></div>
+                </div>
+              </div>
+            `}
           </div>
         </div>
         <div class="cap-video-prog"><div class="cap-video-pfill"></div></div>

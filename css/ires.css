@@ -1587,3 +1587,61 @@ body.page {
     font-size: 16px !important;
   }
 }
+
+/* ════════════════════════════════════════════
+   TABLET (768px – 1024px)
+   Meio-termo entre mobile e desktop
+   ════════════════════════════════════════════ */
+@media (min-width: 768px) and (max-width: 1024px) {
+
+  /* Main content — padding menor que desktop */
+  .main-content {
+    padding: 20px 24px 48px !important;
+  }
+
+  /* Topbar */
+  .topbar { height: 58px; padding: 0 20px; }
+
+  /* Produtos — 3 colunas no tablet */
+  .products-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  /* Home bento — 2 colunas no tablet */
+  .home-bento {
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr) !important;
+    gap: 14px !important;
+  }
+  .home-bento .hero-card { grid-column: 1 / -1; }
+
+  /* Cards de módulo — 3 colunas no tablet */
+  .cap-mod-card {
+    width: calc(33.333% - 10px) !important;
+  }
+
+  /* Player de aula — não tão largo */
+  .cap-player-wrap {
+    max-width: 900px !important;
+    margin: 0 auto !important;
+  }
+  .cap-player-left  { max-width: 620px !important; }
+  .cap-player-right { width: 260px !important; }
+
+  /* Home cards — 2 colunas lado a lado */
+  .home-grid-new {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* Métricas — compactas */
+  .metric-home-val { font-size: 28px !important; }
+
+  /* Hero card */
+  .hero-card { padding: 16px 20px; }
+  .hero-card-name { font-size: 20px; }
+
+  /* Bottom nav — esconde no tablet (usa topbar) */
+  .bottom-nav-new { display: none !important; }
+  .nav-tabs-new   { display: flex !important; }
+
+}

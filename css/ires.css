@@ -4,7 +4,7 @@
    ============================================ */
 
 /* ── Fontes ── */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=DM+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
 
 /* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -63,7 +63,7 @@
   --radius-full: 9999px;
 
   --font:        'DM Sans', sans-serif;
-  --font-serif:  'Playfair Display', Georgia, serif;
+  --font-serif:  'DM Sans', sans-serif;
   --transition:  0.18s ease;
 }
 
@@ -329,7 +329,7 @@ select option { background: var(--creme); color: var(--bord-esc); }
 .auth-logo-circle .logo-sub  { display: none; }
 
 .auth-logo-name {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 26px;
   font-weight: 700;
   color: var(--bord-esc);
@@ -338,7 +338,7 @@ select option { background: var(--creme); color: var(--bord-esc); }
 }
 .auth-logo-name em { color: var(--ouro); font-style: normal; }
 
-.auth-title { font-size: 18px; font-weight: 800; color: var(--bord-esc); font-family: 'Playfair Display', Georgia, serif; letter-spacing: -0.4px; }
+.auth-title { font-size: 18px; font-weight: 800; color: var(--bord-esc); font-family: 'DM Sans', sans-serif; letter-spacing: -0.4px; }
 .auth-subtitle { font-size: 13px; color: var(--cinza); margin-top: 4px; text-align: center; font-weight: 500; }
 
 .stepper { display: flex; align-items: center; margin-bottom: 24px; }
@@ -485,7 +485,7 @@ select option { background: var(--creme); color: var(--bord-esc); }
   padding: 20px 24px;
   display: flex; align-items: center; justify-content: space-between;
 }
-.vitrine-hero h2 { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: #fff; font-family: 'Playfair Display', Georgia, serif; }
+.vitrine-hero h2 { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: #fff; font-family: 'DM Sans', sans-serif; }
 .vitrine-hero h2 span { color: var(--ouro-cl); }  /* nome em ouro claro, legível sobre bordô */
 .vitrine-hero p { font-size: 13px; color: rgba(232,201,172,.7); margin-top: 5px; font-weight: 500; }
 .vitrine-hero-badge {
@@ -494,7 +494,7 @@ select option { background: var(--creme); color: var(--bord-esc); }
   border-radius: var(--radius-lg);
   padding: 10px 16px; text-align: center;
 }
-.vitrine-hero-badge .num { font-size: 24px; font-weight: 900; color: #fff; font-family: 'Playfair Display', Georgia, serif; }
+.vitrine-hero-badge .num { font-size: 24px; font-weight: 900; color: #fff; font-family: 'DM Sans', sans-serif; }
 .vitrine-hero-badge .lbl { font-size: 9px; color: rgba(232,201,172,.7); letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
 
 .section-title {
@@ -577,7 +577,7 @@ select option { background: var(--creme); color: var(--bord-esc); }
   display: flex; align-items: center; justify-content: center;
   margin-bottom: 10px;
 }
-.metric-value { font-size: 22px; font-weight: 900; color: var(--bord-esc); font-family: 'Playfair Display', Georgia, serif; }
+.metric-value { font-size: 22px; font-weight: 900; color: var(--bord-esc); font-family: 'DM Sans', sans-serif; }
 .metric-label { font-size: 11px; color: var(--cinza); margin-top: 2px; font-weight: 600; }
 
 .orders-list { display: flex; flex-direction: column; gap: 8px; }
@@ -717,7 +717,7 @@ select option { background: var(--creme); color: var(--bord-esc); }
   font-size: 15px;
   font-weight: 700;
   color: var(--bord-esc);
-  font-family: 'Playfair Display', serif;
+  font-family: 'DM Sans', sans-serif;
   letter-spacing: -0.2px;
 }
 .empty-state p, .empty-state-body {
@@ -859,7 +859,7 @@ body.page {
 }
 .brand-logo-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .brand-logo-txt {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 19px;
   font-weight: 700;
   color: var(--ouro-cl);
@@ -1037,7 +1037,7 @@ body.page {
   font-weight: 700;
   color: #fdf8f3;
   letter-spacing: -0.3px;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'DM Sans', sans-serif;
 }
 .hero-card-sub {
   font-size: 13px;
@@ -1158,7 +1158,7 @@ body.page {
   font-weight: 800;
   line-height: 1;
   letter-spacing: -1px;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'DM Sans', sans-serif;
 }
 .metric-home-bar {
   height: 4px;
@@ -1383,6 +1383,7 @@ body.page {
 }
 .tag-new.pend { background: var(--nb-amber-dim); color: var(--nb-amber); border: 0.5px solid var(--nb-amber-bdr); }
 .tag-new.ship { background: var(--nb-info-dim);  color: var(--nb-info);  border: 0.5px solid var(--nb-info-bdr); }
+.tag-new.sent { background: var(--nb-burg);      color: var(--ouro-cl);  border: 0.5px solid rgba(200,169,110,.35); }
 .tag-new.ok   { background: var(--nb-green-dim); color: var(--nb-green); border: 0.5px solid var(--nb-green-bdr); }
 .tag-new.wait { background: var(--nb-border);    color: var(--nb-text-low); border: 0.5px solid var(--nb-border-s); }
 

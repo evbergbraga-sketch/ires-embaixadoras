@@ -121,7 +121,7 @@ async function renderInicio() {
       pending:    { label:'Pendente',    cls:'pend' },
       paid:       { label:'Pago',        cls:'ok'   },
       processing: { label:'Em processo', cls:'ship' },
-      shipped:    { label:'Enviado',     cls:'ship' },
+      shipped:    { label:'Enviado',     cls:'sent' },
       delivered:  { label:'Entregue',    cls:'ok'   },
       cancelled:  { label:'Cancelado',   cls:'wait' },
     };
@@ -241,7 +241,6 @@ async function renderInicio() {
       </div>
       <div class="metric-home-card">
         <div class="metric-home-label">
-          <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           Total comprado
         </div>
         <div class="metric-home-val" style="font-size:${totalGasto >= 1000 ? '18px' : '24px'};color:var(--nb-gold);">
@@ -264,38 +263,27 @@ async function renderInicio() {
       const pctMod     = aulasDoMod.length ? Math.round((concMod/aulasDoMod.length)*100) : 0;
       const thumb      = mod.cover_url || '';
       return `
-        <div onclick="irAba('capacitacao')" style="flex-shrink:0;width:130px;border-radius:12px;overflow:hidden;cursor:pointer;background:#fff;border:.5px solid #E8D9C5;">
-          <div class="dash-mod-cover" style="width:100%;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
-          ${thumb ? `<img src="${s(thumb)}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;" loading="lazy"/>` : ''}            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.85) 0%,transparent 55%);"></div>
-            <div style="position:absolute;top:6px;left:6px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.3);border-radius:5px;padding:2px 6px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.06em;">MOD ${String(mi+1).padStart(2,'0')}</div>
-            <div style="position:absolute;bottom:6px;left:6px;right:6px;">
+        <div onclick="irAba('capacitacao')" style="width:100%;border-radius:14px;overflow:hidden;cursor:pointer;background:transparent;border:none;">
+          <div class="dash-mod-cover" style="width:100%;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);border-radius:14px;">
+          ${thumb ? `<img src="${s(thumb)}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;" loading="lazy"/>` : ''}
+            <div style="position:absolute;top:8px;left:8px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.3);border-radius:6px;padding:2px 7px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.06em;">MOD ${String(mi+1).padStart(2,'0')}</div>
+            <div style="position:absolute;bottom:8px;left:8px;right:8px;">
               <div style="height:3px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden;"><div style="height:100%;width:${pctMod}%;background:#C8A96E;border-radius:99px;"></div></div>
-              <div style="font-size:9px;color:rgba(200,169,110,.9);margin-top:3px;font-weight:600;">${pctMod}%</div>
+              <div style="font-size:10px;color:rgba(200,169,110,.9);margin-top:4px;font-weight:600;">${pctMod}%</div>
             </div>
-          </div>
-          <div style="padding:7px 9px 9px;">
-            <div style="font-size:11px;font-weight:600;color:#2C1018;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s(mod.title)}</div>
-            <div style="font-size:10px;color:#8B6050;margin-top:2px;">${aulasDoMod.length} aula${aulasDoMod.length!==1?'s':''}</div>
           </div>
         </div>`;
     }).join('');
     return `
-      <div class="home-card home-cap" style="overflow:hidden;">
+      <div class="home-card home-cap" style="overflow:hidden;background:var(--nb-burg);border-color:rgba(200,169,110,.25);">
         <div class="home-card-header">
-          <div class="home-card-label">
+          <div class="home-card-label" style="color:var(--ouro-cl);">
             <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
             Capacitação
           </div>
-          <a href="#" onclick="irAba('capacitacao'); return false" class="home-card-link">Ver tudo →</a>
+          <a href="#" onclick="irAba('capacitacao'); return false" class="home-card-link" style="color:var(--ouro-cl);">Ver tudo →</a>
         </div>
-        <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;-webkit-overflow-scrolling:touch;">${cardsHTML}</div>
-        <div style="margin-top:10px;height:3px;background:#E8D9C5;border-radius:99px;overflow:hidden;">
-          <div style="height:100%;width:${pctCap}%;background:#C8A96E;border-radius:99px;"></div>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:11px;color:#8B6050;">
-          <span>${totalConc} de ${totalAulas} aulas</span>
-          <span style="font-weight:600;color:${pctCap>0?'#6B1A3A':'#8B6050'}">${pctCap}%</span>
-        </div>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">${cardsHTML}</div>
       </div>`;
   })() : `
     <div class="home-card home-cap">
@@ -319,7 +307,7 @@ async function renderInicio() {
   }, 100);
 
   const pedidosHTML = `
-    <div class="home-card home-pedidos">
+    <div class="home-card home-pedidos" style="background:transparent;border:none;box-shadow:none;">
       <div class="home-card-header">
         <div class="home-card-label">
           <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -327,18 +315,20 @@ async function renderInicio() {
         </div>
         <a href="#" onclick="irAba('pedidos'); return false" class="home-card-link">Ver todos →</a>
       </div>
-      ${(pedidos || []).length ? pedidos.map(o => `
-        <div class="order-row-new">
-          <div>
-            <div class="order-id-new">#${o.id.slice(-6).toUpperCase()}</div>
-            <div class="order-date-new">${new Date(o.created_at).toLocaleDateString('pt-BR')}</div>
-          </div>
-          <div class="order-right-new">
-            <span class="order-val-new" style="color:${corValor(o.status)};">${formatBRL(o.total)}</span>
-            ${tagNova(o.status)}
-          </div>
+      ${(pedidos || []).length ? `
+        <div style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:10px;padding:0 0 8px;border-bottom:.5px solid var(--nb-border);margin-bottom:2px;">
+          <div style="font-size:10px;font-weight:700;color:var(--nb-text-low);text-transform:uppercase;letter-spacing:.05em;">Pedido</div>
+          <div style="font-size:10px;font-weight:700;color:var(--nb-text-low);text-transform:uppercase;letter-spacing:.05em;">Preço</div>
+          <div style="font-size:10px;font-weight:700;color:var(--nb-text-low);text-transform:uppercase;letter-spacing:.05em;">Status</div>
         </div>
-      `).join('') : `
+        ${(pedidos || []).map(o => `
+          <div class="order-row-new" style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:10px;align-items:center;">
+            <div class="order-id-new">#${o.id.slice(-6).toUpperCase()}</div>
+            <div class="order-val-new" style="color:${corValor(o.status)};">${formatBRL(o.total)}</div>
+            <div>${tagNova(o.status)}</div>
+          </div>
+        `).join('')}
+      ` : `
         <div style="padding:20px 0;text-align:center;">
           <p style="font-size:13px;color:var(--nb-text-low);">Nenhum pedido ainda.</p>
           <a href="#" onclick="irAba('vitrine'); return false" class="btn-primary-new" style="margin-top:12px;font-size:12px;padding:8px 16px;">
@@ -1712,28 +1702,22 @@ async function renderCapacitacao() {
     const style = document.createElement('style');
     style.id = 'cap-styles';
     style.textContent = `
-      /* Cards 3:4 portrait — scroll horizontal */
+      /* Cards de módulos */
       .cap-scroll-row {
-        display:flex !important;
+        display:grid !important;
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
         gap:12px !important;
-        overflow-x:auto !important;
-        scroll-snap-type:x mandatory !important;
-        -webkit-overflow-scrolling:touch !important;
-        padding-bottom:4px !important;
-        scrollbar-width:none !important;
         width:100% !important;
         box-sizing:border-box !important;
       }
       .cap-scroll-row::-webkit-scrollbar { display:none; }
       .cap-mod-card {
-        flex-shrink:0 !important;
-        width:155px !important;
+        width:100% !important;
         background:#fff;
         border:.5px solid #E8D9C5;
         border-radius:14px;
         overflow:hidden;
         cursor:pointer;
-        scroll-snap-align:start;
         transition:transform .15s ease,box-shadow .15s ease;
       }
       .cap-mod-card:hover { transform:translateY(-2px);box-shadow:0 4px 16px rgba(92,26,46,.10); }
@@ -1742,8 +1726,9 @@ async function renderCapacitacao() {
       .cap-mod-cover img { width:100%;height:100%;object-fit:cover; }
       .cap-mod-cover-label { font-size:10px;font-weight:600;color:rgba(200,169,110,.6);letter-spacing:.05em; }
       .cap-mod-badge { position:absolute;top:8px;left:8px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.3);border-radius:6px;padding:2px 7px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.06em;text-transform:uppercase; }
-      .cap-mod-play { position:absolute;bottom:8px;right:8px;width:26px;height:26px;border-radius:50%;background:rgba(200,169,110,.92);display:flex;align-items:center;justify-content:center; }
-      .cap-mod-play-tri { width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:8px solid #3D0E20;margin-left:2px; }
+      .cap-mod-play { position:absolute;bottom:8px;right:8px;width:38px;height:38px;border-radius:50%;background:transparent;border:1.8px solid rgba(200,169,110,.95);display:flex;align-items:center;justify-content:center; }
+      .cap-mod-play-tri { width:14px;height:14px;display:block; }
+      .cap-mod-play-tri polygon { fill:none;stroke:rgba(200,169,110,.95);stroke-width:2;stroke-linejoin:round; }
       .cap-mod-body { padding:10px 12px 12px; }
       .cap-mod-title { font-size:13px;font-weight:600;color:#2C1018;line-height:1.2; }
       .cap-mod-meta { font-size:10px;color:#8B6050;margin-top:2px; }
@@ -1753,7 +1738,7 @@ async function renderCapacitacao() {
       .cap-aula-cover { width:100%;aspect-ratio:16/9;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:center;justify-content:center; }
       .cap-aula-cover img { width:100%;height:100%;object-fit:cover; }
       .cap-aula-cover-overlay { position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.85) 0%,transparent 55%); }
-      .cap-aula-cover-title { position:absolute;bottom:14px;left:14px;font-size:17px;font-weight:700;color:#fff;font-family:'Playfair Display',serif;letter-spacing:-.3px;max-width:70%; }
+      .cap-aula-cover-title { position:absolute;bottom:14px;left:14px;font-size:17px;font-weight:700;color:#fff;font-family:'DM Sans',sans-serif;letter-spacing:-.3px;max-width:70%; }
       .cap-aula-cover-meta { position:absolute;bottom:17px;right:14px;font-size:10px;color:rgba(200,169,110,.85); }
       .cap-aula-row { display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:.5px solid #E8D9C5;cursor:pointer;transition:opacity .15s; }
       .cap-aula-row:last-child { border-bottom:none; }
@@ -1798,8 +1783,8 @@ async function renderCapacitacao() {
         to   { opacity:1;transform:translateY(0); }
       }
       @media (min-width: 768px) {
-        .cap-scroll-row { flex-wrap:wrap !important;overflow-x:visible !important;scroll-snap-type:none !important;gap:16px !important; }
-        .cap-mod-card { width:calc(20% - 13px) !important;flex-shrink:0 !important; }
+        .cap-scroll-row { grid-template-columns:repeat(4,minmax(0,1fr)) !important;gap:16px !important; }
+        .cap-mod-card { width:100% !important; }
         .cap-mod-cover { height:auto !important;aspect-ratio:3/4 !important; }
         .cap-dots { display:none; }
         .cap-player-wrap { position:relative;flex-direction:row;align-items:flex-start;max-width:1500px;margin:0 auto; }
@@ -1815,7 +1800,7 @@ async function renderCapacitacao() {
 
   let html = nivelBannerHTML + bannerNivel;
   html += `<div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;margin-bottom:10px;">Modulos</div>`;
-  html += `<div id="cap-scroll-row" style="display:flex;flex-wrap:nowrap;gap:10px;width:100%;box-sizing:border-box;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:4px;scrollbar-width:none;">`;
+  html += `<div id="cap-scroll-row" class="cap-scroll-row">`;
 
   modulos.forEach((mod, mi) => {
     const aulas   = (mod.lessons||[]).sort((a,b)=>a.order-b.order);
@@ -1827,13 +1812,11 @@ async function renderCapacitacao() {
       <div class="cap-mod-card" onclick="_abrirModuloModal('${mod.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;flex-shrink:0;scroll-snap-align:start;">
         <div class="cap-mod-cover-inner" style="width:100%;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);height:0;padding-bottom:0;" id="cover-${mod.id}">
           ${thumb ? `<img src="${s(thumb)}" alt="${s(mod.title)}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>` : ''}
-          <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.92) 0%,rgba(26,10,18,.3) 50%,transparent 100%);"></div>
           <div class="cap-mod-badge">Mod ${String(mi+1).padStart(2,'0')}</div>
           <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 10px;">
-            <div style="font-size:13px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:3px;">${s(mod.title)}</div>
             <div style="font-size:10px;color:rgba(200,169,110,.8);">${aulas.length} aula${aulas.length!==1?'s':''}</div>
           </div>
-          <div class="cap-mod-play" style="bottom:auto;right:10px;top:50%;transform:translateY(-50%);opacity:.85;"><div class="cap-mod-play-tri"></div></div>
+          <div class="cap-mod-play" style="top:50%;left:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);opacity:.95;"><svg class="cap-mod-play-tri" viewBox="0 0 16 16" aria-hidden="true"><polygon points="5,3 13,8 5,13"></polygon></svg></div>
         </div>
         <div class="cap-mod-prog" style="margin:0;border-radius:0;"><div class="cap-mod-pfill" style="width:${pctMod}%"></div></div>
       </div>
@@ -1930,7 +1913,7 @@ function _abrirModuloModal(moduloId) {
       <!-- Conteúdo -->
       <div style="padding:16px;">
         <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;margin-bottom:3px;">Módulo ${String(mi+1).padStart(2,'0')}</div>
-        <div style="font-size:19px;font-weight:700;color:#2C1018;font-family:'Playfair Display',serif;letter-spacing:-.3px;margin-bottom:3px;line-height:1.2;">${s(mod.title)}</div>
+        <div style="font-size:19px;font-weight:700;color:#2C1018;font-family:'DM Sans',sans-serif;letter-spacing:-.3px;margin-bottom:3px;line-height:1.2;">${s(mod.title)}</div>
         <div style="font-size:12px;color:#8B6050;margin-bottom:14px;">${aulas.length} aula${aulas.length!==1?'s':''} · ${pctMod}% concluído</div>
         ${proximaAula ? `
         <div onclick="_abrirPlayer('${proximaAula.id}');document.getElementById('mod-modal-overlay')?.remove()"
@@ -1990,7 +1973,7 @@ function _abrirModulo(moduloId) {
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <div style="position:absolute;bottom:14px;left:14px;right:14px;">
-          <div style="font-size:19px;font-weight:700;color:#fff;font-family:'Playfair Display',serif;letter-spacing:-.3px;margin-bottom:3px;">${s(mod.title)}</div>
+          <div style="font-size:19px;font-weight:700;color:#fff;font-family:'DM Sans',sans-serif;letter-spacing:-.3px;margin-bottom:3px;">${s(mod.title)}</div>
           <div style="font-size:11px;color:rgba(200,169,110,.8);">${aulas.length} aula${aulas.length!==1?'s':''} · ${pctMod}% concluído</div>
           <div style="margin-top:7px;height:3px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden;">
             <div style="height:100%;width:${pctMod}%;background:#C8A96E;border-radius:99px;"></div>

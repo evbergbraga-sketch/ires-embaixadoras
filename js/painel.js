@@ -17,6 +17,11 @@ let _abaAtiva  = 'painel';
   const hash     = window.location.hash.replace('#', '');
   const abaValida = ['painel','vitrine','pedidos','avisos','perfil','depoimentos','suporte','criativos','capacitacao'].includes(hash);
   irAba(abaValida ? hash : 'painel');
+
+  // Mostra boas-vindas no primeiro login
+  if (_perfil.first_login !== false) {
+    setTimeout(() => _mostrarBoasVindas(), 600);
+  }
 })();
 
 // ── Navegação entre abas ──
@@ -2249,3 +2254,62 @@ async function _marcarConcluida(lessonId) {
   // Re-renderiza a lista em background
   renderCapacitacao();
 }
+
+// ── MODAL BOAS-VINDAS ────────────────────────────────────────────────────────
+async function _mostrarBoasVindas() {
+  const nome = _perfil.full_name?.split(' ')[0] || 'Embaixadora';
+
+  const overlay = document.createElement('div');
+  overlay.id = 'boas-vindas-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(26,10,18,.75);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);';
+
+  overlay.innerHTML = `
+    <div style="background:#F5EFE6;border-radius:20px;max-width:420px;width:100%;text-align:center;overflow:hidden;animation:bvIn .4s cubic-bezier(.34,1.56,.64,1);">
+      <!-- Header bordô -->
+      <div style="background:#3D0E20;padding:32px 24px 24px;position:relative;">
+        <div style="font-size:48px;margin-bottom:12px;">🌸</div>
+        <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:1.6rem;font-weight:400;color:#F5EFE6;line-height:1.2;margin-bottom:6px;">
+          Bem-vinda à <em style="color:#C8A96E;font-style:normal;">IRES</em>,<br>${s(nome)}!
+        </h2>
+        <p style="font-size:13px;color:rgba(200,169,110,.7);line-height:1.5;">Sua conta está ativa e você já pode explorar tudo!</p>
+      </div>
+      <!-- Itens -->
+      <div style="padding:20px 24px;">
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;text-align:left;">
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fff;border-radius:10px;border:.5px solid #E8D9C5;">
+            <span style="font-size:20px;">🛍️</span>
+            <div><div style="font-size:13px;font-weight:600;color:#3D0E20;">Vitrine de produtos</div><div style="font-size:11px;color:#8B6050;">Explore o catálogo e faça seus primeiros pedidos</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fff;border-radius:10px;border:.5px solid #E8D9C5;">
+            <span style="font-size:20px;">🎓</span>
+            <div><div style="font-size:13px;font-weight:600;color:#3D0E20;">Capacitação</div><div style="font-size:11px;color:#8B6050;">Acesse os treinamentos exclusivos para embaixadoras</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fff;border-radius:10px;border:.5px solid #E8D9C5;">
+            <span style="font-size:20px;">🏆</span>
+            <div><div style="font-size:13px;font-weight:600;color:#3D0E20;">Programa de níveis</div><div style="font-size:11px;color:#8B6050;">Suba de Bronze para Prata e Ouro fazendo pedidos</div></div>
+          </div>
+        </div>
+        <button onclick="_fecharBoasVindas()" style="width:100%;padding:14px;border:none;border-radius:10px;background:linear-gradient(135deg,#C8A96E,#b8845c);color:#3D0E20;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">
+          Começar agora →
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) _fecharBoasVindas(); });
+
+  // Marca first_login como false no banco
+  await _supabase.from('profiles').update({ first_login: false }).eq('id', _perfil.id);
+  _perfil.first_login = false;
+}
+
+function _fecharBoasVindas() {
+  const el = document.getElementById('boas-vindas-overlay');
+  if (el) { el.style.opacity = '0'; el.style.transition = 'opacity .25s'; setTimeout(() => el.remove(), 250); }
+}
+
+// CSS da animação de entrada
+const _bvStyle = document.createElement('style');
+_bvStyle.textContent = '@keyframes bvIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}';
+document.head.appendChild(_bvStyle);

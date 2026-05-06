@@ -1,303 +1,207 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>IRES Embaixadoras — Cadastro</title>
-  <link rel="stylesheet" href="css/ires.css"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Criar Conta — IRES Embaixadoras</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#3a0e1d;--bg2:#2d0a16;--pink:#5c1a2e;--accent:#c49a7a;--light:#fdf8f3;--gray:#b89088;--border:rgba(196,154,122,0.2);--error:#ff6b6b;--success:#6bcb77;--ff:'DM Sans',system-ui,sans-serif;--ff-serif:'Playfair Display',Georgia,serif; }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--light);font-family:var(--ff);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
+.card{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;padding:48px 40px;width:100%;max-width:440px;text-align:center;}
+@media(max-width:480px){.card{padding:32px 24px;}}
+.logo-circle{width:56px;height:56px;border-radius:50%;background:var(--pink);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 24px;}
+.logo-circle span:first-child{font-family:var(--ff-serif);font-size:16px;font-weight:600;}
+.logo-circle span:last-child{font-size:8px;letter-spacing:1.5px;color:var(--accent);}
+h1{font-family:var(--ff-serif);font-style:italic;font-size:1.8rem;font-weight:400;margin-bottom:8px;}
+h1 strong{font-style:normal;color:var(--accent);}
+.subtitle{color:var(--gray);font-size:14px;margin-bottom:32px;line-height:1.55;}
+.step{display:none;} .step.active{display:block;}
+.form-group{margin-bottom:18px;text-align:left;}
+label{display:block;font-size:11px;font-weight:700;color:var(--accent);margin-bottom:7px;letter-spacing:1px;text-transform:uppercase;}
+input{width:100%;padding:14px 16px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;color:var(--light);font-family:var(--ff);font-size:16px;outline:none;transition:border-color 0.2s;}
+input::placeholder{color:rgba(184,144,136,0.4);}
+input:focus{border-color:var(--accent);}
+.btn{width:100%;padding:15px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--accent),#b8845c);color:var(--bg2);font-family:var(--ff);font-size:15px;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(196,154,122,0.3);}
+.btn:disabled{opacity:0.55;cursor:not-allowed;transform:none;}
+.spinner{width:16px;height:16px;border-radius:50%;border:2px solid rgba(0,0,0,0.2);border-top-color:var(--bg2);animation:spin 0.8s linear infinite;display:none;}
+.btn.loading .spinner{display:block;} .btn.loading .btn-label{display:none;}
+.msg{font-size:13px;margin-top:12px;min-height:20px;line-height:1.4;}
+.msg.error{color:var(--error);} .msg.success{color:var(--success);}
+.success-icon{font-size:52px;margin-bottom:20px;}
+.btn-plat{display:inline-flex;align-items:center;gap:8px;margin-top:28px;padding:15px 36px;border-radius:50px;background:linear-gradient(135deg,var(--accent),#b8845c);color:var(--bg2);font-weight:700;font-size:15px;text-decoration:none;transition:all 0.2s;}
+.btn-plat:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(196,154,122,0.3);}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
 </head>
 <body>
+<div class="card">
+  <div class="logo-circle"><span>ires</span><span>EMB.</span></div>
 
-<div class="auth-page" style="align-items:flex-start;padding-top:32px">
-  <div class="auth-card" style="max-width:440px">
-
-    <!-- Logo -->
-    <div class="auth-logo" style="margin-bottom:20px">
-      <a href="index.html">
-        <div class="auth-logo-circle">
-          <span class="logo-ires">ires</span>
-          <span class="logo-sub">embaixadoras</span>
-        </div>
-      </a>
-      <div>
-        <div class="auth-title">Quero ser embaixadora</div>
-        <div class="auth-subtitle">Preencha os dados para solicitar acesso</div>
-      </div>
+  <!-- STEP 1: VALIDA CPF -->
+  <div id="stepCpf" class="step active">
+    <h1>Criar sua <strong>conta</strong></h1>
+    <p class="subtitle">Informe o CPF utilizado no pagamento para liberar seu acesso à plataforma IRES.</p>
+    <div class="form-group">
+      <label for="cpfInput">CPF</label>
+      <input type="text" id="cpfInput" placeholder="000.000.000-00" maxlength="14" inputmode="numeric">
     </div>
+    <button class="btn" id="btnCpf">
+      <div class="spinner"></div>
+      <span class="btn-label">Verificar acesso →</span>
+    </button>
+    <p class="msg error" id="cpfMsg"></p>
+  </div>
 
-    <!-- Stepper -->
-    <div class="stepper" id="stepper">
-      <div class="step-item">
-        <div class="step-dot active" id="dot-1">1</div>
-        <div class="step-label active" id="lbl-1">Dados</div>
-      </div>
-      <div class="step-line" id="line-1"></div>
-      <div class="step-item">
-        <div class="step-dot" id="dot-2">2</div>
-        <div class="step-label" id="lbl-2">Acesso</div>
-      </div>
-      <div class="step-line" id="line-2"></div>
-      <div class="step-item">
-        <div class="step-dot" id="dot-3">3</div>
-        <div class="step-label" id="lbl-3">Confirmação</div>
-      </div>
+  <!-- STEP 2: CRIA SENHA -->
+  <div id="stepSenha" class="step">
+    <h1>Crie sua <strong>senha</strong></h1>
+    <p class="subtitle">Defina sua senha de acesso à plataforma IRES.</p>
+    <div class="form-group">
+      <label for="senhaInput">Senha</label>
+      <input type="password" id="senhaInput" placeholder="Mínimo 8 caracteres">
     </div>
-
-    <!-- STEP 1 — Dados pessoais -->
-    <div id="step-1">
-      <div style="font-size:10px;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;padding-bottom:8px;border-bottom:0.5px solid var(--pink-faint)">
-        Informações pessoais
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label for="nome">Nome</label>
-          <input type="text" id="nome" placeholder="Ana"/>
-        </div>
-        <div class="form-group">
-          <label for="sobrenome">Sobrenome</label>
-          <input type="text" id="sobrenome" placeholder="Silva"/>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="whatsapp">WhatsApp</label>
-        <input type="tel" id="whatsapp" placeholder="(11) 99999-9999" maxlength="15"/>
-      </div>
-
-      <div class="form-group">
-        <label for="cpf">CPF</label>
-        <input type="text" id="cpf" placeholder="000.000.000-00" maxlength="14"/>
-      </div>
-
-      <div class="form-group">
-        <label for="como-encontrou">Como nos encontrou?</label>
-        <select id="como-encontrou">
-          <option value="" disabled selected>Selecione</option>
-          <option value="instagram">Instagram</option>
-          <option value="indicacao">Indicação de embaixadora</option>
-          <option value="tiktok">TikTok</option>
-          <option value="whatsapp">WhatsApp</option>
-          <option value="outro">Outro</option>
-        </select>
-      </div>
-
-      <button class="btn btn-primary" onclick="irStep2()">Continuar →</button>
-      <p style="text-align:center;font-size:12px;color:var(--gray);margin-top:14px">
-        Já tem conta? <a href="index.html">Entrar</a>
-      </p>
+    <div class="form-group">
+      <label for="senhaConfirm">Confirmar senha</label>
+      <input type="password" id="senhaConfirm" placeholder="Repita a senha">
     </div>
+    <button class="btn" id="btnSenha">
+      <div class="spinner"></div>
+      <span class="btn-label">Criar minha conta →</span>
+    </button>
+    <p class="msg error" id="senhaMsg"></p>
+  </div>
 
-    <!-- STEP 2 — Dados de acesso -->
-    <div id="step-2" style="display:none">
-      <div style="font-size:10px;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;padding-bottom:8px;border-bottom:0.5px solid var(--pink-faint)">
-        Dados de acesso
-      </div>
-
-      <div class="form-group">
-        <label for="email">E-mail</label>
-        <input type="email" id="email" placeholder="ana@email.com"/>
-      </div>
-
-      <div class="form-group">
-        <label for="senha">Senha</label>
-        <input type="password" id="senha" placeholder="Mínimo 12 caracteres"/>
-        <div id="senha-strength" style="height:3px;border-radius:2px;margin-top:6px;background:var(--border);overflow:hidden">
-          <div id="senha-bar" style="height:100%;width:0%;background:var(--red);transition:all 0.3s"></div>
-        </div>
-        <div id="senha-label" style="font-size:10px;color:var(--gray);margin-top:4px"></div>
-      </div>
-
-      <div class="form-group">
-        <label for="senha-confirm">Confirmar senha</label>
-        <input type="password" id="senha-confirm" placeholder="Repita a senha"/>
-      </div>
-
-      <div class="info-box">
-        <div class="info-box-dot"></div>
-        <p>Seu cadastro passa por <strong>aprovação manual</strong>. Você receberá um e-mail em até <strong>48 horas</strong> com a confirmação de acesso.</p>
-      </div>
-
-      <div class="check-row" id="check-termos" onclick="toggleCheck(this)">
-        <div class="check-box"><div class="check-mark" style="display:none"></div></div>
-        <div class="check-label">Li e aceito os <a href="#" onclick="event.stopPropagation()">termos de embaixadora</a> e a <a href="#" onclick="event.stopPropagation()">política de privacidade</a></div>
-      </div>
-
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-outline" style="flex:1" onclick="voltarStep1()">← Voltar</button>
-        <button class="btn btn-primary" style="flex:1" id="btn-cadastrar" onclick="finalizar()">Solicitar acesso</button>
-      </div>
-    </div>
-
-    <!-- STEP 3 — Sucesso -->
-    <div id="step-3" style="display:none;text-align:center">
-      <div style="width:64px;height:64px;border-radius:50%;background:var(--green-bg);border:0.5px solid var(--green-border);display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="20 6 9 17 4 12"/>
-        </svg>
-      </div>
-      <h3 style="font-size:17px;font-weight:800;margin-bottom:8px">Solicitação enviada!</h3>
-      <p style="font-size:13px;color:var(--gray);line-height:1.7;margin-bottom:20px">
-        Recebemos seu cadastro. Nossa equipe vai analisar e você receberá um e-mail em até <strong style="color:var(--pink)">48 horas</strong>.
-      </p>
-      <a href="index.html" class="btn btn-outline">Voltar ao início</a>
-    </div>
-
+  <!-- STEP 3: SUCESSO -->
+  <div id="stepSucesso" class="step">
+    <div class="success-icon">🎉</div>
+    <h1>Bem-vinda à <strong>IRES!</strong></h1>
+    <p class="subtitle">Sua conta foi criada! Você já tem acesso completo à plataforma.</p>
+    <a href="https://iresembaixadoras.com.br/painel.html" class="btn-plat">Acessar a plataforma →</a>
   </div>
 </div>
 
-<!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js"></script>
-<script src="js/auth.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script>
+const SUPABASE_URL      = 'https://cqhcbbrpxytpybgnpxys.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxaGNiYnJweHl0cHliZ25weHlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjAxOTgsImV4cCI6MjA5MjA5NjE5OH0.UP99BYcl_lgOn071gL1TEOufjjFb_eQ4b1yHieLXJXg';
+const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // ── Máscara WhatsApp ──
-  document.getElementById('whatsapp').addEventListener('input', function() {
-    let v = this.value.replace(/\D/g, '');
-    if (v.length > 11) v = v.slice(0, 11);
-    if (v.length > 6) v = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
-    else if (v.length > 2) v = `(${v.slice(0,2)}) ${v.slice(2)}`;
-    else if (v.length > 0) v = `(${v}`;
-    this.value = v;
+let _dados = null; // dados retornados pelo verificar_cpf_pago
+
+// Limpa sessão anterior
+_sb.auth.signOut().catch(() => {});
+
+// Máscara CPF
+document.getElementById('cpfInput').addEventListener('input', function(e) {
+  let v = e.target.value.replace(/\D/g,'').substring(0,11);
+  if (v.length > 9)      v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+  else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+  else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+  e.target.value = v;
+});
+
+// STEP 1 — Verifica CPF no lp_purchases (status = 'paid')
+async function verificarCpf() {
+  const btn    = document.getElementById('btnCpf');
+  const msg    = document.getElementById('cpfMsg');
+  const cpfRaw = document.getElementById('cpfInput').value.replace(/\D/g,'');
+
+  if (cpfRaw.length !== 11) { msg.textContent = 'Informe um CPF válido com 11 dígitos.'; return; }
+
+  btn.disabled = true; btn.classList.add('loading'); msg.textContent = '';
+
+  const { data, error } = await _sb.rpc('verificar_cpf_pago', { p_cpf: cpfRaw });
+
+  btn.disabled = false; btn.classList.remove('loading');
+
+  if (error) { msg.textContent = 'Erro ao verificar. Tente novamente.'; console.error(error); return; }
+  if (!data?.ok) { msg.textContent = data?.msg || 'CPF não encontrado ou pagamento pendente.'; return; }
+
+  // Guarda dados vindos do lp_purchases (nome, email, whatsapp)
+  _dados = { nome: data.nome, email: data.email, whatsapp: data.whatsapp, cpf: cpfRaw };
+
+  document.getElementById('stepCpf').classList.remove('active');
+  document.getElementById('stepSenha').classList.add('active');
+}
+
+// STEP 2 — Cria usuário no Supabase Auth + profile + atualiza lp_purchases
+async function criarConta() {
+  const btn     = document.getElementById('btnSenha');
+  const msg     = document.getElementById('senhaMsg');
+  const senha   = document.getElementById('senhaInput').value;
+  const confirma = document.getElementById('senhaConfirm').value;
+
+  if (senha.length < 8)    { msg.textContent = 'A senha deve ter pelo menos 8 caracteres.'; return; }
+  if (senha !== confirma)  { msg.textContent = 'As senhas não coincidem.'; return; }
+
+  btn.disabled = true; btn.classList.add('loading'); msg.textContent = '';
+
+  // 1. Cria conta no Supabase Auth
+  let userId = null;
+  const { data: authData, error: authError } = await _sb.auth.signUp({
+    email:    _dados.email,
+    password: senha,
+    options:  { data: { full_name: _dados.nome } }
   });
 
-  // ── Máscara CPF ──
-  document.getElementById('cpf').addEventListener('input', function() {
-    let v = this.value.replace(/\D/g, '');
-    if (v.length > 11) v = v.slice(0, 11);
-    if (v.length > 9) v = `${v.slice(0,3)}.${v.slice(3,6)}.${v.slice(6,9)}-${v.slice(9)}`;
-    else if (v.length > 6) v = `${v.slice(0,3)}.${v.slice(3,6)}.${v.slice(6)}`;
-    else if (v.length > 3) v = `${v.slice(0,3)}.${v.slice(3)}`;
-    this.value = v;
-  });
-
-  // ── Força da senha ──
-  document.getElementById('senha').addEventListener('input', function() {
-    const v = this.value;
-    let forca = 0;
-    if (v.length >= 12) forca++;
-    if (/[A-Z]/.test(v)) forca++;
-    if (/[0-9]/.test(v)) forca++;
-    if (/[^A-Za-z0-9]/.test(v)) forca++;
-
-    const bar   = document.getElementById('senha-bar');
-    const label = document.getElementById('senha-label');
-    const cfg = [
-      { w:'0%',   c:'var(--border)', t:'' },
-      { w:'25%',  c:'var(--red)',    t:'Fraca' },
-      { w:'50%',  c:'var(--amber)',  t:'Razoável' },
-      { w:'75%',  c:'var(--blue)',   t:'Boa' },
-      { w:'100%', c:'var(--green)',  t:'Forte' },
-    ];
-    bar.style.width      = cfg[forca].w;
-    bar.style.background = cfg[forca].c;
-    label.textContent    = cfg[forca].t;
-    label.style.color    = cfg[forca].c;
-  });
-
-  // ── Toggle checkbox ──
-  function toggleCheck(el) {
-    const box  = el.querySelector('.check-box');
-    const mark = el.querySelector('.check-mark');
-    const ativo = box.classList.toggle('checked');
-    mark.style.display = ativo ? 'block' : 'none';
-  }
-
-  // ── Stepper ──
-  function setStep(n) {
-    [1,2,3].forEach(i => {
-      document.getElementById(`step-${i}`).style.display = i === n ? 'block' : 'none';
-      const dot = document.getElementById(`dot-${i}`);
-      const lbl = document.getElementById(`lbl-${i}`);
-      dot.className = 'step-dot' + (i < n ? ' done' : i === n ? ' active' : '');
-      lbl.className = 'step-label' + (i === n ? ' active' : '');
-      if (i < n) dot.innerHTML = '✓';
-      else dot.textContent = i;
-      if (i < 3) {
-        const line = document.getElementById(`line-${i}`);
-        line.className = 'step-line' + (i < n ? ' done' : '');
-      }
-    });
-  }
-
-
-  // ── Validação algorítmica de CPF ──────────────
-  function validarCPF(cpf) {
-    const nums = cpf.replace(/\D/g, '');
-    if (nums.length !== 11) return false;
-    if (/^(\d)\1{10}$/.test(nums)) return false; // todos dígitos iguais
-    let sum = 0;
-    for (let i = 0; i < 9; i++) sum += parseInt(nums[i]) * (10 - i);
-    let d1 = 11 - (sum % 11);
-    if (d1 >= 10) d1 = 0;
-    if (d1 !== parseInt(nums[9])) return false;
-    sum = 0;
-    for (let i = 0; i < 10; i++) sum += parseInt(nums[i]) * (11 - i);
-    let d2 = 11 - (sum % 11);
-    if (d2 >= 10) d2 = 0;
-    return d2 === parseInt(nums[10]);
-  }
-
-  function irStep2() {
-    const nome     = document.getElementById('nome').value.trim();
-    const sobre    = document.getElementById('sobrenome').value.trim();
-    const whats    = document.getElementById('whatsapp').value.trim();
-    const cpf      = document.getElementById('cpf').value.trim();
-    const como     = document.getElementById('como-encontrou').value;
-
-    if (!nome)  { showToast('Informe seu nome.',       'error'); return; }
-    if (!sobre) { showToast('Informe seu sobrenome.',  'error'); return; }
-    if (whats.length < 14) { showToast('WhatsApp inválido.', 'error'); return; }
-    if (!validarCPF(cpf))  { showToast('CPF inválido. Verifique e tente novamente.', 'error'); return; }
-    if (!como)  { showToast('Selecione como nos encontrou.', 'error'); return; }
-
-    setStep(2);
-  }
-
-  function voltarStep1() { setStep(1); }
-
-  async function finalizar() {
-    const email  = document.getElementById('email').value.trim();
-    const senha  = document.getElementById('senha').value;
-    const conf   = document.getElementById('senha-confirm').value;
-    const termos = document.querySelector('#check-termos .check-box').classList.contains('checked');
-
-    if (!email)  { showToast('Informe o e-mail.',         'error'); return; }
-    if (senha.length < 12) { showToast('Senha precisa ter no mínimo 12 caracteres.', 'error'); return; }
-    if (senha !== conf)   { showToast('As senhas não coincidem.', 'error'); return; }
-    if (!termos) { showToast('Aceite os termos para continuar.', 'error'); return; }
-
-    const btn = document.getElementById('btn-cadastrar');
-    btn.disabled = true;
-    btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
-
-    const nome     = document.getElementById('nome').value.trim();
-    const sobre    = document.getElementById('sobrenome').value.trim();
-    const whatsapp = document.getElementById('whatsapp').value.trim();
-    const cpf      = document.getElementById('cpf').value.trim();
-    const how      = document.getElementById('como-encontrou').value;
-
-    try {
-      await signUp({
-        email,
-        password: senha,
-        full_name: `${nome} ${sobre}`,
-        phone: whatsapp,
-        cpf,
-        how_found: how,
+  if (authError) {
+    if (authError.status === 422 || authError.message?.includes('already')) {
+      // Usuário já existe — faz login com a senha informada
+      const { data: loginData, error: loginError } = await _sb.auth.signInWithPassword({
+        email:    _dados.email,
+        password: senha
       });
-      setStep(3);
-    } catch (err) {
-      const msg = err.message.includes('already registered')
-        ? 'Este e-mail já está cadastrado.'
-        : err.message;
-      showToast(msg, 'error');
-      btn.disabled = false;
-      btn.textContent = 'Solicitar acesso';
+      if (loginError) {
+        btn.disabled = false; btn.classList.remove('loading');
+        msg.textContent = 'Este e-mail já tem conta. Tente fazer login na plataforma com sua senha.';
+        setTimeout(() => { window.location.href = 'https://iresembaixadoras.com.br/painel.html'; }, 3000);
+        return;
+      }
+      userId = loginData.user?.id;
+    } else {
+      btn.disabled = false; btn.classList.remove('loading');
+      msg.textContent = 'Erro ao criar conta: ' + authError.message;
+      return;
     }
+  } else {
+    userId = authData.user?.id;
+    // Faz login imediatamente após criar (garante sessão ativa)
+    await _sb.auth.signInWithPassword({ email: _dados.email, password: senha });
   }
 
+  if (!userId) { btn.disabled = false; btn.classList.remove('loading'); msg.textContent = 'Erro inesperado. Tente novamente.'; return; }
+
+  // 2. Cria profile como embaixadora Bronze
+  await _sb.from('profiles').upsert({
+    id:        userId,
+    full_name: _dados.nome,
+    email:     _dados.email,
+    phone:     _dados.whatsapp || '',
+    role:      'reseller',
+    status:    'active',
+    nivel:     'bronze'
+  });
+
+  // 3. Marca lp_purchases como ativado
+  await _sb.from('lp_purchases')
+    .update({ status: 'activated', activated_at: new Date().toISOString() })
+    .eq('cpf', _dados.cpf);
+
+  btn.disabled = false; btn.classList.remove('loading');
+  document.getElementById('stepSenha').classList.remove('active');
+  document.getElementById('stepSucesso').classList.add('active');
+}
+
+document.getElementById('btnCpf').addEventListener('click', verificarCpf);
+document.getElementById('btnSenha').addEventListener('click', criarConta);
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter') return;
+  if (document.getElementById('stepCpf').classList.contains('active'))   verificarCpf();
+  if (document.getElementById('stepSenha').classList.contains('active')) criarConta();
+});
 </script>
 </body>
 </html>

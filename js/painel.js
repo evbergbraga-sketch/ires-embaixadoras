@@ -357,7 +357,7 @@ async function renderInicio() {
           </div>
           <div>
             <div class="hero-card-name">Olá, ${nome} 👋</div>
-            <div class="hero-card-sub"><span class="hero-status-dot"></span>Embaixadora ${{bronze:'Bronze',prata:'Prata',ouro:'Ouro'}[_perfil.nivel||'bronze']||'Bronze'}</div>
+            <div class="hero-card-sub"><span class="hero-status-dot"></span>Embaixadora ${{iniciante:'Iniciante',bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante'}[_perfil.nivel||'iniciante']||'Iniciante'}</div>
           </div>
         </div>
         <button onclick="irAba('vitrine')" class="btn-primary-new">Ver vitrine →</button>
@@ -878,12 +878,14 @@ let _todosProdutos = [];
 let _categoriaAtiva = '';
 
 async function renderVitrine() {
-  const meuNivel  = _perfil.nivel || 'bronze';
-  const NIVEL_PRATA = 5;
-  const NIVEL_OURO  = 15;
-  const corDot = meuNivel === 'ouro' ? '#C8A96E' : meuNivel === 'prata' ? '#A8A9AD' : '#CD7F32';
-  const corBorder = meuNivel === 'ouro' ? 'rgba(200,169,110,.3)' : meuNivel === 'prata' ? 'rgba(168,169,173,.3)' : 'rgba(205,127,50,.3)';
-  const nivelLabel = {bronze:'Bronze',prata:'Prata',ouro:'Ouro'}[meuNivel];
+  const meuNivel  = _perfil.nivel || 'iniciante';
+  const NIVEL_BRONZE   = 1;
+  const NIVEL_PRATA    = 5;
+  const NIVEL_OURO     = 15;
+  const NIVEL_DIAMANTE = 30;
+  const corDot = meuNivel === 'diamante' ? '#B9F2FF' : meuNivel === 'ouro' ? '#C8A96E' : meuNivel === 'prata' ? '#A8A9AD' : meuNivel === 'bronze' ? '#CD7F32' : '#8B8B8B';
+  const corBorder = meuNivel === 'diamante' ? 'rgba(185,242,255,.3)' : meuNivel === 'ouro' ? 'rgba(200,169,110,.3)' : meuNivel === 'prata' ? 'rgba(168,169,173,.3)' : meuNivel === 'bronze' ? 'rgba(205,127,50,.3)' : 'rgba(139,139,139,.3)';
+  const nivelLabel = {iniciante:'Iniciante',bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante'}[meuNivel] || 'Iniciante';
 
   // Conta pedidos pagos para barra de progresso
   const { count: totalPagosVitrine } = await _supabase
@@ -893,8 +895,10 @@ async function renderVitrine() {
     .in('status', ['paid','processing','shipped','delivered']);
 
   const totalPagos = totalPagosVitrine || 0;
-  const prox = meuNivel === 'bronze' ? { nome:'Prata', faltam: NIVEL_PRATA }
-             : meuNivel === 'prata'  ? { nome:'Ouro',  faltam: NIVEL_OURO  }
+  const prox = meuNivel === 'iniciante' ? { nome:'Bronze',   faltam: NIVEL_BRONZE   }
+             : meuNivel === 'bronze'   ? { nome:'Prata',    faltam: NIVEL_PRATA    }
+             : meuNivel === 'prata'    ? { nome:'Ouro',     faltam: NIVEL_OURO     }
+             : meuNivel === 'ouro'     ? { nome:'Diamante', faltam: NIVEL_DIAMANTE }
              : null;
   const pct = prox ? Math.min(100, Math.round((totalPagos / prox.faltam) * 100)) : 100;
 
@@ -1616,23 +1620,29 @@ function _abrirPreviewCriativo(id) {
 // CAPACITAÇÃO
 // ════════════════════════════════════════════
 async function renderCapacitacao() {
-  const NIVEL_PRATA = 5;
-  const NIVEL_OURO  = 15;
-  const meuNivel    = _perfil.nivel || 'bronze';
+  const NIVEL_BRONZE   = 1;
+  const NIVEL_PRATA    = 5;
+  const NIVEL_OURO     = 15;
+  const NIVEL_DIAMANTE = 30;
+  const meuNivel    = _perfil.nivel || 'iniciante';
   const ORDEM_NIVEL = { bronze:0, prata:1, ouro:2 };
 
   function nivelLiberado(n) { return ORDEM_NIVEL[meuNivel] >= ORDEM_NIVEL[n||'bronze']; }
-  function nivelLabel(n)    { return {bronze:'Bronze',prata:'Prata',ouro:'Ouro'}[n]||'Bronze'; }
+  function nivelLabel(n)    { return {iniciante:'Iniciante',bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante'}[n]||'Bronze'; }
   function nivelCor(n) {
     return {
+      iniciante:{bg:'#F5F5F5',text:'#555555',border:'#8B8B8B',dot:'#8B8B8B'},
       bronze:{bg:'#FFF4E6',text:'#7A4A1A',border:'#CD7F32',dot:'#CD7F32'},
       prata: {bg:'#F4F4F4',text:'#444444',border:'#A8A9AD',dot:'#A8A9AD'},
       ouro:  {bg:'#FFFBE6',text:'#6B4C1A',border:'#C8A96E',dot:'#C8A96E'},
-    }[n]||{bg:'#FFF4E6',text:'#7A4A1A',border:'#CD7F32',dot:'#CD7F32'};
+      diamante:{bg:'#E8FBFF',text:'#1A5A6B',border:'#B9F2FF',dot:'#B9F2FF'},
+    }[n]||{bg:'#F5F5F5',text:'#555555',border:'#8B8B8B',dot:'#8B8B8B'};
   }
   function proximoNivel() {
-    if (meuNivel==='bronze') return {nome:'Prata',faltam:NIVEL_PRATA};
-    if (meuNivel==='prata')  return {nome:'Ouro', faltam:NIVEL_OURO};
+    if (meuNivel==='iniciante') return {nome:'Bronze',   faltam:NIVEL_BRONZE};
+    if (meuNivel==='bronze')   return {nome:'Prata',    faltam:NIVEL_PRATA};
+    if (meuNivel==='prata')    return {nome:'Ouro',     faltam:NIVEL_OURO};
+    if (meuNivel==='ouro')     return {nome:'Diamante', faltam:NIVEL_DIAMANTE};
     return null;
   }
 
@@ -1875,7 +1885,7 @@ function _abrirModuloModal(moduloId) {
   const modalThumb = mod.modal_cover_url || mod.cover_url || '';
   const modConc    = aulas.filter(a=>concluidas.has(a.id)).length;
   const pctMod     = aulas.length ? Math.round((modConc/aulas.length)*100) : 0;
-  const meuNivel   = _perfil.nivel || 'bronze';
+  const meuNivel   = _perfil.nivel || 'iniciante';
   const ORDEM_NIVEL = { bronze:0, prata:1, ouro:2 };
   function nivelLiberado(n) { return ORDEM_NIVEL[meuNivel] >= ORDEM_NIVEL[n||'bronze']; }
   const proximaAula = aulas.find(a => !concluidas.has(a.id) && nivelLiberado(a.nivel)) || aulas[0];
@@ -1946,16 +1956,18 @@ function _abrirModulo(moduloId) {
   const mod        = modulos.find(m => m.id === moduloId);
   if (!mod) return;
 
-  const meuNivel    = _perfil.nivel || 'bronze';
+  const meuNivel    = _perfil.nivel || 'iniciante';
   const ORDEM_NIVEL = { bronze:0, prata:1, ouro:2 };
   function nivelLiberado(n) { return ORDEM_NIVEL[meuNivel] >= ORDEM_NIVEL[n||'bronze']; }
-  function nivelLabel(n)    { return {bronze:'Bronze',prata:'Prata',ouro:'Ouro'}[n]||'Bronze'; }
+  function nivelLabel(n)    { return {iniciante:'Iniciante',bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante'}[n]||'Bronze'; }
   function nivelCor(n) {
     return {
+      iniciante:{bg:'#F5F5F5',text:'#555555',border:'#8B8B8B',dot:'#8B8B8B'},
       bronze:{bg:'#FFF4E6',text:'#7A4A1A',border:'#CD7F32',dot:'#CD7F32'},
       prata: {bg:'#F4F4F4',text:'#444444',border:'#A8A9AD',dot:'#A8A9AD'},
       ouro:  {bg:'#FFFBE6',text:'#6B4C1A',border:'#C8A96E',dot:'#C8A96E'},
-    }[n]||{bg:'#FFF4E6',text:'#7A4A1A',border:'#CD7F32',dot:'#CD7F32'};
+      diamante:{bg:'#E8FBFF',text:'#1A5A6B',border:'#B9F2FF',dot:'#B9F2FF'},
+    }[n]||{bg:'#F5F5F5',text:'#555555',border:'#8B8B8B',dot:'#8B8B8B'};
   }
 
   const aulas   = (mod.lessons||[]).sort((a,b)=>a.order-b.order);
@@ -2008,7 +2020,7 @@ function _abrirModulo(moduloId) {
     const feita     = concluidas.has(aula.id);
     const liberada  = nivelLiberado(aula.nivel);
     const durMin    = aula.duration_seconds ? Math.ceil(aula.duration_seconds/60) : null;
-    const nivelAula = aula.nivel||'bronze';
+    const nivelAula = aula.nivel||'iniciante';
     const cor       = nivelCor(nivelAula);
     const aulaCover = aula.cover_url||mod.cover_url||'';
 
@@ -2131,7 +2143,7 @@ function _abrirPlayer(aulaId) {
       ouro:   { bg:'#FFFBE6', text:'#6B4C1A', border:'#C8A96E', dot:'#C8A96E' },
     }[n] || { bg:'#FFF4E6', text:'#7A4A1A', border:'#CD7F32', dot:'#CD7F32' };
   }
-  function nivelLabel2(n) { return {bronze:'Bronze',prata:'Prata',ouro:'Ouro'}[n]||'Bronze'; }
+  function nivelLabel2(n) { return {iniciante:'Iniciante',bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante'}[n]||'Bronze'; }
 
   const embedUrl = _youtubeEmbedUrl(aulaAtual.video_url);
   // Store embed URL in JS — never expose in HTML attributes (prevents iOS prefetch)

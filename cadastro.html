@@ -144,7 +144,27 @@ input[readonly]:focus{border-color:var(--border);}
     <p class="subtitle">Defina sua senha de acesso à plataforma IRES.</p>
     <div class="form-group">
       <label for="senhaInput">Senha</label>
-      <input type="password" id="senhaInput" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+      <input type="password" id="senhaInput" placeholder="Mínimo 8 caracteres + 1 especial" autocomplete="new-password" oninput="avaliarSenha(this.value)">
+      <!-- Barra de força -->
+      <div style="margin-top:8px;">
+        <div style="display:flex;gap:4px;margin-bottom:5px;">
+          <div class="sbar" id="sbar1" style="flex:1;height:4px;border-radius:99px;background:rgba(196,154,122,0.15);transition:background .3s;"></div>
+          <div class="sbar" id="sbar2" style="flex:1;height:4px;border-radius:99px;background:rgba(196,154,122,0.15);transition:background .3s;"></div>
+          <div class="sbar" id="sbar3" style="flex:1;height:4px;border-radius:99px;background:rgba(196,154,122,0.15);transition:background .3s;"></div>
+          <div class="sbar" id="sbar4" style="flex:1;height:4px;border-radius:99px;background:rgba(196,154,122,0.15);transition:background .3s;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <span class="req" id="req-len" style="font-size:11px;color:rgba(196,154,122,0.35);display:flex;align-items:center;gap:3px;transition:color .3s;">
+              <span id="ico-len">○</span> 8+ caracteres
+            </span>
+            <span class="req" id="req-esp" style="font-size:11px;color:rgba(196,154,122,0.35);display:flex;align-items:center;gap:3px;transition:color .3s;">
+              <span id="ico-esp">○</span> 1 especial (!@#$...)
+            </span>
+          </div>
+          <span id="forca-label" style="font-size:11px;font-weight:600;color:rgba(196,154,122,0.4);transition:color .3s;"></span>
+        </div>
+      </div>
     </div>
     <div class="form-group">
       <label for="senhaConfirm">Confirmar senha</label>
@@ -296,14 +316,54 @@ document.getElementById('btnDados').addEventListener('click', function() {
   if (validarDados()) setStep('senha');
 });
 
+// ── Avalia força da senha ────────────────────────────────────────────────────
+function avaliarSenha(v) {
+  const temLen = v.length >= 8;
+  const temEsp = /[!@#$%^&*()_+\-=\[\]{};':"\|,.<>\/?]/.test(v);
+  const temNum = /\d/.test(v);
+  const temMai = /[A-Z]/.test(v);
+  const temMin = /[a-z]/.test(v);
+
+  // Score 0-4
+  let score = 0;
+  if (temLen) score++;
+  if (temEsp) score++;
+  if (temNum) score++;
+  if (temMai && temMin) score++;
+
+  const cores = ['','#ff6b6b','#f4a261','#c49a7a','#6bcb77'];
+  const labels = ['','Fraca','Média','Boa','Forte'];
+
+  for (let i = 1; i <= 4; i++) {
+    const bar = document.getElementById('sbar' + i);
+    bar.style.background = i <= score ? cores[score] : 'rgba(196,154,122,0.15)';
+  }
+
+  const label = document.getElementById('forca-label');
+  label.textContent = score > 0 ? labels[score] : '';
+  label.style.color = score > 0 ? cores[score] : 'rgba(196,154,122,0.4)';
+
+  // Requisitos visuais
+  const reqLen = document.getElementById('req-len');
+  const icoLen = document.getElementById('ico-len');
+  reqLen.style.color = temLen ? '#6bcb77' : 'rgba(196,154,122,0.35)';
+  icoLen.textContent = temLen ? '●' : '○';
+
+  const reqEsp = document.getElementById('req-esp');
+  const icoEsp = document.getElementById('ico-esp');
+  reqEsp.style.color = temEsp ? '#6bcb77' : 'rgba(196,154,122,0.35)';
+  icoEsp.textContent = temEsp ? '●' : '○';
+}
+
 // ── STEP 3: Cria conta ────────────────────────────────────────────────────────
 async function criarConta() {
   const btn      = document.getElementById('btnSenha');
   const senha    = document.getElementById('senhaInput').value;
   const confirma = document.getElementById('senhaConfirm').value;
 
-  if (senha.length < 8)   { showMsg('senhaMsg','error','A senha deve ter pelo menos 8 caracteres.'); return; }
-  if (senha !== confirma) { showMsg('senhaMsg','error','As senhas não coincidem.'); return; }
+  if (senha.length < 8)                              { showMsg('senhaMsg','error','A senha deve ter pelo menos 8 caracteres.'); return; }
+  if (!/[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?]/.test(senha)) { showMsg('senhaMsg','error','A senha deve conter pelo menos 1 caractere especial (!@#$%...).'); return; }
+  if (senha !== confirma)                            { showMsg('senhaMsg','error','As senhas não coincidem.'); return; }
 
   btn.disabled = true; btn.classList.add('loading'); hideMsg('senhaMsg');
 

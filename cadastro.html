@@ -9,38 +9,49 @@
 :root{--bg:#3a0e1d;--bg2:#2d0a16;--pink:#5c1a2e;--accent:#c49a7a;--light:#fdf8f3;--gray:#b89088;--border:rgba(196,154,122,0.2);--error:#ff6b6b;--success:#6bcb77;}
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--bg);color:var(--light);font-family:'DM Sans',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
-.card{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;padding:48px 40px;width:100%;max-width:440px;text-align:center;}
-@media(max-width:480px){.card{padding:32px 24px;}}
+.card{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;padding:48px 40px;width:100%;max-width:460px;text-align:center;}
+@media(max-width:480px){.card{padding:32px 22px;}}
 .logo-circle{width:56px;height:56px;border-radius:50%;background:var(--pink);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 20px;}
 .logo-circle span:first-child{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:600;}
 .logo-circle span:last-child{font-size:8px;letter-spacing:1.5px;color:var(--accent);}
-.steps{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:28px;}
-.sdot{width:8px;height:8px;border-radius:50%;background:rgba(196,154,122,0.2);transition:all .3s;}
-.sdot.active{background:var(--accent);width:24px;border-radius:4px;}
-.sdot.done{background:rgba(107,203,119,0.5);}
-.sline{width:24px;height:1px;background:rgba(196,154,122,0.15);}
-h1{font-family:'Playfair Display',Georgia,serif;font-style:italic;font-size:1.8rem;font-weight:400;margin-bottom:8px;}
+/* Steps */
+.steps{display:flex;align-items:center;justify-content:center;margin-bottom:28px;gap:0;}
+.sdot{width:8px;height:8px;border-radius:50%;background:rgba(196,154,122,0.2);transition:all .35s;}
+.sdot.active{background:var(--accent);width:28px;border-radius:4px;}
+.sdot.done{background:rgba(107,203,119,0.55);}
+.sline{width:22px;height:1px;background:rgba(196,154,122,0.15);}
+h1{font-family:'Playfair Display',Georgia,serif;font-style:italic;font-size:1.75rem;font-weight:400;margin-bottom:7px;line-height:1.2;}
 h1 strong{font-style:normal;color:var(--accent);}
-.subtitle{color:var(--gray);font-size:14px;margin-bottom:28px;line-height:1.55;}
+.subtitle{color:var(--gray);font-size:13.5px;margin-bottom:26px;line-height:1.6;}
 .step{display:none;}.step.active{display:block;}
-.form-group{margin-bottom:16px;text-align:left;}
+.form-group{margin-bottom:15px;text-align:left;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:15px;}
+@media(max-width:400px){.form-row{grid-template-columns:1fr;}}
 label{display:block;font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;letter-spacing:1px;text-transform:uppercase;}
-input{width:100%;padding:14px 16px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;color:var(--light);font-family:'DM Sans',system-ui,sans-serif;font-size:16px;outline:none;transition:border-color .2s,background .2s;}
+input,select{width:100%;padding:13px 15px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;color:var(--light);font-family:'DM Sans',system-ui,sans-serif;font-size:16px;outline:none;transition:border-color .2s,background .2s;appearance:none;}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23c49a7a' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
+select option{background:var(--bg2);color:var(--light);}
 input::placeholder{color:rgba(184,144,136,0.35);}
-input:focus{border-color:var(--accent);}
+input:focus,select:focus{border-color:var(--accent);}
 input.ok{border-color:rgba(107,203,119,0.5);background:rgba(107,203,119,0.04);}
-input.err{border-color:rgba(255,107,107,0.5);background:rgba(255,107,107,0.04);}
-.btn{width:100%;padding:15px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--accent),#b8845c);color:var(--bg2);font-family:'DM Sans',system-ui,sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px;}
+input.err,select.err{border-color:rgba(255,107,107,0.5);background:rgba(255,107,107,0.04);}
+/* Prefilled readonly */
+input[readonly]{opacity:.7;cursor:default;}
+input[readonly]:focus{border-color:var(--border);}
+.prefilled-tag{font-size:10px;color:rgba(107,203,119,0.7);letter-spacing:.5px;margin-left:4px;vertical-align:middle;}
+.btn{width:100%;padding:14px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--accent),#b8845c);color:var(--bg2);font-family:'DM Sans',system-ui,sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:8px;}
 .btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(196,154,122,0.3);}
 .btn:disabled{opacity:0.55;cursor:not-allowed;transform:none;}
 .spinner{width:16px;height:16px;border-radius:50%;border:2px solid rgba(0,0,0,0.2);border-top-color:var(--bg2);animation:spin .8s linear infinite;display:none;}
 .btn.loading .spinner{display:block;}.btn.loading .btn-label{display:none;}
-.msg-box{margin-top:12px;padding:11px 14px;border-radius:9px;font-size:13px;line-height:1.45;text-align:left;display:none;}
+.msg-box{margin-top:11px;padding:11px 14px;border-radius:9px;font-size:13px;line-height:1.45;text-align:left;display:none;}
 .msg-box.error{background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.18);color:#ff8080;}
-.msg-box.success{background:rgba(107,203,119,0.08);border:1px solid rgba(107,203,119,0.18);color:#6bcb77;}
+.msg-box.success{background:rgba(107,203,119,0.08);border:1px solid rgba(107,203,119,0.18);color:var(--success);}
 .btn-plat{display:inline-flex;align-items:center;gap:8px;margin-top:24px;padding:15px 36px;border-radius:50px;background:linear-gradient(135deg,var(--accent),#b8845c);color:var(--bg2);font-weight:700;font-size:15px;text-decoration:none;transition:all .2s;}
 .btn-plat:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(196,154,122,0.3);}
 .success-icon{font-size:52px;margin-bottom:16px;}
+.back-btn{background:none;border:none;color:var(--gray);font-size:13px;cursor:pointer;margin-top:14px;font-family:inherit;display:inline-flex;align-items:center;gap:4px;transition:color .2s;}
+.back-btn:hover{color:var(--accent);}
 @keyframes spin{to{transform:rotate(360deg);}}
 </style>
 </head>
@@ -54,6 +65,8 @@ input.err{border-color:rgba(255,107,107,0.5);background:rgba(255,107,107,0.04);}
     <div class="sdot" id="sd2"></div>
     <div class="sline"></div>
     <div class="sdot" id="sd3"></div>
+    <div class="sline"></div>
+    <div class="sdot" id="sd4"></div>
   </div>
 
   <!-- STEP 1: VERIFICA CPF -->
@@ -71,7 +84,61 @@ input.err{border-color:rgba(255,107,107,0.5);background:rgba(255,107,107,0.04);}
     <div class="msg-box" id="cpfMsg"></div>
   </div>
 
-  <!-- STEP 2: CRIA SENHA -->
+  <!-- STEP 2: DADOS PESSOAIS -->
+  <div id="stepDados" class="step">
+    <h1>Seus <strong>dados</strong></h1>
+    <p class="subtitle">Confirme e complete suas informações. Os campos marcados foram preenchidos automaticamente.</p>
+
+    <div class="form-group">
+      <label for="nomeInput">Nome completo <span class="prefilled-tag">✓ preenchido</span></label>
+      <input type="text" id="nomeInput" placeholder="Seu nome completo" autocomplete="name">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group" style="margin-bottom:0">
+        <label for="cpfReadonly">CPF <span class="prefilled-tag">✓ preenchido</span></label>
+        <input type="text" id="cpfReadonly" readonly tabindex="-1">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label for="whatsappInput">WhatsApp <span class="prefilled-tag">✓ preenchido</span></label>
+        <input type="tel" id="whatsappInput" placeholder="(21) 99999-9999" inputmode="numeric">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-top:15px">
+      <label for="emailInput">E-mail <span class="prefilled-tag">✓ preenchido</span></label>
+      <input type="email" id="emailInput" readonly tabindex="-1">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group" style="margin-bottom:0">
+        <label for="nascInput">Data de nascimento</label>
+        <input type="date" id="nascInput">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label for="howInput">Como conheceu a IRES?</label>
+        <select id="howInput">
+          <option value="">Selecione...</option>
+          <option value="instagram">Instagram</option>
+          <option value="tiktok">TikTok</option>
+          <option value="indicacao">Indicação de amiga</option>
+          <option value="facebook">Facebook</option>
+          <option value="google">Google</option>
+          <option value="youtube">YouTube</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn" id="btnDados" style="margin-top:20px">
+      <div class="spinner"></div>
+      <span class="btn-label">Continuar →</span>
+    </button>
+    <div class="msg-box" id="dadosMsg"></div>
+    <button class="back-btn" onclick="setStep('cpf')">← Voltar</button>
+  </div>
+
+  <!-- STEP 3: CRIA SENHA -->
   <div id="stepSenha" class="step">
     <h1>Crie sua <strong>senha</strong></h1>
     <p class="subtitle">Defina sua senha de acesso à plataforma IRES.</p>
@@ -88,9 +155,10 @@ input.err{border-color:rgba(255,107,107,0.5);background:rgba(255,107,107,0.04);}
       <span class="btn-label">Criar minha conta →</span>
     </button>
     <div class="msg-box" id="senhaMsg"></div>
+    <button class="back-btn" onclick="setStep('dados')">← Voltar</button>
   </div>
 
-  <!-- STEP 3: SUCESSO -->
+  <!-- STEP 4: SUCESSO -->
   <div id="stepSucesso" class="step">
     <div class="success-icon">🎉</div>
     <h1>Bem-vinda à <strong>IRES!</strong></h1>
@@ -104,17 +172,22 @@ input.err{border-color:rgba(255,107,107,0.5);background:rgba(255,107,107,0.04);}
 const SUPABASE_URL      = 'https://cqhcbbrpxytpybgnpxys.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxaGNiYnJweHl0cHliZ25weHlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjAxOTgsImV4cCI6MjA5MjA5NjE5OH0.UP99BYcl_lgOn071gL1TEOufjjFb_eQ4b1yHieLXJXg';
 const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-let _dados = null;
+let _dados = null; // { nome, email, whatsapp, cpf }
 
 _sb.auth.signOut().catch(() => {});
 
+const STEPS = ['cpf','dados','senha','sucesso'];
+
 function setStep(step) {
-  ['Cpf','Senha','Sucesso'].forEach((s,i) => {
-    document.getElementById('step'+s).classList.toggle('active', s.toLowerCase()===step);
-    const dot = document.getElementById('sd'+(i+1));
-    if (i < ['cpf','senha','sucesso'].indexOf(step)) { dot.classList.add('done'); dot.classList.remove('active'); }
-    else if (s.toLowerCase()===step) { dot.classList.add('active'); dot.classList.remove('done'); }
-    else { dot.classList.remove('active','done'); }
+  STEPS.forEach((s, i) => {
+    const el = document.getElementById('step' + s.charAt(0).toUpperCase() + s.slice(1));
+    if (el) el.classList.toggle('active', s === step);
+    const dot = document.getElementById('sd' + (i + 1));
+    if (!dot) return;
+    const idx = STEPS.indexOf(step);
+    if (i < idx)      { dot.classList.add('done'); dot.classList.remove('active'); }
+    else if (i === idx){ dot.classList.add('active'); dot.classList.remove('done'); }
+    else              { dot.classList.remove('active','done'); }
   });
 }
 
@@ -124,23 +197,33 @@ function showMsg(id, type, text) {
   el.textContent = text;
   el.style.display = 'block';
 }
-
-function hideMsg(id) {
-  document.getElementById(id).style.display = 'none';
-}
+function hideMsg(id) { document.getElementById(id).style.display = 'none'; }
 
 // Máscara CPF
+function maskCpf(v) {
+  v = v.replace(/\D/g,'').substring(0,11);
+  if (v.length > 9)      return v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/,'$1.$2.$3-$4');
+  if (v.length > 6)      return v.replace(/(\d{3})(\d{3})(\d{1,3})/,'$1.$2.$3');
+  if (v.length > 3)      return v.replace(/(\d{3})(\d{1,3})/,'$1.$2');
+  return v;
+}
+function maskTel(v) {
+  v = v.replace(/\D/g,'').substring(0,11);
+  if (v.length === 11)   return v.replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3');
+  if (v.length >= 10)    return v.replace(/(\d{2})(\d{4})(\d{4})/,'($1) $2-$3');
+  return v;
+}
+
 document.getElementById('cpfInput').addEventListener('input', function(e) {
-  let v = e.target.value.replace(/\D/g,'').substring(0,11);
-  if (v.length > 9)      v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/,'$1.$2.$3-$4');
-  else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/,'$1.$2.$3');
-  else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/,'$1.$2');
-  e.target.value = v;
+  e.target.value = maskCpf(e.target.value);
   e.target.classList.remove('ok','err');
   hideMsg('cpfMsg');
 });
+document.getElementById('whatsappInput').addEventListener('input', function(e) {
+  e.target.value = maskTel(e.target.value);
+});
 
-// STEP 1 — Verifica CPF
+// ── STEP 1: Verifica CPF ──────────────────────────────────────────────────────
 async function verificarCpf() {
   const btn    = document.getElementById('btnCpf');
   const input  = document.getElementById('cpfInput');
@@ -166,36 +249,76 @@ async function verificarCpf() {
 
   if (!data?.ok) {
     input.classList.add('err');
-    const msg = data?.msg?.includes('já foi cadastrado')
-      ? 'Este CPF já possui conta na plataforma. Acesse com seu e-mail e senha normalmente.'
-      : 'Pagamento não encontrado para este CPF. Verifique se usou o CPF correto na compra ou aguarde a confirmação.';
+    const msg = (data?.msg || '').includes('já foi cadastrado')
+      ? 'Este CPF já possui conta na plataforma. Acesse com seu e-mail e senha.'
+      : 'Pagamento não encontrado para este CPF. Verifique se usou o CPF correto na compra ou aguarde a confirmação do pagamento.';
     showMsg('cpfMsg','error', msg);
     return;
   }
 
   input.classList.add('ok');
-  showMsg('cpfMsg','success','✓ Pagamento confirmado! Defina sua senha abaixo.');
   _dados = { nome: data.nome, email: data.email, whatsapp: data.whatsapp, cpf: cpfRaw };
 
-  setTimeout(() => { setStep('senha'); }, 800);
+  // Preenche os campos do step 2
+  document.getElementById('nomeInput').value     = _dados.nome || '';
+  document.getElementById('cpfReadonly').value   = maskCpf(cpfRaw);
+  document.getElementById('whatsappInput').value = maskTel(_dados.whatsapp || '');
+  document.getElementById('emailInput').value    = _dados.email || '';
+
+  showMsg('cpfMsg','success','✓ Pagamento confirmado! Complete seus dados.');
+  setTimeout(() => setStep('dados'), 700);
 }
 
-// STEP 2 — Cria conta
+// ── STEP 2: Valida e salva dados pessoais ─────────────────────────────────────
+function validarDados() {
+  const nome = document.getElementById('nomeInput').value.trim();
+  const wpp  = document.getElementById('whatsappInput').value.replace(/\D/g,'');
+
+  if (!nome || nome.split(' ').length < 2) {
+    document.getElementById('nomeInput').classList.add('err');
+    showMsg('dadosMsg','error','Informe seu nome completo (nome e sobrenome).');
+    return false;
+  }
+  document.getElementById('nomeInput').classList.remove('err');
+
+  if (wpp.length < 10) {
+    document.getElementById('whatsappInput').classList.add('err');
+    showMsg('dadosMsg','error','Informe um WhatsApp válido com DDD.');
+    return false;
+  }
+  document.getElementById('whatsappInput').classList.remove('err');
+
+  hideMsg('dadosMsg');
+  return true;
+}
+
+document.getElementById('btnDados').addEventListener('click', function() {
+  if (validarDados()) setStep('senha');
+});
+
+// ── STEP 3: Cria conta ────────────────────────────────────────────────────────
 async function criarConta() {
   const btn      = document.getElementById('btnSenha');
   const senha    = document.getElementById('senhaInput').value;
   const confirma = document.getElementById('senhaConfirm').value;
 
-  if (senha.length < 8) { showMsg('senhaMsg','error','A senha deve ter pelo menos 8 caracteres.'); return; }
+  if (senha.length < 8)   { showMsg('senhaMsg','error','A senha deve ter pelo menos 8 caracteres.'); return; }
   if (senha !== confirma) { showMsg('senhaMsg','error','As senhas não coincidem.'); return; }
 
   btn.disabled = true; btn.classList.add('loading'); hideMsg('senhaMsg');
 
+  // Dados extras do step 2
+  const nomeAtual  = document.getElementById('nomeInput').value.trim();
+  const wppAtual   = document.getElementById('whatsappInput').value.replace(/\D/g,'');
+  const nasc       = document.getElementById('nascInput').value || null;
+  const howFound   = document.getElementById('howInput').value || null;
+
   let userId = null;
+
   const { data: authData, error: authError } = await _sb.auth.signUp({
-    email:   _dados.email,
+    email:    _dados.email,
     password: senha,
-    options: { data: { full_name: _dados.nome } }
+    options:  { data: { full_name: nomeAtual } }
   });
 
   if (authError) {
@@ -226,11 +349,21 @@ async function criarConta() {
     return;
   }
 
+  // Salva profile completo
   await _sb.from('profiles').upsert({
-    id: userId, full_name: _dados.nome, email: _dados.email,
-    phone: _dados.whatsapp || '', role: 'reseller', status: 'active', nivel: 'bronze'
+    id:         userId,
+    full_name:  nomeAtual,
+    email:      _dados.email,
+    phone:      wppAtual,
+    cpf:        _dados.cpf,
+    birth_date: nasc,
+    how_found:  howFound,
+    role:       'reseller',
+    status:     'active',
+    nivel:      'bronze'
   });
 
+  // Marca lp_purchases como ativado
   await _sb.from('lp_purchases')
     .update({ status: 'activated', activated_at: new Date().toISOString() })
     .eq('cpf', _dados.cpf);
@@ -239,12 +372,15 @@ async function criarConta() {
   setStep('sucesso');
 }
 
+// Eventos
 document.getElementById('btnCpf').addEventListener('click', verificarCpf);
 document.getElementById('btnSenha').addEventListener('click', criarConta);
+
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Enter') return;
-  if (document.getElementById('stepCpf').classList.contains('active'))   verificarCpf();
-  if (document.getElementById('stepSenha').classList.contains('active')) criarConta();
+  if (document.getElementById('stepCpf').classList.contains('active'))    verificarCpf();
+  if (document.getElementById('stepDados').classList.contains('active'))  { if (validarDados()) setStep('senha'); }
+  if (document.getElementById('stepSenha').classList.contains('active'))  criarConta();
 });
 </script>
 </body>

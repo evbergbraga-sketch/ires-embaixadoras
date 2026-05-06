@@ -18,8 +18,8 @@ let _abaAtiva  = 'painel';
   const abaValida = ['painel','vitrine','pedidos','avisos','perfil','depoimentos','suporte','criativos','capacitacao'].includes(hash);
   irAba(abaValida ? hash : 'painel');
 
-  // Mostra boas-vindas no primeiro login
-  if (_perfil.first_login !== false) {
+  // Mostra boas-vindas nos 3 primeiros acessos
+  if ((_perfil.login_count || 0) < 3) {
     setTimeout(() => _mostrarBoasVindas(), 600);
   }
 })();
@@ -2299,9 +2299,10 @@ async function _mostrarBoasVindas() {
   document.body.appendChild(overlay);
   overlay.addEventListener('click', (e) => { if (e.target === overlay) _fecharBoasVindas(); });
 
-  // Marca first_login como false no banco
-  await _supabase.from('profiles').update({ first_login: false }).eq('id', _perfil.id);
-  _perfil.first_login = false;
+  // Incrementa contador de logins
+  const novoCount = (_perfil.login_count || 0) + 1;
+  await _supabase.from('profiles').update({ login_count: novoCount }).eq('id', _perfil.id);
+  _perfil.login_count = novoCount;
 }
 
 function _fecharBoasVindas() {

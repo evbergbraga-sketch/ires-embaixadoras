@@ -74,11 +74,32 @@
           <span style="color:var(--gray)">Subtotal</span>
           <span id="val-subtotal" class="val">R$ 0,00</span>
         </div>
+        <div class="summary-row" id="row-frete" style="display:none">
+          <span style="color:var(--gray)">Frete <span id="lbl-frete-nome" style="font-size:11px;opacity:.7"></span></span>
+          <span id="val-frete" class="val">R$ 0,00</span>
+        </div>
         <div class="summary-row total">
           <span>Total</span>
           <span id="val-total" class="val">R$ 0,00</span>
         </div>
       </div>
+
+      <!-- ── Frete ── -->
+      <div class="form-group" style="margin-top:16px">
+        <label>Calcular frete</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="cep-frete" placeholder="00000-000" maxlength="9" oninput="mascaraCEPFrete(this)" style="flex:1"/>
+          <button class="btn btn-outline btn-sm" onclick="cotarFrete()" id="btn-cotar" style="width:auto;padding:10px 16px;white-space:nowrap">
+            Calcular
+          </button>
+        </div>
+      </div>
+      <div id="frete-loading" style="display:none;text-align:center;padding:12px">
+        <div class="spinner" style="margin:0 auto 6px"></div>
+        <span style="font-size:12px;color:var(--gray)">Consultando transportadoras…</span>
+      </div>
+      <div id="frete-opcoes" style="display:none;margin-bottom:16px"></div>
+      <div id="frete-erro" style="display:none;font-size:12px;color:var(--red);padding:8px 0"></div>
 
       <div class="form-group" style="margin-top:16px">
         <label>Forma de pagamento</label>
@@ -163,6 +184,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/carrinho.js"></script>
+  <script src="js/carrinho.js?v=1778275268"></script>
 </body>
 </html>

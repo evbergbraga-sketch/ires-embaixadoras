@@ -165,13 +165,17 @@ async function finalizarPedido() {
 
   try {
     // 1. Cria o pedido no Supabase
+    const cepFrete = document.getElementById('cep-frete')?.value.replace(/\D/g, '') || null;
     const { data: pedido, error: errPedido } = await _supabase
       .from('orders')
       .insert({
         reseller_id: _perfil.id,
         status:      'pending',
-        total,
+        total:       _freteSelecionado ? total + _freteSelecionado.price : total,
         notes:       obs || null,
+        shipping_service: _freteSelecionado?.serviceId || null,
+        shipping_price:   _freteSelecionado?.price || 0,
+        recipient_cep:    cepFrete,
       })
       .select()
       .single();
@@ -206,7 +210,7 @@ async function finalizarPedido() {
         email:            (await _supabase.auth.getUser()).data.user.email,
         cpf:              _perfil.cpf || '00000000000',
         telefone:         _perfil.phone || '',
-        total:            total,
+        total:            _freteSelecionado ? total + _freteSelecionado.price : total,
         pedido_id:        pedido.id,
         forma_pagamento:  forma,
       }),
@@ -325,3 +329,139 @@ function copiarPix() {
     }, 3000);
   });
 }
+
+// ════════════════════════════════════════════
+// FRETE — Melhor Envio via Edge Function
+// ════════════════════════════════════════════
+
+const SUPABASE_FUNC = 'https://cqhcbbrpxytpybgnpxys.supabase.co/functions/v1';
+let _freteSelecionado = null;
+
+function mascaraCEPFrete(input) {
+  let v = input.value.replace(/\D/g, '');
+  if (v.length > 5) v = v.slice(0,5) + '-' + v.slice(5,8);
+  input.value = v;
+}
+
+async function cotarFrete() {
+  const cep = document.getElementById('cep-frete').value.replace(/\D/g, '');
+  if (cep.length !== 8) { showToast('Informe um CEP válido.', 'error'); return; }
+
+  const cart = getCart();
+  if (!cart.length) return;
+
+  const loading = document.getElementById('frete-loading');
+  const opcoes  = document.getElementById('frete-opcoes');
+  const erro    = document.getElementById('frete-erro');
+  const btn     = document.getElementById('btn-cotar');
+
+  loading.style.display = 'block';
+  opcoes.style.display  = 'none';
+  erro.style.display    = 'none';
+  btn.disabled = true;
+  btn.textContent = '…';
+
+  try {
+    // Buscar peso dos produtos do banco
+    const ids = [...new Set(cart.map(i => i.id))];
+    const { data: produtos } = await _supabase
+      .from('products')
+      .select('id, weight_grams')
+      .in('id', ids);
+
+    const pesoMap = {};
+    (produtos || []).forEach(p => pesoMap[p.id] = p.weight_grams || 100);
+
+    const payload = {
+      cep_destino: cep,
+      produtos: cart.map(item => ({
+        id: item.id,
+        price: item.price,
+        quantity: item.quantity,
+        weight_grams: pesoMap[item.id] || 100,
+      })),
+    };
+
+    const resp = await fetch(`${SUPABASE_FUNC}/melhorenvio-cotacao`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await resp.json();
+
+    if (!resp.ok || !data.opcoes?.length) {
+      erro.textContent = data.error || 'Nenhuma opção de frete disponível para este CEP.';
+      erro.style.display = 'block';
+      return;
+    }
+
+    // Renderiza opções
+    opcoes.innerHTML = data.opcoes.map((op, i) => `
+      <label class="frete-opcao ${i === 0 ? 'selected' : ''}" data-price="${op.price}" data-id="${op.id}" data-name="${op.company} ${op.name}" onclick="selecionarFrete(this)">
+        <input type="radio" name="frete" ${i === 0 ? 'checked' : ''} style="display:none"/>
+        <div style="display:flex;align-items:center;gap:10px;flex:1">
+          ${op.company_picture ? `<img src="${op.company_picture}" style="width:28px;height:28px;border-radius:6px;object-fit:contain"/>` : ''}
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--nb-text-hi)">${op.company} — ${op.name}</div>
+            <div style="font-size:11px;color:var(--gray)">Até ${op.delivery_time} dias úteis</div>
+          </div>
+        </div>
+        <div style="font-size:14px;font-weight:700;color:var(--nb-text-hi);white-space:nowrap">${formatBRL(op.price)}</div>
+      </label>
+    `).join('');
+
+    opcoes.style.display = 'block';
+
+    // Auto-seleciona o primeiro
+    selecionarFrete(opcoes.querySelector('.frete-opcao'));
+
+  } catch (e) {
+    erro.textContent = 'Erro ao calcular frete: ' + e.message;
+    erro.style.display = 'block';
+  } finally {
+    loading.style.display = 'none';
+    btn.disabled = false;
+    btn.textContent = 'Calcular';
+  }
+}
+
+function selecionarFrete(el) {
+  document.querySelectorAll('.frete-opcao').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  el.querySelector('input').checked = true;
+
+  const price = parseFloat(el.dataset.price);
+  const name  = el.dataset.name;
+  const id    = el.dataset.id;
+
+  _freteSelecionado = { price, name, serviceId: id };
+
+  // Atualiza resumo
+  document.getElementById('row-frete').style.display = 'flex';
+  document.getElementById('val-frete').textContent = formatBRL(price);
+  document.getElementById('lbl-frete-nome').textContent = `(${name})`;
+
+  // Atualiza total
+  const subtotal = getCart().reduce((acc, i) => acc + i.price * i.quantity, 0);
+  document.getElementById('val-total').textContent = formatBRL(subtotal + price);
+}
+
+// Inject frete styles
+(function() {
+  const s = document.createElement('style');
+  s.textContent = `
+    .frete-opcao {
+      display:flex;align-items:center;justify-content:space-between;
+      padding:12px 14px;border:0.5px solid var(--nb-border-s);border-radius:12px;
+      cursor:pointer;margin-bottom:6px;background:var(--nb-card);
+      transition:border-color .2s, background .2s;
+    }
+    .frete-opcao:hover { border-color:var(--nb-border); }
+    .frete-opcao.selected {
+      border-color:var(--nb-burg);
+      background:rgba(61,14,32,.04);
+    }
+  `;
+  document.head.appendChild(s);
+})();

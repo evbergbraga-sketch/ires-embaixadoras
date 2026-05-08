@@ -1426,7 +1426,7 @@ async function salvarPerfil() {
 //   suporte:     renderSuporte,
 //   criativos:   renderCriativos,       // <-- novo
 //   capacitacao: renderCapacitacao,
-    jornada:      renderJornada,     // <-- novo
+//   jornada:      renderJornada,
 // };
 //
 // E no hash de inicialização, adicionar ao array de abas válidas:

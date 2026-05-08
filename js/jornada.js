@@ -1,250 +1,325 @@
 // ============================================================
-// IRES Embaixadoras — Aba "Minha Jornada"
-// Integrado ao sistema irAba() do painel.js
+// IRES Embaixadoras — Aba "Minha Jornada" (v2)
+// Design system: creme/bordô/ouro — integrado ao painel
 // ============================================================
 
 const _NIVEIS = [
-  { key: 'iniciante', label: 'Iniciante', icon: '⭐', cor: '#8B8B8B', minPedidos: 0,
-    beneficios: ['Acesso ao painel de revendedoras','Catálogo completo de produtos IRES','Suporte via WhatsApp','Módulos de capacitação básicos'] },
-  { key: 'bronze',    label: 'Bronze',    icon: '🥉', cor: '#CD7F32', minPedidos: 1,
-    beneficios: ['Desconto especial em pedidos','Acesso a módulos intermediários','Relatório de vendas mensal','Badge Bronze no perfil'] },
-  { key: 'prata',     label: 'Prata',     icon: '🥈', cor: '#A8A9AD', minPedidos: 5,
-    beneficios: ['Desconto exclusivo Prata','Acesso a módulos avançados','Prioridade no suporte','Kit de brindes trimestral'] },
-  { key: 'ouro',      label: 'Ouro',      icon: '🥇', cor: '#C8A96E', minPedidos: 15,
-    beneficios: ['Comissão ampliada por indicação','Acesso total à capacitação','Gerente de conta dedicado','Produtos em lançamento antecipado'] },
-  { key: 'diamante',  label: 'Diamante',  icon: '💎', cor: '#B9F2FF', minPedidos: 30,
-    beneficios: ['Maior desconto da plataforma','Convite para eventos exclusivos','Co-criação de coleções','Reconhecimento oficial IRES'] },
+  { key:'iniciante', label:'Iniciante', icon:'⭐', cor:'#8B8B8B', corBg:'rgba(139,139,139,.10)', corBdr:'rgba(139,139,139,.25)', min:0,
+    beneficios:['Acesso ao painel de revendedoras','Catálogo completo de produtos IRES','Suporte via WhatsApp','Módulos de capacitação básicos'] },
+  { key:'bronze', label:'Bronze', icon:'🥉', cor:'#A0723C', corBg:'rgba(160,114,60,.10)', corBdr:'rgba(160,114,60,.25)', min:1,
+    beneficios:['Desconto especial em pedidos','Acesso a módulos intermediários','Relatório de vendas mensal','Badge Bronze no perfil'] },
+  { key:'prata', label:'Prata', icon:'🥈', cor:'#7A7D82', corBg:'rgba(122,125,130,.10)', corBdr:'rgba(122,125,130,.25)', min:5,
+    beneficios:['Desconto exclusivo Prata','Acesso a módulos avançados','Prioridade no suporte','Kit de brindes trimestral'] },
+  { key:'ouro', label:'Ouro', icon:'🥇', cor:'#8c5e38', corBg:'rgba(140,94,56,.10)', corBdr:'rgba(140,94,56,.25)', min:15,
+    beneficios:['Comissão ampliada por indicação','Acesso total à capacitação','Gerente de conta dedicado','Produtos em lançamento antecipado'] },
+  { key:'diamante', label:'Diamante', icon:'💎', cor:'#2a5080', corBg:'rgba(42,80,128,.10)', corBdr:'rgba(42,80,128,.25)', min:30,
+    beneficios:['Maior desconto da plataforma','Convite para eventos exclusivos','Co-criação de coleções','Reconhecimento oficial IRES'] },
 ];
 
 const _FRASES = {
-  iniciante: 'Sua jornada começa aqui. Cada pedido é um passo rumo ao sucesso! 🚀',
-  bronze:    'Você já deu o primeiro passo! Continue crescendo e conquiste a Prata. ✨',
-  prata:     'Incrível! Você está brilhando. A meta Ouro está ao seu alcance! 🌟',
-  ouro:      'Você é ouro puro! Diamante é questão de tempo. Não pare! 💪',
-  diamante:  'Você chegou ao topo! Parabéns por ser uma Embaixadora Diamante IRES! 💎',
+  iniciante: 'Sua jornada começa aqui. Cada pedido te aproxima do próximo nível!',
+  bronze:    'Parabéns pelo primeiro marco! Continue crescendo rumo à Prata.',
+  prata:     'Você está brilhando! A meta Ouro está cada vez mais perto.',
+  ouro:      'Embaixadora de Ouro! Diamante é questão de tempo.',
+  diamante:  'Você chegou ao topo! Parabéns, Embaixadora Diamante!',
 };
 
-// ── Injeção de estilos ──────────────────────────────────────
-(function injectJornadaStyles() {
-  if (document.getElementById('jornada-styles')) return;
-  const s = document.createElement('style');
-  s.id = 'jornada-styles';
-  s.textContent = `
-    .jornada-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:14px;color:#F5EFE6;font-family:'DM Sans',sans-serif}
-    .jornada-page{padding:0 0 100px;font-family:'DM Sans',sans-serif;min-height:100vh}
-
-    /* Hero */
-    .j-hero{background:linear-gradient(135deg,#3D0E20 55%,#5a1530);padding:24px 20px 28px;border-radius:0 0 24px 24px;margin-bottom:20px}
-    .j-badge{display:flex;align-items:center;gap:14px;margin-bottom:12px}
-    .j-badge-icon{font-size:42px;line-height:1}
-    .j-badge-nivel{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;letter-spacing:.5px}
-    .j-badge-nome{color:#F5EFE6cc;font-size:13px;margin-top:3px}
-    .j-frase{color:#F5EFE6cc;font-size:13px;line-height:1.55;margin:0;font-style:italic}
-
-    /* Stats */
-    .j-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 16px;margin-bottom:24px}
-    .j-stat{background:#1a0d14;border:0.5px solid #3E2A3C;border-radius:14px;padding:14px 10px;text-align:center}
-    .j-stat-val{font-size:19px;font-weight:700;color:#C8A96E;font-family:'Playfair Display',serif}
-    .j-stat-lbl{font-size:10px;color:#9a7a8a;margin-top:4px;line-height:1.3}
-
-    /* Sections */
-    .j-section{padding:0 16px;margin-bottom:28px}
-    .j-title{font-family:'Playfair Display',serif;font-size:17px;color:#F5EFE6;margin:0 0 16px;padding-bottom:8px;border-bottom:1px solid #C8A96E33}
-
-    /* Timeline */
-    .j-timeline{position:relative;padding-left:0}
-    .j-timeline::before{content:'';position:absolute;left:17px;top:4px;bottom:4px;width:2px;background:#3E2A3C}
-    .j-tl-item{display:flex;gap:14px;margin-bottom:22px;position:relative}
-    .j-tl-marker{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;border:2.5px solid #0e0810;z-index:1;position:relative;transition:box-shadow .3s}
-    .j-tl-item.concluido .j-tl-marker{background:var(--nc);box-shadow:0 0 0 2px var(--nc),0 0 12px var(--nc)44;color:#fff;font-size:13px;font-weight:700}
-    .j-tl-item.atual .j-tl-marker{background:var(--nc);box-shadow:0 0 0 2px var(--nc),0 0 16px var(--nc)66;animation:j-pulse 2s ease-in-out infinite}
-    .j-tl-item.bloqueado .j-tl-marker{background:#1a0d14;border-color:#3E2A3C;color:#705868;filter:grayscale(.8)}
-    @keyframes j-pulse{0%,100%{box-shadow:0 0 0 2px var(--nc),0 0 8px var(--nc)44}50%{box-shadow:0 0 0 3px var(--nc),0 0 20px var(--nc)66}}
-    .j-tl-content{flex:1;padding-top:5px}
-    .j-tl-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
-    .j-tl-nome{font-weight:600;font-size:14px}
-    .j-tl-req{font-size:11px;color:#705868}
-    .j-tl-lock{font-size:11px;color:#705868;margin-top:3px}
-    .j-tl-item.bloqueado .j-tl-nome{color:#705868!important}
-
-    /* Progresso */
-    .j-prog-wrap{margin-top:8px}
-    .j-prog-track{background:#1a0d14;border:0.5px solid #3E2A3C;border-radius:99px;height:8px;overflow:hidden}
-    .j-prog-fill{height:100%;border-radius:99px;transition:width .9s cubic-bezier(.4,0,.2,1);width:0%}
-    .j-prog-lbl{font-size:11px;color:#9a7a8a;margin-top:5px;display:block}
-
-    /* Benefícios accordion */
-    .j-benef-card{background:#1a0d14;border:0.5px solid #3E2A3C;border-radius:14px;margin-bottom:10px;overflow:hidden}
-    .j-benef-header{width:100%;background:none;border:none;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;color:#F5EFE6}
-    .j-benef-chevron{transition:transform .25s;color:#C8A96E;font-size:16px}
-    .j-benef-card.open .j-benef-chevron{transform:rotate(180deg)}
-    .j-benef-body{max-height:0;overflow:hidden;transition:max-height .35s ease}
-    .j-benef-card.open .j-benef-body{max-height:300px}
-    .j-benef-body ul{margin:0;padding:0 16px 16px;list-style:none}
-    .j-benef-body li{font-size:13px;color:#C0A8B8;padding:5px 0;border-bottom:0.5px solid #3E2A3C22}
-    .j-benef-body li:last-child{border:none}
-
-    /* Próximo passo */
-    .j-prox-card{background:#1a0d14;border:0.5px solid #3E2A3C;border-left:3px solid var(--pc,#C8A96E);border-radius:14px;padding:16px;display:flex;gap:14px;align-items:center;margin-bottom:14px}
-    .j-prox-icon{font-size:34px;line-height:1}
-    .j-prox-titulo{font-weight:700;color:#F5EFE6;font-size:15px;margin-bottom:4px}
-    .j-prox-desc{font-size:13px;color:#9a7a8a;line-height:1.45}
-    .j-prox-desc strong{color:#C8A96E}
-    .j-prox-acoes{display:flex;gap:10px;margin-top:2px}
-    .j-btn{flex:1;padding:13px;border-radius:12px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .2s}
-    .j-btn:active{opacity:.8}
-    .j-btn-p{background:#3D0E20;color:#C8A96E;border:0.5px solid #C8A96E44}
-    .j-btn-s{background:#C8A96E18;color:#C8A96E;border:0.5px solid #C8A96E33}
-    .j-diamante-card{background:linear-gradient(135deg,#1a0d14,#0d1a1a);border-color:#B9F2FF44;border-left-color:#B9F2FF}
-  `;
-  document.head.appendChild(s);
-})();
-
-// ── Render principal ────────────────────────────────────────
+// ── Render principal (chamada por irAba) ──────────────────
 async function renderJornada() {
   const el = document.getElementById('conteudo');
-  el.innerHTML = `<div class="jornada-loading"><div class="spinner" style="border-top-color:#C8A96E"></div><p style="color:#9a7a8a;font-size:13px">Carregando sua jornada...</p></div>`;
+  el.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;min-height:50vh;color:var(--nb-text-low);font-size:13px;gap:10px"><div class="spinner"></div> Carregando jornada…</div>`;
 
   try {
     const [profileRes, ordersRes, progressRes] = await Promise.all([
       _supabase.from('profiles').select('*').eq('id', _perfil.id).single(),
-      _supabase.from('orders').select('id,total').eq('reseller_id', _perfil.id).in('status', ['paid','processing','shipped','delivered']),
+      _supabase.from('orders').select('id,total').eq('reseller_id', _perfil.id).in('status',['paid','processing','shipped','delivered']),
       _supabase.from('lesson_progress').select('id').eq('reseller_id', _perfil.id),
     ]);
 
-    const profile      = profileRes.data  || _perfil;
-    const pedidos      = ordersRes.data   || [];
-    const progressos   = progressRes.data || [];
+    const profile = profileRes.data || _perfil;
+    const pedidos = ordersRes.data || [];
+    const progressos = progressRes.data || [];
     const totalPedidos = pedidos.length;
-    const totalVolume  = pedidos.reduce((s, o) => s + (o.total || 0), 0);
-    const totalAulas   = progressos.length;
-    const nivelAtual   = profile.nivel || 'iniciante';
-    const nivelIdx     = _NIVEIS.findIndex(n => n.key === nivelAtual);
-    const nivelObj     = _NIVEIS[nivelIdx];
-    const proximo      = _NIVEIS[nivelIdx + 1] || null;
+    const totalVolume = pedidos.reduce((s,o) => s + (o.total||0), 0);
+    const totalAulas = progressos.length;
+    const nivelAtual = profile.nivel || 'iniciante';
+    const nivelIdx = _NIVEIS.findIndex(n => n.key === nivelAtual);
+    const nivelObj = _NIVEIS[nivelIdx];
+    const proximo = _NIVEIS[nivelIdx+1] || null;
 
-    el.innerHTML = _buildJornadaHTML({ profile, nivelAtual, nivelIdx, nivelObj, proximo, totalPedidos, totalVolume, totalAulas });
+    const baseMin = nivelObj.min;
+    const prxMin = proximo ? proximo.min : baseMin;
+    const faltam = proximo ? Math.max(0, prxMin - totalPedidos) : 0;
+    const range = prxMin - baseMin;
+    const pct = proximo ? (range > 0 ? Math.min(100, Math.round(((totalPedidos - baseMin) / range) * 100)) : 100) : 100;
 
-    // Anima barra
-    setTimeout(() => {
-      el.querySelectorAll('.j-prog-fill').forEach(b => { b.style.width = b.dataset.pct + '%'; });
-    }, 120);
+    el.innerHTML = _jornadaHTML({ profile, nivelAtual, nivelIdx, nivelObj, proximo, totalPedidos, totalVolume, totalAulas, faltam, pct, prxMin });
+
+    // Anima barra de progresso
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        el.querySelectorAll('.j2-prog-fill').forEach(b => b.style.width = b.dataset.pct + '%');
+      });
+    });
+
+    // Animação de entrada staggered
+    el.querySelectorAll('.j2-animate').forEach((card, i) => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(12px)';
+      setTimeout(() => {
+        card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+      }, 80 + i * 60);
+    });
 
     // Accordion
-    el.querySelectorAll('.j-benef-header').forEach(btn => {
-      btn.addEventListener('click', () => btn.closest('.j-benef-card').classList.toggle('open'));
+    el.querySelectorAll('.j2-benef-hdr').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const card = btn.closest('.j2-benef-card');
+        card.classList.toggle('open');
+      });
     });
 
   } catch (err) {
-    el.innerHTML = `<div class="jornada-loading"><p style="color:#C0A8B8">⚠️ Erro ao carregar jornada.</p><button onclick="renderJornada()" style="margin-top:8px;padding:10px 20px;background:#3D0E20;color:#C8A96E;border:none;border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif">Tentar novamente</button></div>`;
+    el.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--nb-text-low)"><p style="margin-bottom:12px">⚠️ Não foi possível carregar sua jornada</p><button onclick="renderJornada()" class="btn-link" style="color:var(--nb-burg);font-weight:600;border:none;background:none;cursor:pointer;text-decoration:underline">Tentar novamente</button></div>`;
     console.error('[Jornada]', err);
   }
 }
 
-function _buildJornadaHTML({ profile, nivelAtual, nivelIdx, nivelObj, proximo, totalPedidos, totalVolume, totalAulas }) {
-  const prxMin  = proximo ? proximo.minPedidos : nivelObj.minPedidos;
-  const faltam  = proximo ? Math.max(0, prxMin - totalPedidos) : 0;
-  const baseMin = nivelObj.minPedidos;
-  const pct     = proximo
-    ? Math.min(100, prxMin === baseMin ? 100 : Math.round(((totalPedidos - baseMin) / (prxMin - baseMin)) * 100))
-    : 100;
+function _jornadaHTML({ profile, nivelAtual, nivelIdx, nivelObj, proximo, totalPedidos, totalVolume, totalAulas, faltam, pct, prxMin }) {
+  const nome = profile.full_name?.split(' ')[0] || 'Embaixadora';
 
-  // Timeline
+  // ── TIMELINE ──
   const tlHTML = _NIVEIS.map((n, i) => {
-    const estado = i < nivelIdx ? 'concluido' : i === nivelIdx ? 'atual' : 'bloqueado';
+    const estado = i < nivelIdx ? 'done' : i === nivelIdx ? 'current' : 'locked';
+    const isLast = i === _NIVEIS.length - 1;
     return `
-      <div class="j-tl-item ${estado}" style="--nc:${n.cor}">
-        <div class="j-tl-marker">${estado === 'concluido' ? '✓' : n.icon}</div>
-        <div class="j-tl-content">
-          <div class="j-tl-header">
-            <span class="j-tl-nome" style="color:${estado === 'bloqueado' ? '' : n.cor}">${n.icon} ${n.label}</span>
-            <span class="j-tl-req">${n.minPedidos === 0 ? 'Início' : n.minPedidos + (n.minPedidos === 1 ? ' pedido' : ' pedidos')}</span>
+      <div class="j2-tl-item j2-tl-${estado} j2-animate" ${estado !== 'locked' ? `style="--nc:${n.cor};--nc-bg:${n.corBg};--nc-bdr:${n.corBdr}"` : ''}>
+        <div class="j2-tl-rail">
+          <div class="j2-tl-dot">${estado === 'done' ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : `<span>${n.icon}</span>`}</div>
+          ${!isLast ? '<div class="j2-tl-line"></div>' : ''}
+        </div>
+        <div class="j2-tl-body">
+          <div class="j2-tl-top">
+            <span class="j2-tl-nome">${n.label}</span>
+            <span class="j2-tl-req">${n.min === 0 ? 'Início' : n.min + ' pedido' + (n.min > 1 ? 's' : '')}</span>
           </div>
-          ${estado === 'atual' ? `
-            <div class="j-prog-wrap">
-              <div class="j-prog-track"><div class="j-prog-fill" data-pct="${pct}" style="background:${n.cor}"></div></div>
-              <span class="j-prog-lbl">${totalPedidos} / ${proximo ? prxMin : totalPedidos} pedidos</span>
-            </div>` : ''}
-          ${estado === 'bloqueado' ? `<span class="j-tl-lock">🔒 Bloqueado</span>` : ''}
+          ${estado === 'current' ? `
+            <div class="j2-tl-prog">
+              <div class="j2-prog-track"><div class="j2-prog-fill" data-pct="${pct}" style="background:var(--nc)"></div></div>
+              <span class="j2-prog-lbl">${totalPedidos} de ${proximo ? prxMin : totalPedidos} pedidos</span>
+            </div>
+          ` : ''}
+          ${estado === 'locked' ? `<span class="j2-tl-lock">Bloqueado</span>` : ''}
+          ${estado === 'done' ? `<span class="j2-tl-done-tag">Conquistado ✓</span>` : ''}
         </div>
       </div>`;
   }).join('');
 
-  // Benefícios (níveis já alcançados, do maior para menor)
-  const benefHTML = _NIVEIS.slice(0, nivelIdx + 1).reverse().map(n => `
-    <div class="j-benef-card">
-      <button class="j-benef-header">
-        <span style="color:${n.cor}">${n.icon} ${n.label}</span>
-        <span class="j-benef-chevron">▾</span>
+  // ── BENEFÍCIOS ──
+  const benefHTML = _NIVEIS.slice(0, nivelIdx + 1).reverse().map((n, i) => `
+    <div class="j2-benef-card ${i === 0 ? 'open' : ''} j2-animate" style="--nc:${n.cor};--nc-bg:${n.corBg};--nc-bdr:${n.corBdr}">
+      <button class="j2-benef-hdr">
+        <span class="j2-benef-hdr-left"><span class="j2-benef-icon">${n.icon}</span> ${n.label}</span>
+        <svg class="j2-benef-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
-      <div class="j-benef-body">
-        <ul>${n.beneficios.map(b => `<li>✅ ${b}</li>`).join('')}</ul>
+      <div class="j2-benef-body">
+        ${n.beneficios.map(b => `
+          <div class="j2-benef-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${n.cor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span>${b}</span>
+          </div>`).join('')}
       </div>
     </div>`).join('');
 
   return `
-    <div class="jornada-page">
+    <div class="j2-page">
 
-      <div class="j-hero">
-        <div class="j-badge">
-          <span class="j-badge-icon">${nivelObj.icon}</span>
-          <div>
-            <div class="j-badge-nivel" style="color:${nivelObj.cor}">${nivelObj.label}</div>
-            <div class="j-badge-nome">${profile.full_name || 'Embaixadora'}</div>
+      <!-- Hero -->
+      <div class="j2-hero j2-animate">
+        <div class="j2-hero-top">
+          <div class="j2-hero-badge" style="background:${nivelObj.corBg};border-color:${nivelObj.corBdr}">
+            <span style="font-size:28px;line-height:1">${nivelObj.icon}</span>
+          </div>
+          <div class="j2-hero-info">
+            <div class="j2-hero-greeting">Olá, ${nome}!</div>
+            <div class="j2-hero-nivel">
+              <span class="j2-nivel-tag" style="background:${nivelObj.corBg};border-color:${nivelObj.corBdr};color:${nivelObj.cor}">${nivelObj.icon} ${nivelObj.label}</span>
+            </div>
           </div>
         </div>
-        <p class="j-frase">${_FRASES[nivelAtual]}</p>
-      </div>
-
-      <div class="j-stats">
-        <div class="j-stat">
-          <div class="j-stat-val">${totalPedidos}</div>
-          <div class="j-stat-lbl">Pedidos realizados</div>
-        </div>
-        <div class="j-stat">
-          <div class="j-stat-val">${totalAulas}</div>
-          <div class="j-stat-lbl">Aulas assistidas</div>
-        </div>
-        <div class="j-stat">
-          <div class="j-stat-val">R$&nbsp;${totalVolume.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div>
-          <div class="j-stat-lbl">Volume total</div>
-        </div>
-      </div>
-
-      <section class="j-section">
-        <h2 class="j-title">Sua Jornada</h2>
-        <div class="j-timeline">${tlHTML}</div>
-      </section>
-
-      <section class="j-section">
-        <h2 class="j-title">Benefícios Desbloqueados</h2>
-        <div>${benefHTML}</div>
-      </section>
-
-      <section class="j-section">
+        <p class="j2-hero-frase">${_FRASES[nivelAtual]}</p>
         ${proximo ? `
-          <h2 class="j-title">Próximo Passo</h2>
-          <div class="j-prox-card" style="--pc:${proximo.cor}">
-            <div class="j-prox-icon">${proximo.icon}</div>
-            <div>
-              <div class="j-prox-titulo">Próximo nível: ${proximo.label}</div>
-              <div class="j-prox-desc">Faltam <strong>${faltam} pedido${faltam !== 1 ? 's' : ''}</strong> para você ser ${proximo.label}!</div>
+          <div class="j2-hero-prog">
+            <div class="j2-hero-prog-top">
+              <span>Progresso para ${proximo.icon} ${proximo.label}</span>
+              <span style="font-weight:700">${pct}%</span>
             </div>
+            <div class="j2-prog-track j2-prog-track-hero"><div class="j2-prog-fill" data-pct="${pct}" style="background:${proximo.cor}"></div></div>
           </div>
-          <div class="j-prox-acoes">
-            <button class="j-btn j-btn-p" onclick="irAba('vitrine')">🛍️ Ver Vitrine</button>
-            <button class="j-btn j-btn-s" onclick="irAba('capacitacao')">📚 Capacitação</button>
+        ` : `<div class="j2-hero-prog"><span style="color:var(--nb-gold);font-weight:600">💎 Nível máximo alcançado!</span></div>`}
+      </div>
+
+      <!-- Stats -->
+      <div class="j2-stats">
+        <div class="j2-stat j2-animate">
+          <div class="j2-stat-icon" style="background:var(--nb-burg-dim);border-color:var(--nb-burg-bdr)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--nb-burg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
           </div>
-        ` : `
-          <div class="j-prox-card j-diamante-card" style="--pc:#B9F2FF">
-            <div class="j-prox-icon">💎</div>
-            <div>
-              <div class="j-prox-titulo" style="color:#B9F2FF">Você é Diamante!</div>
-              <div class="j-prox-desc">Parabéns! Você atingiu o nível máximo da IRES. Continue brilhando! ✨</div>
-            </div>
+          <div class="j2-stat-val">${totalPedidos}</div>
+          <div class="j2-stat-lbl">Pedidos</div>
+        </div>
+        <div class="j2-stat j2-animate">
+          <div class="j2-stat-icon" style="background:var(--nb-gold-dim);border-color:var(--nb-gold-bdr)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--nb-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
           </div>
-        `}
-      </section>
+          <div class="j2-stat-val">${totalAulas}</div>
+          <div class="j2-stat-lbl">Aulas</div>
+        </div>
+        <div class="j2-stat j2-animate">
+          <div class="j2-stat-icon" style="background:var(--nb-green-dim);border-color:var(--nb-green-bdr)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--nb-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          </div>
+          <div class="j2-stat-val">R$ ${totalVolume.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div>
+          <div class="j2-stat-lbl">Volume</div>
+        </div>
+      </div>
+
+      <!-- Próximo passo -->
+      ${proximo ? `
+      <div class="j2-section j2-animate">
+        <div class="j2-prox-card" style="--nc:${proximo.cor};--nc-bg:${proximo.corBg};--nc-bdr:${proximo.corBdr}">
+          <div class="j2-prox-left">
+            <span style="font-size:30px;line-height:1">${proximo.icon}</span>
+          </div>
+          <div class="j2-prox-body">
+            <div class="j2-prox-title">Próximo: ${proximo.label}</div>
+            <div class="j2-prox-desc">Faltam <strong style="color:var(--nc)">${faltam} pedido${faltam !== 1 ? 's' : ''}</strong> para o nível ${proximo.label}</div>
+          </div>
+        </div>
+        <div class="j2-prox-acoes">
+          <button class="j2-btn j2-btn-p" onclick="irAba('vitrine')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+            Ver Vitrine
+          </button>
+          <button class="j2-btn j2-btn-s" onclick="irAba('capacitacao')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            Capacitação
+          </button>
+        </div>
+      </div>` : ''}
+
+      <!-- Timeline -->
+      <div class="j2-section">
+        <div class="j2-section-hdr j2-animate">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--nb-burg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 010-5H6"/><path d="M18 9h1.5a2.5 2.5 0 000-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0012 0V2z"/></svg>
+          <span>Linha do Tempo</span>
+        </div>
+        <div class="j2-timeline">${tlHTML}</div>
+      </div>
+
+      <!-- Benefícios -->
+      <div class="j2-section">
+        <div class="j2-section-hdr j2-animate">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--nb-burg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span>Benefícios Desbloqueados</span>
+        </div>
+        ${benefHTML}
+      </div>
 
     </div>`;
 }
+
+// ── Estilos v2 — Design system IRES ──────────────────────
+(function(){
+  if(document.getElementById('j2-css')) return;
+  const s=document.createElement('style');
+  s.id='j2-css';
+  s.textContent=`
+.j2-page{padding:0 0 100px}
+
+/* Hero */
+.j2-hero{background:var(--nb-card);border:0.5px solid var(--nb-border-s);border-radius:16px;padding:20px;margin-bottom:14px}
+.j2-hero-top{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.j2-hero-badge{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;border:1px solid;flex-shrink:0}
+.j2-hero-greeting{font-size:18px;font-weight:800;color:var(--nb-text-hi);line-height:1.2;letter-spacing:-.3px}
+.j2-hero-nivel{margin-top:6px}
+.j2-nivel-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;border:0.5px solid;letter-spacing:.3px}
+.j2-hero-frase{font-size:13px;color:var(--nb-text-low);line-height:1.5;margin-bottom:16px}
+.j2-hero-prog{padding-top:14px;border-top:0.5px solid var(--nb-border)}
+.j2-hero-prog-top{display:flex;justify-content:space-between;font-size:11px;color:var(--nb-text-low);margin-bottom:8px}
+
+/* Progress bar */
+.j2-prog-track{background:var(--nb-border);border-radius:99px;height:6px;overflow:hidden}
+.j2-prog-track-hero{height:8px}
+.j2-prog-fill{height:100%;border-radius:99px;transition:width 1s cubic-bezier(.4,0,.2,1);width:0}
+.j2-prog-lbl{font-size:11px;color:var(--nb-text-low);margin-top:5px;display:block}
+
+/* Stats */
+.j2-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.j2-stat{background:var(--nb-card);border:0.5px solid var(--nb-border-s);border-radius:14px;padding:16px 12px;text-align:center}
+.j2-stat-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;border:0.5px solid}
+.j2-stat-val{font-size:22px;font-weight:800;color:var(--nb-text-hi);letter-spacing:-.5px;line-height:1}
+.j2-stat-lbl{font-size:10px;font-weight:600;color:var(--nb-text-low);text-transform:uppercase;letter-spacing:.5px;margin-top:6px}
+
+/* Sections */
+.j2-section{margin-bottom:18px}
+.j2-section-hdr{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--nb-burg);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px}
+
+/* Timeline */
+.j2-timeline{position:relative}
+.j2-tl-item{display:flex;gap:0;margin-bottom:0}
+.j2-tl-rail{display:flex;flex-direction:column;align-items:center;width:40px;flex-shrink:0}
+.j2-tl-dot{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;border:2px solid var(--nb-border);background:var(--nb-card);color:var(--nb-text-low);position:relative;z-index:1}
+.j2-tl-line{flex:1;width:2px;background:var(--nb-border);min-height:12px}
+
+.j2-tl-done .j2-tl-dot{background:var(--nc);border-color:var(--nc);color:#fff}
+.j2-tl-done .j2-tl-line{background:var(--nc)}
+.j2-tl-current .j2-tl-dot{background:var(--nc-bg);border-color:var(--nc);color:var(--nc);box-shadow:0 0 0 4px var(--nc-bg);animation:j2pulse 2.5s ease-in-out infinite}
+@keyframes j2pulse{0%,100%{box-shadow:0 0 0 4px var(--nc-bg)}50%{box-shadow:0 0 0 8px var(--nc-bg)}}
+.j2-tl-locked .j2-tl-dot{background:var(--nb-inset);border-color:var(--nb-border);color:var(--nb-text-low);opacity:.5}
+.j2-tl-locked .j2-tl-line{background:var(--nb-border);opacity:.4}
+
+.j2-tl-body{flex:1;padding:6px 0 20px 10px;min-width:0}
+.j2-tl-top{display:flex;justify-content:space-between;align-items:center}
+.j2-tl-nome{font-size:14px;font-weight:700;color:var(--nb-text-hi)}
+.j2-tl-current .j2-tl-nome{color:var(--nc)}
+.j2-tl-locked .j2-tl-nome{color:var(--nb-text-low);opacity:.5}
+.j2-tl-req{font-size:11px;color:var(--nb-text-low);font-weight:500}
+.j2-tl-lock{font-size:10px;color:var(--nb-text-low);opacity:.5;margin-top:3px;display:block}
+.j2-tl-done-tag{font-size:10px;font-weight:700;color:var(--nc);margin-top:3px;display:block}
+.j2-tl-prog{margin-top:8px;background:var(--nb-inset);border:0.5px solid var(--nb-border);border-radius:10px;padding:10px 12px}
+
+/* Benefícios */
+.j2-benef-card{background:var(--nb-card);border:0.5px solid var(--nb-border-s);border-radius:14px;margin-bottom:8px;overflow:hidden}
+.j2-benef-hdr{width:100%;background:none;border:none;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:14px;font-weight:700;font-family:var(--font);color:var(--nb-text-hi)}
+.j2-benef-hdr-left{display:flex;align-items:center;gap:8px}
+.j2-benef-icon{font-size:16px}
+.j2-benef-chevron{transition:transform .25s;color:var(--nb-text-low)}
+.j2-benef-card.open .j2-benef-chevron{transform:rotate(180deg)}
+.j2-benef-body{max-height:0;overflow:hidden;transition:max-height .35s ease;padding:0 16px}
+.j2-benef-card.open .j2-benef-body{max-height:280px;padding-bottom:14px}
+.j2-benef-item{display:flex;align-items:flex-start;gap:8px;padding:6px 0;font-size:13px;color:var(--nb-text-mid)}
+.j2-benef-item svg{flex-shrink:0;margin-top:1px}
+
+/* Próximo passo */
+.j2-prox-card{background:var(--nb-card);border:0.5px solid var(--nc-bdr);border-left:3px solid var(--nc);border-radius:14px;padding:16px;display:flex;gap:14px;align-items:center;margin-bottom:12px}
+.j2-prox-left{width:50px;height:50px;border-radius:14px;background:var(--nc-bg);border:0.5px solid var(--nc-bdr);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.j2-prox-title{font-size:14px;font-weight:700;color:var(--nb-text-hi);margin-bottom:3px}
+.j2-prox-desc{font-size:12px;color:var(--nb-text-low);line-height:1.5}
+.j2-prox-acoes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.j2-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;border-radius:12px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);transition:opacity .15s}
+.j2-btn:active{opacity:.75}
+.j2-btn-p{background:var(--nb-burg);color:var(--ouro-cl)}
+.j2-btn-s{background:var(--nb-burg-dim);color:var(--nb-burg);border:0.5px solid var(--nb-burg-bdr)}
+
+@media(min-width:768px){
+  .j2-page{max-width:620px;margin:0 auto;padding-top:10px}
+  .j2-hero{padding:28px;border-radius:18px}
+  .j2-stat{padding:20px 16px}
+  .j2-stat-val{font-size:26px}
+}
+`;
+  document.head.appendChild(s);
+})();

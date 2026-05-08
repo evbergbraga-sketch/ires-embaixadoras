@@ -15,7 +15,7 @@ let _abaAtiva  = 'painel';
   await renderTopbar();
 
   const hash     = window.location.hash.replace('#', '');
-  const abaValida = ['painel','vitrine','pedidos','avisos','perfil','depoimentos','suporte','criativos','capacitacao'].includes(hash);
+  const abaValida = ['painel','vitrine','pedidos','avisos','perfil','depoimentos','suporte','criativos','capacitacao','jornada'].includes(hash);
   irAba(abaValida ? hash : 'painel');
 
   // Mostra boas-vindas nos 3 primeiros acessos
@@ -53,6 +53,7 @@ function irAba(aba) {
     suporte:     renderSuporte,
     criativos:   renderCriativos,
     capacitacao: renderCapacitacao,
+    jornada:      renderJornada,
   };
   (acoes[aba] || renderInicio)();
 }
@@ -1424,11 +1425,12 @@ async function salvarPerfil() {
 //   depoimentos: renderDepoimentos,
 //   suporte:     renderSuporte,
 //   criativos:   renderCriativos,       // <-- novo
-//   capacitacao: renderCapacitacao,     // <-- novo
+//   capacitacao: renderCapacitacao,
+    jornada:      renderJornada,     // <-- novo
 // };
 //
 // E no hash de inicialização, adicionar ao array de abas válidas:
-// ['painel','vitrine','pedidos','avisos','perfil','depoimentos','suporte','criativos','capacitacao']
+// ['painel','vitrine','pedidos','avisos','perfil','depoimentos','suporte','criativos','capacitacao','jornada']
 
 // ════════════════════════════════════════════
 // CRIATIVOS

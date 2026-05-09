@@ -170,9 +170,14 @@ function getCart() {
     const raw = localStorage.getItem('ires_cart');
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed)
-      ? parsed.filter(i => i && typeof i.id === 'string' && /^[0-9a-f-]{36}$/i.test(i.id))
-      : [];
+    if (!Array.isArray(parsed)) { localStorage.removeItem('ires_cart'); return []; }
+    // Filtra itens válidos: UUID correto + size/color são strings simples sem caracteres especiais
+    return parsed.filter(i => {
+      if (!i || typeof i.id !== 'string' || !/^[0-9a-f-]{36}$/i.test(i.id)) return false;
+      if (i.size  && (typeof i.size  !== 'string' || i.size.length  > 50)) return false;
+      if (i.color && (typeof i.color !== 'string' || i.color.length > 50)) return false;
+      return true;
+    });
   } catch(e) { localStorage.removeItem('ires_cart'); return []; }
 }
 function saveCart(cart)    { localStorage.setItem('ires_cart', JSON.stringify(cart)); }

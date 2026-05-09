@@ -222,28 +222,55 @@
   </nav>
 
   <!-- Modal de pagamento -->
-  <div id="modal-sucesso" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:999;align-items:center;justify-content:center;padding:16px">
-    <div style="background:#180F17;border:0.5px solid #3E2A3C;border-radius:20px;width:100%;max-width:440px;overflow:hidden">
-      <div style="padding:16px 20px;border-bottom:0.5px solid #2E1E2D;display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <div style="font-size:15px;font-weight:700;color:var(--nb-text-hi)">Pedido confirmado! 🎉</div>
-          <div style="font-size:12px;color:var(--nb-text-low);margin-top:2px">Nº <span id="num-pedido" style="color:var(--nb-burg);font-weight:700"></span></div>
-        </div>
-        <button onclick="fecharModalPagamento()" style="background:none;border:none;color:var(--nb-text-low);cursor:pointer;font-size:22px">✕</button>
+  <!-- ── Modal de Pagamento IRES ── -->
+  <div id="modal-pagamento" style="display:none;position:fixed;inset:0;z-index:9999;align-items:flex-end;justify-content:center;padding:0">
+    <!-- Backdrop -->
+    <div id="mp-backdrop" onclick="fecharModalPagamento()" style="position:absolute;inset:0;background:rgba(10,4,8,0.80);backdrop-filter:blur(6px)"></div>
+    <!-- Sheet -->
+    <div id="mp-sheet" style="position:relative;background:var(--nb-base,#F5EFE6);border-radius:24px 24px 0 0;width:100%;max-width:520px;overflow:hidden;transform:translateY(100%);transition:transform .4s cubic-bezier(.32,0,.67,0)">
+
+      <!-- Handle -->
+      <div style="display:flex;justify-content:center;padding:12px 0 0">
+        <div style="width:36px;height:4px;border-radius:99px;background:#D4C4BC;opacity:.6"></div>
       </div>
-      <div id="pagamento-conteudo" style="padding:20px"></div>
-      <div style="padding:14px 20px;border-top:0.5px solid #2E1E2D;display:flex;gap:10px">
-        <a id="link-asaas-externo" href="#" target="_blank"
-          style="flex:1;padding:10px;background:var(--nb-burg);border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;text-align:center;text-decoration:none">
-          Finalizar pagamento agora ↗
-        </a>
-        <button onclick="pagarDepois()"
-          style="flex:1;padding:10px;background:transparent;border:0.5px solid #3E2A3C;border-radius:10px;color:var(--nb-text-low);font-size:13px;cursor:pointer">
-          Pagar depois
+
+      <!-- Header dinâmico -->
+      <div id="mp-header" style="padding:14px 20px 0;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div id="mp-title" style="font-size:16px;font-weight:800;color:#3D0E20;font-family:'Playfair Display',serif;letter-spacing:-.2px">Processando pagamento</div>
+          <div style="font-size:11px;color:#9a7a8a;margin-top:2px;font-weight:500">Pedido Nº <span id="num-pedido" style="color:#3D0E20;font-weight:700"></span></div>
+        </div>
+        <button onclick="fecharModalPagamento()" id="mp-close-btn"
+          style="display:none;width:32px;height:32px;border-radius:50%;background:#F0E8E0;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#9a7a8a">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
+      </div>
+
+      <!-- Corpo dinâmico -->
+      <div id="pagamento-conteudo" style="padding:20px 20px 8px"></div>
+
+      <!-- Footer dinâmico -->
+      <div id="mp-footer" style="padding:0 20px 32px;display:flex;flex-direction:column;gap:8px">
+        <a id="link-asaas-externo" href="#" target="_blank" style="display:none"></a>
       </div>
     </div>
   </div>
+
+  <!-- Estilos do modal -->
+  <style>
+    @keyframes mp-spin { to { transform: rotate(360deg); } }
+    @keyframes mp-pop { 0%{transform:scale(.5);opacity:0} 60%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
+    @keyframes mp-fade-up { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    .mp-btn-p { width:100%;padding:15px;border-radius:14px;border:none;background:#3D0E20;color:#C8A96E;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:.2px;transition:opacity .15s }
+    .mp-btn-p:active { opacity:.8 }
+    .mp-btn-s { width:100%;padding:13px;border-radius:14px;border:0.5px solid #D4C4BC;background:transparent;color:#9a7a8a;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .15s }
+    .mp-btn-s:active { opacity:.7 }
+    .mp-pix-code { background:#fff;border:0.5px solid #E8DDD4;border-radius:12px;padding:12px 14px;font-size:11px;color:#6a5a54;word-break:break-all;line-height:1.6;text-align:left;margin-bottom:12px;font-family:'DM Mono',monospace }
+    .mp-info-row { display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:0.5px solid #EDE5DC }
+    .mp-info-row:last-child { border:none }
+    .mp-info-lbl { font-size:12px;color:#9a7a8a;font-weight:500 }
+    .mp-info-val { font-size:13px;color:#3D0E20;font-weight:700 }
+  </style>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
@@ -258,6 +285,6 @@
       }
     } catch(e) { localStorage.removeItem("ires_cart"); }
   </script>
-  <script src="js/carrinho.js?v=1778306592"></script>
+  <script src="js/carrinho.js?v=1778308079"></script>
 </body>
 </html>

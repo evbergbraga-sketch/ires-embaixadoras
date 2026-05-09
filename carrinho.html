@@ -247,7 +247,17 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/carrinho.js?v=1778305897"></script>
+  <script src="js/auth.js?v=1778306598"></script>
+  <script>
+    try {
+      const raw = localStorage.getItem("ires_cart");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed) || parsed.some(i => !i?.id || !/^[0-9a-f-]{36}$/i.test(i.id)))
+          localStorage.removeItem("ires_cart");
+      }
+    } catch(e) { localStorage.removeItem("ires_cart"); }
+  </script>
+  <script src="js/carrinho.js?v=1778306592"></script>
 </body>
 </html>

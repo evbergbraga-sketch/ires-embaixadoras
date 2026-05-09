@@ -165,7 +165,16 @@ function _atualizarBadgeCarrinho() {
   }
 }
 
-function getCart()         { return JSON.parse(localStorage.getItem('ires_cart') || '[]'); }
+function getCart() {
+  try {
+    const raw = localStorage.getItem('ires_cart');
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed.filter(i => i && typeof i.id === 'string' && /^[0-9a-f-]{36}$/i.test(i.id))
+      : [];
+  } catch(e) { localStorage.removeItem('ires_cart'); return []; }
+}
 function saveCart(cart)    { localStorage.setItem('ires_cart', JSON.stringify(cart)); }
 function getCartCount()    { return getCart().reduce((acc, i) => acc + i.quantity, 0); }
 function clearCart()       { localStorage.removeItem('ires_cart'); }
@@ -174,8 +183,8 @@ function addToCart(product, quantity = null) {
   const cart = getCart();
   const min  = parseInt(product.min_quantity) || 1;
   const qty  = quantity ? parseInt(quantity) : min;
-  const size  = product._size  || null;
-  const color = product._color || null;
+  const size  = product._size  ? String(product._size).trim()  : null;
+  const color = product._color ? String(product._color).trim() : null;
 
   // Itens com variações diferentes são entradas separadas no carrinho
   const existing = cart.find(i =>

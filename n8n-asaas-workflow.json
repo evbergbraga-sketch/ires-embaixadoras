@@ -1,0 +1,200 @@
+{
+  "name": "IRES — Asaas Cobrança v2 (PIX + Boleto + Cartão Parcelado)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "asaas-cobranca",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Access-Control-Allow-Origin", "value": "*" },
+              { "name": "Access-Control-Allow-Headers", "value": "Content-Type" }
+            ]
+          }
+        }
+      },
+      "id": "webhook-entrada",
+      "name": "Webhook Entrada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-2200, -1300],
+      "webhookId": "ires-asaas-cobranca"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $input.first().json.body || $input.first().json;\n\nif (!b.nome || !b.email || !b.cpf || !b.total || !b.pedido_id) {\n  throw new Error('Campos obrigatórios ausentes: nome, email, cpf, total, pedido_id');\n}\n\nconst amanha = new Date();\namanha.setDate(amanha.getDate() + 1);\nconst vencimento = amanha.toISOString().split('T')[0];\n\nconst forma = (b.forma_pagamento || 'PIX').toUpperCase();\n\nreturn [{\n  json: {\n    nome: b.nome,\n    email: b.email,\n    cpf: b.cpf.replace(/\\D/g, ''),\n    telefone: (b.telefone || '').replace(/\\D/g, ''),\n    total: Number(b.total),\n    pedido_id: b.pedido_id,\n    forma_pagamento: forma,\n    vencimento: vencimento,\n    // Campos de cartão (preenchidos só quando forma === CREDIT_CARD)\n    parcelas: Number(b.parcelas || 1),\n    cartao_numero: b.cartao_numero || '',\n    cartao_nome: b.cartao_nome || '',\n    cartao_validade: b.cartao_validade || '',\n    cartao_cvv: b.cartao_cvv || '',\n    cartao_cpf: (b.cartao_cpf || b.cpf || '').replace(/\\D/g, ''),\n    cartao_email: b.cartao_email || b.email || '',\n    cartao_telefone: (b.cartao_telefone || b.telefone || '').replace(/\\D/g, ''),\n    cartao_cep: (b.cartao_cep || '').replace(/\\D/g, ''),\n    cartao_numero_end: b.cartao_numero_end || 'S/N',\n    cartao_complemento: b.cartao_complemento || ''\n  }\n}]"
+      },
+      "id": "prepara-dados",
+      "name": "Prepara Dados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1980, -1300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.forma_pagamento }}",
+              "operation": "equal",
+              "value2": "CREDIT_CARD"
+            }
+          ]
+        }
+      },
+      "id": "roteador",
+      "name": "É Cartão?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [-1760, -1300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.asaas.com/v3/customers",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "access_token", "value": "$aact_prod_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6OjUyMDczMzY2LTcyMzAtNDAyOS04ZDkzLTZhMjY4OGQyMzFhYzo6JGFhY2hfYmMxM2IzNmEtNmQ2NC00Mjk2LWE0NWItZWVjYjQ4MGFlM2Ux" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"name\": \"{{ $('Prepara Dados').first().json.nome }}\",\n  \"email\": \"{{ $('Prepara Dados').first().json.email }}\",\n  \"cpfCnpj\": \"{{ $('Prepara Dados').first().json.cpf }}\",\n  \"mobilePhone\": \"{{ $('Prepara Dados').first().json.telefone }}\"\n}"
+      },
+      "id": "criar-cliente-cartao",
+      "name": "Criar/Buscar Cliente (Cartão)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-1540, -1180]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.asaas.com/v3/payments",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "access_token", "value": "$aact_prod_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6OjUyMDczMzY2LTcyMzAtNDAyOS04ZDkzLTZhMjY4OGQyMzFhYzo6JGFhY2hfYmMxM2IzNmEtNmQ2NC00Mjk2LWE0NWItZWVjYjQ4MGFlM2Ux" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"customer\": \"{{ $json.id }}\",\n  \"billingType\": \"CREDIT_CARD\",\n  \"value\": {{ $('Prepara Dados').first().json.total }},\n  \"dueDate\": \"{{ $('Prepara Dados').first().json.vencimento }}\",\n  \"description\": \"Pedido IRES #{{ $('Prepara Dados').first().json.pedido_id }}\",\n  \"externalReference\": \"{{ $('Prepara Dados').first().json.pedido_id }}\",\n  \"installmentCount\": {{ $('Prepara Dados').first().json.parcelas }},\n  \"installmentValue\": {{ Number(($('Prepara Dados').first().json.total / $('Prepara Dados').first().json.parcelas).toFixed(2)) }},\n  \"creditCard\": {\n    \"holderName\": \"{{ $('Prepara Dados').first().json.cartao_nome }}\",\n    \"number\": \"{{ $('Prepara Dados').first().json.cartao_numero.replace(/\\\\s/g, '') }}\",\n    \"expiryMonth\": \"{{ $('Prepara Dados').first().json.cartao_validade.split('/')[0] }}\",\n    \"expiryYear\": \"{{ $('Prepara Dados').first().json.cartao_validade.split('/')[1] }}\",\n    \"ccv\": \"{{ $('Prepara Dados').first().json.cartao_cvv }}\"\n  },\n  \"creditCardHolderInfo\": {\n    \"name\": \"{{ $('Prepara Dados').first().json.cartao_nome }}\",\n    \"email\": \"{{ $('Prepara Dados').first().json.cartao_email }}\",\n    \"cpfCnpj\": \"{{ $('Prepara Dados').first().json.cartao_cpf }}\",\n    \"postalCode\": \"{{ $('Prepara Dados').first().json.cartao_cep }}\",\n    \"addressNumber\": \"{{ $('Prepara Dados').first().json.cartao_numero_end }}\",\n    \"addressComplement\": \"{{ $('Prepara Dados').first().json.cartao_complemento }}\",\n    \"phone\": \"{{ $('Prepara Dados').first().json.cartao_telefone }}\"\n  },\n  \"callback\": {\n    \"successUrl\": \"https://iresembaixadoras.com.br/obrigado\",\n    \"cancelUrl\": \"https://iresembaixadoras.com.br/cancelado\"\n  }\n}"
+      },
+      "id": "cobrar-cartao",
+      "name": "Cobrar Cartão Parcelado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-1320, -1180]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payment = $input.first().json;\nconst dados = $('Prepara Dados').first().json;\n\nif (payment.errors || payment.status === 'DECLINED') {\n  const msg = payment.errors?.[0]?.description || payment.transactionReceiptUrl || 'Cartão recusado';\n  return [{ json: { ok: false, erro: msg } }];\n}\n\nreturn [{\n  json: {\n    ok: true,\n    forma: 'CREDIT_CARD',\n    id: payment.id,\n    link: payment.invoiceUrl || '',\n    parcelas: dados.parcelas,\n    valorParcela: Number((dados.total / dados.parcelas).toFixed(2)),\n    total: dados.total,\n    status: payment.status\n  }\n}]"
+      },
+      "id": "resposta-cartao",
+      "name": "Formata Resposta Cartão",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1100, -1180]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.asaas.com/v3/customers",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "access_token", "value": "$aact_prod_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6OjUyMDczMzY2LTcyMzAtNDAyOS04ZDkzLTZhMjY4OGQyMzFhYzo6JGFhY2hfYmMxM2IzNmEtNmQ2NC00Mjk2LWE0NWItZWVjYjQ4MGFlM2Ux" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"name\": \"{{ $('Prepara Dados').first().json.nome }}\",\n  \"email\": \"{{ $('Prepara Dados').first().json.email }}\",\n  \"cpfCnpj\": \"{{ $('Prepara Dados').first().json.cpf }}\",\n  \"mobilePhone\": \"{{ $('Prepara Dados').first().json.telefone }}\"\n}"
+      },
+      "id": "criar-cliente-pixbol",
+      "name": "Criar/Buscar Cliente (PIX/Boleto)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-1540, -1420]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.asaas.com/v3/payments",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "access_token", "value": "$aact_prod_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6OjUyMDczMzY2LTcyMzAtNDAyOS04ZDkzLTZhMjY4OGQyMzFhYzo6JGFhY2hfYmMxM2IzNmEtNmQ2NC00Mjk2LWE0NWItZWVjYjQ4MGFlM2Ux" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"customer\": \"{{ $json.id }}\",\n  \"billingType\": \"{{ $('Prepara Dados').first().json.forma_pagamento }}\",\n  \"value\": {{ $('Prepara Dados').first().json.total }},\n  \"dueDate\": \"{{ $('Prepara Dados').first().json.vencimento }}\",\n  \"description\": \"Pedido IRES #{{ $('Prepara Dados').first().json.pedido_id }}\",\n  \"externalReference\": \"{{ $('Prepara Dados').first().json.pedido_id }}\",\n  \"callback\": {\n    \"successUrl\": \"https://iresembaixadoras.com.br/obrigado\",\n    \"cancelUrl\": \"https://iresembaixadoras.com.br/cancelado\"\n  }\n}"
+      },
+      "id": "cobrar-pix-boleto",
+      "name": "Cobrar PIX/Boleto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-1320, -1420]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payment = $input.first().json;\nconst dados = $('Prepara Dados').first().json;\n\nif (payment.errors) {\n  return [{ json: { ok: false, erro: payment.errors?.[0]?.description || 'Erro ao gerar cobrança' } }];\n}\n\nconst isPix = dados.forma_pagamento === 'PIX';\n\nreturn [{\n  json: {\n    ok: true,\n    forma: dados.forma_pagamento,\n    id: payment.id,\n    link: payment.invoiceUrl || '',\n    vencimento: payment.dueDate || dados.vencimento,\n    valor: dados.total,\n    pixQrCode: payment.pixQrCodeImage || null,\n    pixCopiaECola: payment.pixQrCode || null,\n    boletoUrl: payment.bankSlipUrl || null\n  }\n}]"
+      },
+      "id": "resposta-pix-boleto",
+      "name": "Formata Resposta PIX/Boleto",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1100, -1420]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($input.first().json) }}"
+      },
+      "id": "resposta-final-pix",
+      "name": "Resposta PIX/Boleto",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [-880, -1420]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($input.first().json) }}"
+      },
+      "id": "resposta-final-cartao",
+      "name": "Resposta Cartão",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [-880, -1180]
+    }
+  ],
+  "connections": {
+    "Webhook Entrada": { "main": [[{ "node": "Prepara Dados", "type": "main", "index": 0 }]] },
+    "Prepara Dados": { "main": [[{ "node": "É Cartão?", "type": "main", "index": 0 }]] },
+    "É Cartão?": {
+      "main": [
+        [{ "node": "Criar/Buscar Cliente (Cartão)", "type": "main", "index": 0 }],
+        [{ "node": "Criar/Buscar Cliente (PIX/Boleto)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Criar/Buscar Cliente (Cartão)": { "main": [[{ "node": "Cobrar Cartão Parcelado", "type": "main", "index": 0 }]] },
+    "Cobrar Cartão Parcelado": { "main": [[{ "node": "Formata Resposta Cartão", "type": "main", "index": 0 }]] },
+    "Formata Resposta Cartão": { "main": [[{ "node": "Resposta Cartão", "type": "main", "index": 0 }]] },
+    "Criar/Buscar Cliente (PIX/Boleto)": { "main": [[{ "node": "Cobrar PIX/Boleto", "type": "main", "index": 0 }]] },
+    "Cobrar PIX/Boleto": { "main": [[{ "node": "Formata Resposta PIX/Boleto", "type": "main", "index": 0 }]] },
+    "Formata Resposta PIX/Boleto": { "main": [[{ "node": "Resposta PIX/Boleto", "type": "main", "index": 0 }]] }
+  }
+}

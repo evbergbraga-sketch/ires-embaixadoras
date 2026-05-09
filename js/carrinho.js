@@ -163,6 +163,22 @@ async function finalizarPedido() {
   const obs   = document.getElementById('obs-pedido').value.trim();
   const forma = document.getElementById('forma-pagamento')?.value || 'PIX';
 
+  // Valida formulário de cartão se necessário
+  if (forma === 'CREDIT_CARD') {
+    const num = document.getElementById('cartao-numero')?.value.replace(/\s/g,'') || '';
+    const nome = document.getElementById('cartao-nome')?.value.trim() || '';
+    const val = document.getElementById('cartao-validade')?.value || '';
+    const cvv = document.getElementById('cartao-cvv')?.value || '';
+    const cpf = document.getElementById('cartao-cpf')?.value.replace(/\D/g,'') || '';
+    const cep = document.getElementById('cartao-cep')?.value.replace(/\D/g,'') || '';
+    if (num.length < 13) { showToast('Número do cartão inválido.', 'error'); return; }
+    if (nome.length < 3) { showToast('Informe o nome no cartão.', 'error'); return; }
+    if (!val.match(/^\d{2}\/\d{2}$/)) { showToast('Validade inválida (MM/AA).', 'error'); return; }
+    if (cvv.length < 3) { showToast('CVV inválido.', 'error'); return; }
+    if (cpf.length !== 11) { showToast('CPF do titular inválido.', 'error'); return; }
+    if (cep.length !== 8) { showToast('CEP de cobrança inválido.', 'error'); return; }
+  }
+
   try {
     // 1. Cria o pedido no Supabase
     const cepFrete = document.getElementById('cep-frete')?.value.replace(/\D/g, '') || null;
@@ -213,6 +229,20 @@ async function finalizarPedido() {
         total:            _freteSelecionado ? total + _freteSelecionado.price : total,
         pedido_id:        pedido.id,
         forma_pagamento:  forma,
+        // Dados do cartão (só preenchidos quando CREDIT_CARD)
+        ...(forma === 'CREDIT_CARD' ? {
+          parcelas:           parseInt(document.getElementById('cartao-parcelas')?.value || '1'),
+          cartao_numero:      document.getElementById('cartao-numero')?.value.replace(/\s/g,'') || '',
+          cartao_nome:        document.getElementById('cartao-nome')?.value || '',
+          cartao_validade:    document.getElementById('cartao-validade')?.value || '',
+          cartao_cvv:         document.getElementById('cartao-cvv')?.value || '',
+          cartao_cpf:         document.getElementById('cartao-cpf')?.value || _perfil.cpf || '',
+          cartao_email:       (await _supabase.auth.getUser()).data.user.email,
+          cartao_telefone:    _perfil.phone || '',
+          cartao_cep:         document.getElementById('cartao-cep')?.value || '',
+          cartao_numero_end:  document.getElementById('cartao-numero-end')?.value || 'S/N',
+          cartao_complemento: '',
+        } : {}),
       }),
     });
 
@@ -281,6 +311,31 @@ async function finalizarPedido() {
             O boleto pode levar até 3 dias úteis para compensar. Não pague após o vencimento sem antes verificar a disponibilidade.
           </div>
         </div>`;
+    } else if (asaas.forma === 'CREDIT_CARD') {
+      if (!asaas.ok) {
+        conteudo.innerHTML = `
+          <div style="text-align:center;padding:16px">
+            <div style="width:56px;height:56px;border-radius:50%;background:#200a0a;border:0.5px solid #500;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+            <div style="font-size:14px;font-weight:700;color:#f87171;margin-bottom:8px">Cartão recusado</div>
+            <div style="font-size:12px;color:var(--nb-text-low);line-height:1.6">${asaas.erro || 'Verifique os dados e tente novamente.'}</div>
+          </div>`;
+      } else {
+        conteudo.innerHTML = `
+          <div style="text-align:center;padding:8px 0">
+            <div style="width:56px;height:56px;border-radius:50%;background:#0a200a;border:0.5px solid #1a5030;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div style="font-size:14px;font-weight:700;color:var(--nb-text-hi);margin-bottom:4px">Pagamento aprovado! ✓</div>
+            <div style="font-size:12px;color:var(--nb-text-low);margin-bottom:16px">
+              ${asaas.parcelas > 1
+                ? `${asaas.parcelas}x de ${formatBRL(asaas.valorParcela)}`
+                : `À vista`}
+            </div>
+            <div style="font-size:26px;font-weight:900;color:var(--nb-text-hi)">${formatBRL(asaas.total)}</div>
+          </div>`;
+      }
     } else {
       conteudo.innerHTML = `
         <div style="text-align:center;padding:8px 0">
@@ -465,3 +520,80 @@ function selecionarFrete(el) {
   `;
   document.head.appendChild(s);
 })();
+
+// ════════════════════════════════════════════
+// PAGAMENTO — Tabs + Formulário de Cartão
+// ════════════════════════════════════════════
+
+// Injeta estilos das tabs e form cartão
+(function(){
+  const s = document.createElement('style');
+  s.textContent = `
+    .pag-tabs { display:flex; gap:8px; margin-top:6px; }
+    .pag-tab {
+      flex:1; display:flex; align-items:center; justify-content:center; gap:6px;
+      padding:10px 6px; border-radius:10px; border:0.5px solid var(--nb-border-s);
+      background:var(--nb-card); color:var(--nb-text-low); font-size:12px;
+      font-weight:600; cursor:pointer; font-family:var(--font);
+      transition:all .2s;
+    }
+    .pag-tab.active {
+      border-color:var(--nb-burg); background:rgba(61,14,32,.06);
+      color:var(--nb-burg);
+    }
+    .pag-tab:active { opacity:.8; }
+  `;
+  document.head.appendChild(s);
+})();
+
+function selecionarFormaPag(btn) {
+  document.querySelectorAll('.pag-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  const forma = btn.dataset.forma;
+  document.getElementById('forma-pagamento').value = forma;
+  const formCartao = document.getElementById('form-cartao');
+  formCartao.style.display = forma === 'CREDIT_CARD' ? 'block' : 'none';
+  if (forma === 'CREDIT_CARD') atualizarParcelaInfo();
+}
+
+function mascaraCartao(input) {
+  let v = input.value.replace(/\D/g,'').slice(0,16);
+  v = v.match(/.{1,4}/g)?.join(' ') || v;
+  input.value = v;
+  atualizarParcelaInfo();
+}
+
+function mascaraValidade(input) {
+  let v = input.value.replace(/\D/g,'').slice(0,4);
+  if (v.length >= 2) v = v.slice(0,2) + '/' + v.slice(2);
+  input.value = v;
+}
+
+function mascaraCPFCartao(input) {
+  let v = input.value.replace(/\D/g,'').slice(0,11);
+  if (v.length > 9) v = v.slice(0,3)+'.'+v.slice(3,6)+'.'+v.slice(6,9)+'-'+v.slice(9);
+  else if (v.length > 6) v = v.slice(0,3)+'.'+v.slice(3,6)+'.'+v.slice(6);
+  else if (v.length > 3) v = v.slice(0,3)+'.'+v.slice(3);
+  input.value = v;
+}
+
+function atualizarParcelaInfo() {
+  const sel = document.getElementById('cartao-parcelas');
+  const info = document.getElementById('cartao-parcela-info');
+  if (!sel || !info) return;
+  const cart = getCart();
+  const subtotal = cart.reduce((a,i) => a + i.price * i.quantity, 0);
+  const frete = _freteSelecionado?.price || 0;
+  const total = subtotal + frete;
+  const parcelas = parseInt(sel.value);
+  const vlr = (total / parcelas).toFixed(2).replace('.',',');
+  info.textContent = parcelas > 1
+    ? `${parcelas}x de R$ ${vlr} = R$ ${formatBRL(total).replace('R$ ','')}`
+    : `Total: ${formatBRL(total)}`;
+}
+
+// Atualiza info ao mudar parcelas
+document.addEventListener('DOMContentLoaded', () => {
+  const sel = document.getElementById('cartao-parcelas');
+  if (sel) sel.addEventListener('change', atualizarParcelaInfo);
+});

@@ -101,13 +101,77 @@
       <div id="frete-opcoes" style="display:none;margin-bottom:16px"></div>
       <div id="frete-erro" style="display:none;font-size:12px;color:var(--red);padding:8px 0"></div>
 
+      <!-- Forma de pagamento -->
       <div class="form-group" style="margin-top:16px">
         <label>Forma de pagamento</label>
-        <select id="forma-pagamento">
-          <option value="PIX">PIX</option>
-          <option value="BOLETO">Boleto bancário</option>
-          <option value="CREDIT_CARD">Cartão de crédito</option>
-        </select>
+        <div class="pag-tabs" id="pag-tabs">
+          <button class="pag-tab active" data-forma="PIX" onclick="selecionarFormaPag(this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+            PIX
+          </button>
+          <button class="pag-tab" data-forma="CREDIT_CARD" onclick="selecionarFormaPag(this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Crédito
+          </button>
+          <button class="pag-tab" data-forma="BOLETO" onclick="selecionarFormaPag(this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            Boleto
+          </button>
+        </div>
+        <input type="hidden" id="forma-pagamento" value="PIX"/>
+      </div>
+
+      <!-- Formulário de cartão (só aparece quando crédito selecionado) -->
+      <div id="form-cartao" style="display:none;margin-top:12px">
+        <div class="form-group">
+          <label>Número do cartão</label>
+          <input type="text" id="cartao-numero" placeholder="0000 0000 0000 0000" maxlength="19" oninput="mascaraCartao(this)" autocomplete="cc-number"/>
+        </div>
+        <div class="form-group">
+          <label>Nome no cartão</label>
+          <input type="text" id="cartao-nome" placeholder="Como está no cartão" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" autocomplete="cc-name"/>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="form-group">
+            <label>Validade</label>
+            <input type="text" id="cartao-validade" placeholder="MM/AA" maxlength="5" oninput="mascaraValidade(this)" autocomplete="cc-exp"/>
+          </div>
+          <div class="form-group">
+            <label>CVV</label>
+            <input type="text" id="cartao-cvv" placeholder="123" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')" autocomplete="cc-csc"/>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="form-group">
+            <label>CPF do titular</label>
+            <input type="text" id="cartao-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascaraCPFCartao(this)"/>
+          </div>
+          <div class="form-group">
+            <label>CEP de cobrança</label>
+            <input type="text" id="cartao-cep" placeholder="00000-000" maxlength="9" oninput="mascaraCEPFrete(this)"/>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px">
+          <div class="form-group">
+            <label>Endereço (só rua/av)</label>
+            <input type="text" id="cartao-endereco" placeholder="Rua das Flores"/>
+          </div>
+          <div class="form-group">
+            <label>Número</label>
+            <input type="text" id="cartao-numero-end" placeholder="123"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Parcelas</label>
+          <select id="cartao-parcelas">
+            <option value="1">1x sem juros</option>
+            <option value="2">2x sem juros</option>
+            <option value="3">3x sem juros</option>
+            <option value="4">4x sem juros</option>
+            <option value="5">5x sem juros</option>
+          </select>
+        </div>
+        <div id="cartao-parcela-info" style="font-size:11px;color:var(--nb-text-low);margin-top:-8px;margin-bottom:4px;text-align:right"></div>
       </div>
 
       <div class="form-group">
@@ -184,6 +248,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/carrinho.js?v=1778275268"></script>
+  <script src="js/carrinho.js?v=1778305897"></script>
 </body>
 </html>

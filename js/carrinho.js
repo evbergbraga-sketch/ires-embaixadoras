@@ -313,7 +313,7 @@ function _iniciarPollingPIX() {
   if (!window._pixPaymentId) return;
   _pixPollingTimer = setInterval(async () => {
     try {
-      const res = await fetch('https://webhook.ruahsystems.com.br/webhook/ires-lp-pix-status', {
+      const res = await fetch('https://webhook.ruahsystems.com.br/webhook/ires-painel-pix-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ payment_id: window._pixPaymentId })

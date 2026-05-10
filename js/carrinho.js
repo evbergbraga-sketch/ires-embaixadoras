@@ -437,37 +437,6 @@ function _renderModalPagamento(asaas) {
     return;
   }
 
-  // ── BOLETO ──
-  if (asaas.forma === 'BOLETO') {
-    title.textContent = 'Boleto gerado';
-    conteudo.innerHTML = `
-      <div style="animation:mp-fade-up .35s ease both">
-        <div style="text-align:center;margin-bottom:16px">
-          <div style="width:64px;height:64px;border-radius:20px;background:#FDF8EE;border:1px solid #EDE5DC;display:flex;align-items:center;justify-content:center;margin:0 auto;animation:mp-pop .5s ease both">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" stroke-width="1.6" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-          </div>
-        </div>
-        <div class="mp-info-row">
-          <span class="mp-info-lbl">Valor</span>
-          <span class="mp-info-val" style="font-size:18px;font-family:'Playfair Display',serif">${formatBRL(asaas.valor)}</span>
-        </div>
-        <div class="mp-info-row">
-          <span class="mp-info-lbl">Vencimento</span>
-          <span class="mp-info-val">${new Date(asaas.vencimento).toLocaleDateString('pt-BR')}</span>
-        </div>
-        <div style="background:#FDF8EE;border:0.5px solid #EDE5DC;border-radius:12px;padding:12px 14px;margin-top:14px">
-          <p style="font-size:11px;color:#9a7a8a;line-height:1.6;margin:0">⚠️ O boleto pode levar até 3 dias úteis para compensar. Não pague após o vencimento sem verificar disponibilidade.</p>
-        </div>
-      </div>`;
-    footer.innerHTML = `
-      ${asaas.link ? `<a class="mp-btn-p" href="${asaas.link}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        Abrir boleto
-      </a>` : ''}
-      <button class="mp-btn-s" onclick="pagarDepois()">Pagar depois</button>`;
-    return;
-  }
-
   // ── CARTÃO — APROVADO ──
   if (asaas.forma === 'CREDIT_CARD' && asaas.ok) {
     title.textContent = 'Pagamento aprovado!';

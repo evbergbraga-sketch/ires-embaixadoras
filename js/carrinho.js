@@ -305,7 +305,60 @@ function _abrirModalPagamento(pedidoId) {
   requestAnimationFrame(() => { sheet.style.transform = 'translateY(0)'; });
 }
 
+// ── Polling confirmação PIX ────────────────────────────
+let _pixPollingTimer = null;
+
+function _iniciarPollingPIX() {
+  _pararPollingPIX();
+  if (!window._pixPaymentId) return;
+  _pixPollingTimer = setInterval(async () => {
+    try {
+      const res = await fetch('https://webhook.ruahsystems.com.br/webhook/ires-lp-pix-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payment_id: window._pixPaymentId })
+      });
+      const data = await res.json();
+      if (data.pago) {
+        _pararPollingPIX();
+        // Atualiza status do pedido no Supabase
+        if (window._pixPedidoId) {
+          await _supabase.from('orders').update({ status: 'paid' }).eq('id', window._pixPedidoId);
+        }
+        _renderPixConfirmado(data);
+      }
+    } catch(e) { /* silencioso */ }
+  }, 5000);
+}
+
+function _pararPollingPIX() {
+  if (_pixPollingTimer) { clearInterval(_pixPollingTimer); _pixPollingTimer = null; }
+}
+
+function _renderPixConfirmado(data) {
+  document.getElementById('mp-title').textContent = 'Pagamento confirmado!';
+  document.getElementById('mp-close-btn').style.display = 'flex';
+  document.getElementById('pagamento-conteudo').innerHTML = `
+    <div style="animation:mp-fade-up .35s ease both;text-align:center;padding:16px 0">
+      <div style="width:72px;height:72px;border-radius:22px;background:#F0FAF4;border:1px solid #C6E8D4;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;animation:mp-pop .6s ease both">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <p style="font-size:22px;font-weight:800;color:#3D0E20;font-family:'Playfair Display',serif;margin-bottom:8px">PIX confirmado! 🎉</p>
+      <p style="font-size:16px;font-weight:700;color:#22C55E;margin-bottom:16px">R$ ${Number(data.valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</p>
+      <div style="background:#F0FAF4;border:1px solid #C6E8D4;border-radius:14px;padding:14px 16px;text-align:left">
+        <p style="font-size:13px;color:#555;line-height:1.7;margin:0">
+          ✅ Pagamento recebido com sucesso<br>
+          📦 Seu pedido está sendo processado<br>
+          📱 Você receberá atualizações em breve
+        </p>
+      </div>
+    </div>`;
+  document.getElementById('mp-footer').innerHTML = `
+    <button class="mp-btn-p" onclick="fecharModalPagamento()">Ver meus pedidos →</button>`;
+}
+
 function fecharModalPagamento() {
+  _pararPollingPIX();
   const modal = document.getElementById('modal-pagamento');
   const sheet = document.getElementById('mp-sheet');
   sheet.style.transform = 'translateY(100%)';
@@ -348,6 +401,9 @@ function _renderModalPagamento(asaas) {
   // ── PIX ──
   if (asaas.forma === 'PIX') {
     window._pixCode = asaas.pixCopiaECola;
+    window._pixPaymentId = asaas.id || null;
+    window._pixPedidoId  = pedido?.id || null;
+    _iniciarPollingPIX();
     title.textContent = 'Pague com PIX';
     conteudo.innerHTML = `
       <div style="animation:mp-fade-up .35s ease both">

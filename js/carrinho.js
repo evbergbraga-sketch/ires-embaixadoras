@@ -260,17 +260,28 @@ async function finalizarPedido() {
 
     const asaas = await resp.json();
 
-    // salva payment_url direto no pedido via REST (bypassa RLS)
-    if (asaas.ok && asaas.link) {
+    // Atualiza pedido com dados do pagamento
+    if (asaas.ok) {
+      const session = (await _supabase.auth.getSession()).data.session;
+      const updateData = {
+        payment_url: asaas.link || null,
+        payment_ref: asaas.id  || null,
+      };
+
+      // Cartão aprovado na hora → marca como pago imediatamente
+      if (asaas.forma === 'CREDIT_CARD' && asaas.ok && asaas.status === 'CONFIRMED') {
+        updateData.status = 'paid';
+      }
+
       await fetch(`https://cqhcbbrpxytpybgnpxys.supabase.co/rest/v1/orders?id=eq.${pedido.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'apikey': IRES_CONFIG.supabaseAnonKey,
-          'Authorization': `Bearer ${(await _supabase.auth.getSession()).data.session.access_token}`,
+          'Authorization': `Bearer ${session.access_token}`,
           'Prefer': 'return=minimal',
         },
-        body: JSON.stringify({ payment_url: asaas.link, payment_ref: asaas.id }),
+        body: JSON.stringify(updateData),
       });
     }
 

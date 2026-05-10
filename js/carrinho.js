@@ -260,29 +260,24 @@ async function finalizarPedido() {
 
     const asaas = await resp.json();
 
-    // Atualiza pedido com dados do pagamento
+    // Atualiza pedido com dados do pagamento usando _supabase client
     if (asaas.ok) {
-      const session = (await _supabase.auth.getSession()).data.session;
       const updateData = {
         payment_url: asaas.link || null,
         payment_ref: asaas.id  || null,
       };
 
       // Cartão aprovado na hora → marca como pago imediatamente
-      if (asaas.forma === 'CREDIT_CARD' && asaas.ok && asaas.status === 'CONFIRMED') {
+      if (asaas.forma === 'CREDIT_CARD' && asaas.status === 'CONFIRMED') {
         updateData.status = 'paid';
       }
 
-      await fetch(`https://cqhcbbrpxytpybgnpxys.supabase.co/rest/v1/orders?id=eq.${pedido.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': IRES_CONFIG.supabaseAnonKey,
-          'Authorization': `Bearer ${session.access_token}`,
-          'Prefer': 'return=minimal',
-        },
-        body: JSON.stringify(updateData),
-      });
+      const { error: errUpdate } = await _supabase
+        .from('orders')
+        .update(updateData)
+        .eq('id', pedido.id);
+
+      if (errUpdate) console.error('[Pagamento] Erro ao atualizar pedido:', errUpdate);
     }
 
     // 4. Limpa o carrinho

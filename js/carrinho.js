@@ -284,6 +284,7 @@ async function finalizarPedido() {
     clearCart();
 
     // 5. Exibe modal e renderiza estado do pagamento
+    window._pedidoAtualId = pedido.id;
     _abrirModalPagamento(pedido.id);
     _renderModalPagamento(asaas);
 
@@ -402,7 +403,7 @@ function _renderModalPagamento(asaas) {
   if (asaas.forma === 'PIX') {
     window._pixCode = asaas.pixCopiaECola;
     window._pixPaymentId = asaas.id || null;
-    window._pixPedidoId  = pedido?.id || null;
+    window._pixPedidoId  = window._pedidoAtualId || null;
     _iniciarPollingPIX();
     title.textContent = 'Pague com PIX';
     conteudo.innerHTML = `

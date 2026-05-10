@@ -449,7 +449,8 @@ function _renderModalPagamento(asaas) {
         ${asaas.pixCopiaECola ? `
           <div style="margin-top:14px">
             <div style="font-size:10px;font-weight:700;color:#9a7a8a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Pix Copia e Cola</div>
-            <div class="mp-pix-code">${asaas.pixCopiaECola.slice(0,72)}…</div>
+            <div class="mp-pix-code" id="pix-code-text" onclick="copiarPix()" style="cursor:pointer;user-select:all;-webkit-user-select:all" title="Toque para copiar">${asaas.pixCopiaECola}</div>
+            <div style="font-size:10px;color:#9a7a8a;text-align:center;margin-top:4px">↑ Toque no código para copiar</div>
           </div>` : ''}
       </div>`;
     footer.innerHTML = `
@@ -515,22 +516,47 @@ function _tentarNovamenteCartao() {
 
 function copiarPix() {
   if (!window._pixCode) return;
-  navigator.clipboard.writeText(window._pixCode).then(() => {
+
+  function _onCopiado() {
     const btn = document.getElementById('btn-copiar');
     if (btn) {
       btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="margin-right:6px;vertical-align:middle"><polyline points="20 6 9 17 4 12"/></svg> Copiado!';
       btn.style.background = '#22C55E';
       btn.style.borderColor = '#22C55E';
-    }
-    showToast('Código PIX copiado!', 'success');
-    setTimeout(() => {
-      if (btn) {
+      setTimeout(() => {
         btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="margin-right:6px;vertical-align:middle"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar código PIX';
         btn.style.background = '#3D0E20';
         btn.style.borderColor = 'transparent';
-      }
-    }, 3000);
-  }).catch(() => showToast('Erro ao copiar. Tente manualmente.', 'error'));
+      }, 3000);
+    }
+    showToast('Código PIX copiado!', 'success');
+  }
+
+  // Tenta clipboard API (HTTPS)
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(window._pixCode).then(_onCopiado).catch(_fallbackCopy);
+  } else {
+    _fallbackCopy();
+  }
+
+  function _fallbackCopy() {
+    // Fallback para HTTP — cria textarea temporário e usa execCommand
+    try {
+      const el = document.createElement('textarea');
+      el.value = window._pixCode;
+      el.style.cssText = 'position:fixed;top:0;left:0;opacity:0;font-size:16px'; // font-size:16px evita zoom no iOS
+      document.body.appendChild(el);
+      el.focus();
+      el.select();
+      el.setSelectionRange(0, 99999); // iOS
+      const ok = document.execCommand('copy');
+      document.body.removeChild(el);
+      if (ok) { _onCopiado(); }
+      else     { showToast('Não foi possível copiar. Toque e segure o código para copiar.', 'error'); }
+    } catch(e) {
+      showToast('Não foi possível copiar. Toque e segure o código para copiar.', 'error');
+    }
+  }
 }
 
 // ════════════════════════════════════════════

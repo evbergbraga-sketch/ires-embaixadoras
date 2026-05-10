@@ -155,6 +155,14 @@ async function finalizarPedido() {
     return;
   }
 
+  // Frete obrigatório
+  if (!_freteSelecionado) {
+    showToast('Calcule e selecione uma opção de frete antes de finalizar.', 'error');
+    document.getElementById('cep-frete')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('cep-frete')?.focus();
+    return;
+  }
+
   const btn = document.getElementById('btn-finalizar');
   btn.disabled  = true;
   btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
@@ -181,17 +189,33 @@ async function finalizarPedido() {
 
   try {
     // 1. Cria o pedido no Supabase
-    const cepFrete = document.getElementById('cep-frete')?.value.replace(/\D/g, '') || null;
+    const cepFrete   = document.getElementById('cep-frete')?.value.replace(/\D/g, '') || null;
+    const nomeDestinatario = document.getElementById('dest-nome')?.value.trim() || _perfil.full_name || null;
+    const telefoneDestinatario = document.getElementById('dest-telefone')?.value.replace(/\D/g,'') || _perfil.phone || null;
+    const enderecoDestinatario = [
+      document.getElementById('dest-rua')?.value.trim(),
+      document.getElementById('dest-numero')?.value.trim(),
+      document.getElementById('dest-complemento')?.value.trim()
+    ].filter(Boolean).join(', ') || null;
+    const cidadeDestinatario = document.getElementById('dest-cidade')?.value.trim() || null;
+    const estadoDestinatario = document.getElementById('dest-estado')?.value.trim() || null;
+
     const { data: pedido, error: errPedido } = await _supabase
       .from('orders')
       .insert({
-        reseller_id: _perfil.id,
-        status:      'pending',
-        total:       _freteSelecionado ? total + _freteSelecionado.price : total,
-        notes:       obs || null,
+        reseller_id:      _perfil.id,
+        status:           'pending',
+        total:            _freteSelecionado ? total + _freteSelecionado.price : total,
+        notes:            obs || null,
         shipping_service: _freteSelecionado?.serviceId || null,
         shipping_price:   _freteSelecionado?.price || 0,
+        shipping_name:    _freteSelecionado?.name || null,
         recipient_cep:    cepFrete,
+        recipient_name:   nomeDestinatario,
+        recipient_phone:  telefoneDestinatario,
+        recipient_address: enderecoDestinatario,
+        recipient_city:   cidadeDestinatario,
+        recipient_state:  estadoDestinatario,
       })
       .select()
       .single();
@@ -594,6 +618,31 @@ async function cotarFrete() {
 
     // Auto-seleciona o primeiro
     selecionarFrete(opcoes.querySelector('.frete-opcao'));
+
+    // Mostra formulário de endereço e preenche via ViaCEP
+    const formEnd = document.getElementById('form-endereco');
+    if (formEnd) {
+      formEnd.style.display = 'block';
+      // Preenche nome e telefone do perfil se não preenchido
+      const destNome = document.getElementById('dest-nome');
+      const destTel  = document.getElementById('dest-telefone');
+      if (destNome && !destNome.value && window._perfil?.full_name) destNome.value = window._perfil.full_name;
+      if (destTel  && !destTel.value  && window._perfil?.phone)     destTel.value  = window._perfil.phone;
+      // Busca endereço via ViaCEP
+      try {
+        const viacep = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const addr   = await viacep.json();
+        if (!addr.erro) {
+          const destRua    = document.getElementById('dest-rua');
+          const destCidade = document.getElementById('dest-cidade');
+          const destEstado = document.getElementById('dest-estado');
+          if (destRua    && !destRua.value)    destRua.value    = addr.logradouro || '';
+          if (destCidade && !destCidade.value) destCidade.value = addr.localidade || '';
+          if (destEstado && !destEstado.value) destEstado.value = addr.uf || '';
+          document.getElementById('dest-numero')?.focus();
+        }
+      } catch(e) { /* silencioso */ }
+    }
 
   } catch (e) {
     erro.textContent = 'Erro ao calcular frete: ' + e.message;

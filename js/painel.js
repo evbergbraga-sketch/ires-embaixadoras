@@ -378,7 +378,13 @@ async function renderInicio() {
 function _addProdutoHome(id) {
   const p = (window._produtosPainel || []).find(x => x.id === id);
   if (!p) return;
-  addToCart(p);
+  // Abre o modal do produto para escolher cor/tamanho antes de adicionar
+  if (!window._todosProdutos || !window._todosProdutos.find(x => x.id === id)) {
+    window._todosProdutos = window._todosProdutos || [];
+    if (!window._todosProdutos.find(x => x.id === id)) window._todosProdutos.push(p);
+  }
+  irAba('vitrine');
+  setTimeout(() => abrirProdutoPainel(id), 300);
 }
 
 // ════════════════════════════════════════════
@@ -1020,7 +1026,7 @@ function filtrarProdutosPainel() {
               <div class="product-price">${formatBRL(p.price)}</div>
               <div class="product-min">mín. ${p.min_quantity} un.</div>
             </div>
-            <button class="btn-add" onclick="event.stopPropagation();addToCart(_todosProdutos.find(x=>x.id==='${p.id}'))">+</button>
+            <button class="btn-add" onclick="event.stopPropagation();abrirProdutoPainel('${p.id}')">+</button>
           </div>
         </div>
       </div>

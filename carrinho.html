@@ -101,6 +101,43 @@
       <div id="frete-opcoes" style="display:none;margin-bottom:16px"></div>
       <div id="frete-erro" style="display:none;font-size:12px;color:var(--red);padding:8px 0"></div>
 
+      <!-- ── Endereço de entrega (aparece após calcular frete) ── -->
+      <div id="form-endereco" style="display:none;margin-top:4px;margin-bottom:16px;padding:14px;background:var(--nb-card);border-radius:12px;border:0.5px solid rgba(196,154,122,.2)">
+        <div style="font-size:11px;font-weight:700;color:var(--ouro-cl);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">📦 Endereço de entrega</div>
+        <div class="form-group">
+          <label>Nome do destinatário</label>
+          <input type="text" id="dest-nome" placeholder="Nome completo"/>
+        </div>
+        <div class="form-group">
+          <label>Telefone</label>
+          <input type="tel" id="dest-telefone" placeholder="(00) 00000-0000" oninput="mascaraTelefone(this)"/>
+        </div>
+        <div class="form-group">
+          <label>Rua / Avenida</label>
+          <input type="text" id="dest-rua" placeholder="Ex: Rua das Flores"/>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" class="form-group">
+          <div>
+            <label>Número</label>
+            <input type="text" id="dest-numero" placeholder="Ex: 123"/>
+          </div>
+          <div>
+            <label>Complemento</label>
+            <input type="text" id="dest-complemento" placeholder="Apto, Bloco…"/>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 80px;gap:8px" class="form-group">
+          <div>
+            <label>Cidade</label>
+            <input type="text" id="dest-cidade" placeholder="Ex: São Paulo"/>
+          </div>
+          <div>
+            <label>UF</label>
+            <input type="text" id="dest-estado" placeholder="SP" maxlength="2" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"/>
+          </div>
+        </div>
+      </div>
+
       <!-- Forma de pagamento -->
       <div class="form-group" style="margin-top:16px">
         <label>Forma de pagamento</label>
@@ -282,6 +319,6 @@
       }
     } catch(e) { localStorage.removeItem("ires_cart"); }
   </script>
-  <script src="js/carrinho.js?v=1778455826"></script>
+  <script src="js/carrinho.js?v=1778457221"></script>
 </body>
 </html>

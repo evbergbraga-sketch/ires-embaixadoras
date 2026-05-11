@@ -51,6 +51,7 @@ function irPara(pagina) {
 // DASHBOARD
 // ════════════════════════════════════════════
 async function renderDashboard() {
+  try {
   const hoje = new Date().toISOString().slice(0,10);
   const results = await Promise.allSettled([
     _supabase.from('profiles').select('*',{count:'exact',head:true}).eq('status','active').eq('role','reseller'),

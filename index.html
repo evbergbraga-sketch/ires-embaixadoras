@@ -361,11 +361,21 @@
   async function enviarRecuperacao() {
     const email = document.getElementById('email-recuperacao').value.trim();
     if (!email) { showToast('Informe o e-mail.', 'error'); return; }
+    const btn = document.querySelector('#modal-recuperacao .btn-enviar');
+    const textoOriginal = btn.textContent;
+    btn.disabled = true;
+    btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px"></span>Enviando…';
     try {
       await resetPassword(email);
+      btn.innerHTML = '✓ Link enviado!';
+      btn.style.background = '#2d6e3e';
       showToast('Link enviado! Verifique seu e-mail.', 'success');
-      fecharRecuperacao();
-    } catch (err) { showToast(err.message, 'error'); }
+      setTimeout(() => { fecharRecuperacao(); btn.disabled = false; btn.textContent = textoOriginal; btn.style.background = ''; }, 2500);
+    } catch (err) {
+      showToast(err.message || 'Erro ao enviar. Tente novamente.', 'error');
+      btn.disabled = false;
+      btn.textContent = textoOriginal;
+    }
   }
 
   // Fechar modal clicando fora

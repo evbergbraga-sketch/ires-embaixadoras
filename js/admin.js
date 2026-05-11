@@ -408,7 +408,41 @@ async function abrirPedido(id) {
       <input type="text" id="obs-pedido" value="${s(o.notes||'')}" placeholder="Ex: BR123456789"/>
     </div>
     <button class="btn btn-primary" onclick="salvarStatusPedido('${o.id}')">Salvar alterações</button>
-  `);
+
+    ${(o.status === 'paid' || o.status === 'processing') && o.shipping_service && o.recipient_cep ? `
+      <button class="btn btn-outline" style="margin-top:8px;width:100%" onclick="gerarEtiqueta('${o.id}')">
+        🚚 Gerar Etiqueta Melhor Envio
+      </button>
+    ` : ''}
+    ${o.shipping_label_url ? `
+      <a href="${o.shipping_label_url}" target="_blank" class="btn btn-outline" style="margin-top:8px;width:100%;display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none">
+        🖨️ Imprimir Etiqueta
+      </a>
+    ` : ''}
+    ${o.shipping_tracking ? `
+      <div style="margin-top:8px;padding:10px;background:rgba(196,154,122,.07);border:0.5px solid rgba(196,154,122,.2);border-radius:10px;font-size:12px">
+        📦 Rastreio: <strong>${s(o.shipping_tracking)}</strong>
+      </div>
+    ` : ''}
+  \`);
+}
+
+async function gerarEtiqueta(orderId) {
+  showToast('Gerando etiqueta...', 'info');
+  try {
+    const resp = await fetch('https://cqhcbbrpxytpybgnpxys.supabase.co/functions/v1/melhorenvio-etiqueta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order_id: orderId }),
+    });
+    const data = await resp.json();
+    if (!resp.ok || data.error) throw new Error(data.error || 'Erro ao gerar etiqueta');
+    showToast('Etiqueta gerada! Rastreio: ' + (data.tracking || 'aguardando'), 'success');
+    fecharModal();
+    renderPedidos();
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'error');
+  }
 }
 
 async function salvarStatusPedido(id) {

@@ -52,15 +52,7 @@ function irPara(pagina) {
 // ════════════════════════════════════════════
 async function renderDashboard() {
   const hoje = new Date().toISOString().slice(0,10);
-  const [
-    { count: totalEmb },
-    { data: pedidosHoje },
-    { data: pendentes },
-    { data: ultimosPedidos },
-    { data: suporteAberto },
-    { data: pedidos7d },
-    { data: { session } },
-  ] = await Promise.all([
+  const results = await Promise.allSettled([
     _supabase.from('profiles').select('*',{count:'exact',head:true}).eq('status','active').eq('role','reseller'),
     _supabase.from('orders').select('total,status').gte('created_at', hoje),
     _supabase.from('profiles').select('id,full_name,created_at,phone').eq('status','pending').eq('role','reseller').order('created_at',{ascending:false}).limit(5),
@@ -69,6 +61,15 @@ async function renderDashboard() {
     _supabase.from('orders').select('total,status,created_at').gte('created_at', new Date(Date.now()-6*864e5).toISOString().slice(0,10)),
     _supabase.auth.getSession(),
   ]);
+
+  const val = (i, fallback) => results[i].status === 'fulfilled' ? results[i].value : { data: fallback, count: fallback };
+  const totalEmb     = val(0, 0).count  || 0;
+  const pedidosHoje  = val(1, []).data  || [];
+  const pendentes    = val(2, []).data  || [];
+  const ultimosPedidos = val(3, []).data || [];
+  const suporteAberto  = val(4, []).data || [];
+  const pedidos7d      = val(5, []).data || [];
+  const session        = val(6, {session:null}).data?.session || null;
 
   // Saudação por horário
   const hr = new Date().getHours();
@@ -332,35 +333,69 @@ function filtrarPedidosAdmin(el, status) {
 async function abrirPedido(id) {
   const { data: o } = await _supabase
     .from('orders')
-    .select('*, profiles(full_name, phone), order_items(quantity, unit_price, subtotal, products(name))')
+    .select('*, profiles(full_name, phone, cpf), order_items(quantity, unit_price, subtotal, size, color, products(name))')
     .eq('id', id).single();
   if (!o) return;
+
+  const temFrete   = o.shipping_price > 0;
+  const temEndereco = o.recipient_name || o.recipient_address;
+  const subtotalItens = (o.order_items||[]).reduce((a,i)=>a+Number(i.subtotal),0);
+
   abrirModal(`
     <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
     <h3 style="font-size:16px;font-weight:800;margin-bottom:4px">Pedido #${o.id.slice(-4).toUpperCase()}</h3>
     <p style="font-size:12px;color:var(--gray);margin-bottom:16px">${new Date(o.created_at).toLocaleDateString('pt-BR')} · ${s(o.profiles?.full_name)}</p>
+
+    <!-- Itens -->
     <div style="margin-bottom:16px">
       ${(o.order_items||[]).map(i => `
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--border2);font-size:13px">
-          <span style="color:var(--gray-lighter)">${s(i.products?.name)} × ${i.quantity}${(i.size||i.color)?' ('+[i.size,i.color].filter(Boolean).join(' / ')+')':''}</span>
+          <span style="color:var(--gray-lighter)">${s(i.products?.name)} × ${i.quantity}${(i.size||i.color)?' <span style="font-size:11px;color:var(--gray)">('+[i.size,i.color].filter(Boolean).join(' / ')+')</span>':''}</span>
           <span style="font-weight:600">${formatBRL(i.subtotal)}</span>
         </div>
       `).join('')}
+      ${temFrete ? `
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--border2);font-size:13px">
+          <span style="color:var(--gray-lighter)">🚚 ${s(o.shipping_name||o.shipping_service||'Frete')}</span>
+          <span style="font-weight:600">${formatBRL(o.shipping_price)}</span>
+        </div>
+      ` : ''}
       <div style="display:flex;justify-content:space-between;padding:10px 0;font-weight:800;font-size:15px">
         <span>Total</span><span style="color:var(--pink)">${formatBRL(o.total)}</span>
       </div>
     </div>
+
+    <!-- Endereço de entrega -->
+    ${temEndereco ? `
+      <div style="background:rgba(196,154,122,.07);border:0.5px solid rgba(196,154,122,.2);border-radius:10px;padding:12px;margin-bottom:16px;font-size:12px">
+        <div style="font-size:10px;font-weight:700;color:var(--ouro-cl);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📦 Entrega</div>
+        ${o.recipient_name   ? `<div><b>Nome:</b> ${s(o.recipient_name)}</div>`:''}
+        ${o.recipient_phone  ? `<div><b>Tel:</b> ${s(o.recipient_phone)}</div>`:''}
+        ${o.recipient_cep    ? `<div><b>CEP:</b> ${s(o.recipient_cep)}</div>`:''}
+        ${o.recipient_address? `<div><b>Endereço:</b> ${s(o.recipient_address)}</div>`:''}
+        ${o.recipient_city   ? `<div><b>Cidade:</b> ${s(o.recipient_city)}${o.recipient_state?' - '+s(o.recipient_state):''}</div>`:''}
+      </div>
+    ` : ''}
+
+    <!-- Dados da embaixadora -->
+    <div style="background:rgba(196,154,122,.07);border:0.5px solid rgba(196,154,122,.2);border-radius:10px;padding:12px;margin-bottom:16px;font-size:12px">
+      <div style="font-size:10px;font-weight:700;color:var(--ouro-cl);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">👤 Embaixadora</div>
+      <div><b>Nome:</b> ${s(o.profiles?.full_name)}</div>
+      ${o.profiles?.phone ? `<div><b>Tel:</b> ${s(o.profiles.phone)}</div>`:''}
+      ${o.profiles?.cpf   ? `<div><b>CPF:</b> ${s(o.profiles.cpf)}</div>`:''}
+    </div>
+
     <div class="form-group">
       <label>Atualizar status</label>
       <select id="select-status-pedido">
-        ${['pending','paid','processing','shipped','delivered','cancelled'].map(s =>
-          `<option value="${s}" ${o.status===s?'selected':''}>${statusLabel(s).replace(/<[^>]+>/g,'')}</option>`
+        ${['pending','paid','processing','shipped','delivered','cancelled'].map(st =>
+          `<option value="${st}" ${o.status===st?'selected':''}>${statusLabel(st).replace(/<[^>]+>/g,'')}</option>`
         ).join('')}
       </select>
     </div>
     <div class="form-group">
-      <label>Observação (opcional)</label>
-      <input type="text" id="obs-pedido" value="${s(o.notes||'')}" placeholder="Ex: Código de rastreio"/>
+      <label>Observação / Código de rastreio</label>
+      <input type="text" id="obs-pedido" value="${s(o.notes||'')}" placeholder="Ex: BR123456789"/>
     </div>
     <button class="btn btn-primary" onclick="salvarStatusPedido('${o.id}')">Salvar alterações</button>
   `);

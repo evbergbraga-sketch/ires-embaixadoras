@@ -56,9 +56,14 @@ async function renderDashboard() {
   const agora = new Date();
   const hojeDate = new Date(agora.getTime() - 3 * 60 * 60 * 1000);
   const hoje = hojeDate.toISOString().slice(0,10);
+  // Início e fim do dia em Brasília convertido para UTC
+  const hojeInicio = hoje + 'T03:00:00.000Z'; // meia-noite Brasília = 03:00 UTC
+  const amanha = new Date(hojeDate);
+  amanha.setDate(amanha.getDate() + 1);
+  const amanhaStr = amanha.toISOString().slice(0,10) + 'T03:00:00.000Z';
   const results = await Promise.allSettled([
     _supabase.from('profiles').select('*',{count:'exact',head:true}).eq('status','active').eq('role','reseller'),
-    _supabase.from('orders').select('total,status').gte('created_at', hoje),
+    _supabase.from('orders').select('total,status').gte('created_at', hojeInicio).lt('created_at', amanhaStr),
     _supabase.from('profiles').select('id,full_name,created_at,phone').eq('status','pending').eq('role','reseller').order('created_at',{ascending:false}).limit(5),
     _supabase.from('orders').select('id,total,status,created_at,profiles(full_name)').order('created_at',{ascending:false}).limit(5),
     _supabase.from('support_messages').select('id,subject,created_at,profiles(full_name)').eq('status','open').order('created_at',{ascending:false}).limit(4),

@@ -241,13 +241,13 @@ async function renderDashboard() {
             </div>
             <button class="btn btn-sm btn-outline" onclick="irPara('suporte')">Ver</button>
           </div>
-          ${suporteAberto?.length ? suporteAberto.map(s=>`
+          ${suporteAberto?.length ? suporteAberto.map(msg=>`
             <div style="padding:9px 0;border-bottom:0.5px solid var(--border2);cursor:pointer" onclick="irPara('suporte')">
               <div style="display:flex;align-items:flex-start;gap:8px">
                 <div style="width:6px;height:6px;border-radius:50%;background:#5B8FD4;flex-shrink:0;margin-top:5px"></div>
                 <div style="flex:1;min-width:0">
-                  <div style="font-size:12px;font-weight:600;color:var(--bord-esc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s(s.subject)||'Sem assunto'}</div>
-                  <div style="font-size:11px;color:var(--gray);margin-top:1px">${s(s.profiles?.full_name)||'Embaixadora'} · ${new Date(s.created_at).toLocaleDateString('pt-BR')}</div>
+                  <div style="font-size:12px;font-weight:600;color:var(--bord-esc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s(msg.subject)||'Sem assunto'}</div>
+                  <div style="font-size:11px;color:var(--gray);margin-top:1px">${s(msg.profiles?.full_name)||'Embaixadora'} · ${new Date(msg.created_at).toLocaleDateString('pt-BR')}</div>
                 </div>
               </div>
             </div>`).join('')
@@ -533,8 +533,8 @@ async function salvarProduto(id) {
   const peso   = parseInt(document.getElementById('prod-peso').value) || 0;
   const estoque= document.getElementById('prod-estoque').value;
   const catId  = document.getElementById('prod-cat').value;
-  const sizes  = document.getElementById('prod-sizes').value.split(',').map(s=>s.trim()).filter(Boolean);
-  const colors = document.getElementById('prod-colors').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const sizes  = document.getElementById('prod-sizes').value.split(',').map(v=>v.trim()).filter(Boolean);
+  const colors = document.getElementById('prod-colors').value.split(',').map(v=>v.trim()).filter(Boolean);
   if (!nome)        { showToast('Informe o nome do produto.','error'); return; }
   if (isNaN(preco)) { showToast('Informe o preço.','error'); return; }
   if (min < 1)      { showToast('Quantidade mínima deve ser pelo menos 1.','error'); return; }
@@ -567,7 +567,7 @@ async function renderEmbaixadoras() {
       <span class="pill pill-gray">${data?.length||0} cadastradas</span>
     </div>
     <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-      ${['','pending','active','suspended'].map(s=>`<div class="filter-pill ${!s?'active':''}" onclick="filtrarEmbs(this,'${s}')">${!s?'Todas':statusNomes[s]}</div>`).join('')}
+      ${['','pending','active','suspended'].map(st=>`<div class="filter-pill ${!st?'active':''}" onclick="filtrarEmbs(this,'${st}')">${!st?'Todas':statusNomes[st]}</div>`).join('')}
     </div>
     <div style="display:flex;flex-direction:column;gap:8px" id="lista-embs">
       ${(data||[]).map(e=>embRow(e,statusCores,statusNomes)).join('')||'<p style="color:var(--gray);font-size:13px">Nenhuma embaixadora cadastrada.</p>'}

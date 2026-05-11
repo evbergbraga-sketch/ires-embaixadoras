@@ -52,7 +52,10 @@ function irPara(pagina) {
 // ════════════════════════════════════════════
 async function renderDashboard() {
   try {
-  const hoje = new Date().toISOString().slice(0,10);
+  // Usa fuso de Brasília (UTC-3) para calcular "hoje"
+  const agora = new Date();
+  const hojeDate = new Date(agora.getTime() - 3 * 60 * 60 * 1000);
+  const hoje = hojeDate.toISOString().slice(0,10);
   const results = await Promise.allSettled([
     _supabase.from('profiles').select('*',{count:'exact',head:true}).eq('status','active').eq('role','reseller'),
     _supabase.from('orders').select('total,status').gte('created_at', hoje),

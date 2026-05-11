@@ -424,7 +424,7 @@ async function abrirPedido(id) {
         📦 Rastreio: <strong>${s(o.shipping_tracking)}</strong>
       </div>
     ` : ''}
-  \`);
+  `);
 }
 
 async function gerarEtiqueta(orderId) {

@@ -276,6 +276,7 @@ async function renderDashboard() {
       </div>
     </div>
   `;
+  } catch(e) { console.error("[Dashboard] Erro:", e); document.getElementById("conteudo-principal").innerHTML = `<div style="padding:40px;text-align:center;color:var(--gray)"><p style="font-size:14px">Erro ao carregar dashboard.</p><button class="btn btn-outline" onclick="renderDashboard()" style="margin-top:12px">Tentar novamente</button></div>`; }
 }
 
 

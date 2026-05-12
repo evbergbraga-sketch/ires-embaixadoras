@@ -439,7 +439,15 @@ async function renderPedidos() {
     </div>
   `;
 
-  _garantirModalPedido();
+  // Garante que o modal de pedido existe no DOM
+  if (!document.getElementById('modal-pedido')) {
+    const m = document.createElement('div');
+    m.id = 'modal-pedido';
+    m.style.cssText = 'display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.5);align-items:flex-end;justify-content:center';
+    m.innerHTML = '<div id="modal-pedido-body" style="background:var(--nb-bg);border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;position:relative"></div>';
+    document.body.appendChild(m);
+    m.addEventListener('click', e => { if (e.target === m) _fecharModalPedido(); });
+  }
 
   const { data, error } = await _supabase
     .from('orders')
@@ -590,6 +598,11 @@ async function gerarCobrancaPainel(orderId, total) {
     showToast('Erro: '+e.message, 'error');
     if (btn) { btn.disabled=false; btn.textContent='Gerar link de pagamento'; }
   }
+}
+
+function _fecharModalPedido() {
+  const m = document.getElementById('modal-pedido');
+  if (m) { m.style.display = 'none'; document.body.style.overflow = ''; }
 }
 
 // ════════════════════════════════════════════

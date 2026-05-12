@@ -461,9 +461,52 @@ async function renderPedidos() {
   document.getElementById('mc-count-val').textContent = data.length;
   document.getElementById('mc-ship-val').textContent  = enviados || '0';
 
-  window._meusPedidos = data;
+  window._todosPedidos = data;
   document.getElementById('lista-pedidos').style.display = 'block';
   _renderListaPedidos(data);
+}
+
+function _renderListaPedidos(lista) {
+  const el = document.getElementById('lista-pedidos');
+  if (!lista?.length) {
+    el.innerHTML = '';
+    document.getElementById('empty-pedidos').style.display = 'flex';
+    return;
+  }
+  el.innerHTML = lista.map(o => {
+    const itens = o.order_items || [];
+    const primeiraImg = itens[0]?.products?.images?.[0] || '';
+    const nomesProdutos = itens.map(i => i.products?.name || 'Produto').join(', ');
+    const temRastreio = o.shipping_tracking;
+    return `
+      <div style="background:var(--nb-card);border:0.5px solid var(--nb-borda);border-radius:14px;padding:16px;cursor:pointer;transition:box-shadow .15s" onclick="abrirDetalhePedido('${o.id}')" data-status="${o.status}">
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          ${primeiraImg ? `<div style="width:52px;height:52px;border-radius:10px;overflow:hidden;flex-shrink:0;background:var(--pink-faint)"><img src="${primeiraImg}" style="width:100%;height:100%;object-fit:cover"/></div>` : `<div style="width:52px;height:52px;border-radius:10px;background:var(--pink-faint);flex-shrink:0;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--pink-deep)" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg></div>`}
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:13px;font-weight:800;color:var(--nb-text-hi)">#${o.id.slice(-4).toUpperCase()}</span>
+                ${statusLabel(o.status)}
+              </div>
+              <span style="font-size:14px;font-weight:800;color:var(--nb-text-hi)">${formatBRL(o.total)}</span>
+            </div>
+            <div style="font-size:12px;color:var(--nb-text-lo);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px">${s(nomesProdutos)}</div>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:11px;color:var(--nb-text-lo)">${new Date(o.created_at).toLocaleDateString('pt-BR')}</span>
+              ${temRastreio ? `<span style="font-size:10px;color:#0ea5e9;font-weight:600">📦 ${s(o.shipping_tracking)}</span>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function filtrarPedidos(el, status) {
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  const lista = (window._todosPedidos || []).filter(o => !status || o.status === status);
+  _renderListaPedidos(lista);
 }
 
 

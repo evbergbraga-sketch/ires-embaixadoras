@@ -295,26 +295,63 @@ async function renderDashboard() {
 async function renderPedidos() {
   const { data } = await _supabase
     .from('orders')
-    .select('id, total, status, created_at, notes, profiles(full_name)')
+    .select('id, total, status, created_at, notes, shipping_price, shipping_name, profiles(full_name)')
     .order('created_at', { ascending: false });
 
+  const todos     = data || [];
+  const pagos     = todos.filter(o => ['paid','processing','shipped','delivered'].includes(o.status));
+  const pendentes = todos.filter(o => o.status === 'pending');
+  const enviados  = todos.filter(o => o.status === 'shipped');
+  const receita   = pagos.reduce((s, o) => s + Number(o.total), 0);
+  const ticketMedio = pagos.length ? receita / pagos.length : 0;
+
   document.getElementById('conteudo-principal').innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-      <h2 style="font-size:20px;font-weight:800">Pedidos</h2>
-      <span class="pill pill-gray">${data?.length || 0} pedidos</span>
+    <div style="margin-bottom:24px">
+      <h2 style="font-size:22px;font-weight:800;color:var(--bord-esc);margin-bottom:4px">Pedidos</h2>
+      <p style="font-size:13px;color:var(--gray)">Gerencie e acompanhe todos os pedidos das embaixadoras</p>
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-      ${['','pending','paid','processing','shipped','delivered','cancelled'].map(s => `
-        <div class="filter-pill ${!s ? 'active' : ''}" onclick="filtrarPedidosAdmin(this,'${s}')">
-          ${!s ? 'Todos' : statusLabel(s).replace(/<[^>]+>/g,'')}
+
+    <!-- Métricas -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:28px">
+      <div style="background:var(--creme);border:0.5px solid var(--borda);border-radius:14px;padding:16px 18px">
+        <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Receita total</div>
+        <div style="font-size:24px;font-weight:800;color:var(--bord-esc);font-family:'Playfair Display',serif">${formatBRL(receita)}</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:4px">${pagos.length} pedidos pagos</div>
+      </div>
+      <div style="background:var(--creme);border:0.5px solid var(--borda);border-radius:14px;padding:16px 18px">
+        <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Pendentes</div>
+        <div style="font-size:24px;font-weight:800;color:#d97706">${pendentes.length}</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:4px">${formatBRL(pendentes.reduce((s,o)=>s+Number(o.total),0))} em aberto</div>
+      </div>
+      <div style="background:var(--creme);border:0.5px solid var(--borda);border-radius:14px;padding:16px 18px">
+        <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Enviados</div>
+        <div style="font-size:24px;font-weight:800;color:#0ea5e9">${enviados.length}</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:4px">aguardando entrega</div>
+      </div>
+      <div style="background:var(--creme);border:0.5px solid var(--borda);border-radius:14px;padding:16px 18px">
+        <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Ticket médio</div>
+        <div style="font-size:24px;font-weight:800;color:var(--bord-esc);font-family:'Playfair Display',serif">${formatBRL(ticketMedio)}</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:4px">por pedido pago</div>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:12px;color:var(--gray);font-weight:600">Filtrar:</span>
+      ${['','pending','paid','processing','shipped','delivered','cancelled'].map(st => `
+        <div class="filter-pill ${!st ? 'active' : ''}" onclick="filtrarPedidosAdmin(this,'${st}')">
+          ${!st ? 'Todos' : statusLabel(st).replace(/<[^>]+>/g,'')}
+          ${!st ? `<span style="background:rgba(0,0,0,.08);border-radius:10px;padding:0 6px;font-size:10px;margin-left:4px">${todos.length}</span>` : ''}
         </div>
       `).join('')}
     </div>
+
+    <!-- Lista -->
     <div class="orders-list" id="lista-pedidos-admin">
-      ${(data || []).map(o => pedidoRow(o)).join('') || '<p style="color:var(--gray);font-size:13px">Nenhum pedido ainda.</p>'}
+      ${(todos).map(o => pedidoRow(o)).join('') || '<p style="color:var(--gray);font-size:13px;padding:24px 0">Nenhum pedido ainda.</p>'}
     </div>
   `;
-  window._todosOsPedidos = data || [];
+  window._todosOsPedidos = todos;
 }
 
 function pedidoRow(o) {

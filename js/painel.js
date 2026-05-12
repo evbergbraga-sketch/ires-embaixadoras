@@ -394,12 +394,30 @@ let _todosPedidos = [];
 
 async function renderPedidos() {
   document.getElementById('conteudo').innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-      <h2 style="font-size:20px;font-weight:700;color:var(--nb-text-hi)">Meus pedidos</h2>
-      <a href="#" onclick="irAba('vitrine'); return false" class="btn-primary-new" style="font-size:12px;padding:8px 14px;">+ Novo pedido</a>
+    <div style="margin-bottom:20px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <h2 style="font-size:20px;font-weight:700;color:var(--nb-text-hi);margin-bottom:2px">Meus pedidos</h2>
+        <p style="font-size:12px;color:var(--nb-text-lo)">Acompanhe seus pedidos e status de entrega</p>
+      </div>
+      <a href="#" onclick="irAba('vitrine'); return false" class="btn-primary-new" style="font-size:12px;padding:8px 16px;white-space:nowrap">+ Novo pedido</a>
     </div>
 
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <div id="metricas-pedidos" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
+      <div id="mc-total" style="background:var(--nb-card);border:0.5px solid var(--nb-borda);border-radius:12px;padding:14px;text-align:center">
+        <div style="font-size:10px;font-weight:700;color:var(--nb-text-lo);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Total gasto</div>
+        <div id="mc-total-val" style="font-size:18px;font-weight:800;color:var(--nb-text-hi);font-family:'Playfair Display',serif">—</div>
+      </div>
+      <div style="background:var(--nb-card);border:0.5px solid var(--nb-borda);border-radius:12px;padding:14px;text-align:center">
+        <div style="font-size:10px;font-weight:700;color:var(--nb-text-lo);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Pedidos</div>
+        <div id="mc-count-val" style="font-size:18px;font-weight:800;color:var(--nb-text-hi)">—</div>
+      </div>
+      <div style="background:var(--nb-card);border:0.5px solid var(--nb-borda);border-radius:12px;padding:14px;text-align:center">
+        <div style="font-size:10px;font-weight:700;color:var(--nb-text-lo);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">A caminho</div>
+        <div id="mc-ship-val" style="font-size:18px;font-weight:800;color:#0ea5e9">—</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
       <div class="filter-pill active" onclick="filtrarPedidos(this,'')">Todos</div>
       <div class="filter-pill" onclick="filtrarPedidos(this,'pending')">Pendente</div>
       <div class="filter-pill" onclick="filtrarPedidos(this,'paid')">Pago</div>
@@ -425,76 +443,29 @@ async function renderPedidos() {
 
   const { data, error } = await _supabase
     .from('orders')
-    .select('id,status,total,notes,payment_url,payment_ref,created_at,order_items(quantity,unit_price,subtotal,size,color,products(name,images,min_quantity,price))')
+    .select('id,status,total,notes,payment_url,payment_ref,shipping_name,shipping_price,shipping_tracking,created_at,order_items(quantity,unit_price,subtotal,size,color,products(name,images,min_quantity,price))')
     .eq('reseller_id', _perfil.id)
     .order('created_at', { ascending: false });
 
   document.getElementById('loading-pedidos').style.display = 'none';
 
   if (error || !data?.length) {
-    document.getElementById('empty-pedidos').style.display = 'block';
+    document.getElementById('empty-pedidos').style.display = 'flex';
     return;
   }
 
-  _todosPedidos = data;
+  // Atualiza métricas
+  const totalGasto  = data.reduce((s,o) => s + Number(o.total), 0);
+  const enviados    = data.filter(o => o.status === 'shipped').length;
+  document.getElementById('mc-total-val').textContent = formatBRL(totalGasto);
+  document.getElementById('mc-count-val').textContent = data.length;
+  document.getElementById('mc-ship-val').textContent  = enviados || '0';
+
+  window._meusPedidos = data;
+  document.getElementById('lista-pedidos').style.display = 'block';
   _renderListaPedidos(data);
 }
 
-function _garantirModalPedido() {
-  if (!document.getElementById('modal-pedido')) {
-    const m = document.createElement('div');
-    m.id = 'modal-pedido';
-    m.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto';
-    m.innerHTML = '<div id="modal-pedido-body" class="card" style="max-width:480px;width:100%;position:relative;margin:auto"></div>';
-    m.onclick = (e) => { if (e.target === m) _fecharModalPedido(); };
-    document.body.appendChild(m);
-  }
-}
-
-function _fecharModalPedido() {
-  const m = document.getElementById('modal-pedido');
-  if (m) m.style.display = 'none';
-  document.body.style.overflow = '';
-}
-
-function _renderListaPedidos(lista) {
-  const el    = document.getElementById('lista-pedidos');
-  const empty = document.getElementById('empty-pedidos');
-  if (!lista.length) { el.style.display='none'; empty.style.display='block'; return; }
-  empty.style.display = 'none';
-  el.style.display    = 'flex';
-  el.innerHTML = lista.map(o => {
-    const itens   = o.order_items || [];
-    const preview = itens.slice(0,2).map(i => i.products?.name).filter(Boolean).join(', ');
-    const img     = itens[0]?.products?.images?.[0] || '';
-    return `
-      <div class="order-row" onclick="abrirDetalhePedido('${o.id}')" style="cursor:pointer">
-        <div style="width:44px;height:44px;border-radius:var(--radius-md);background:var(--pink-faint);border:0.5px solid var(--pink-deep);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
-          ${img
-            ? `<img src="${img}" style="width:100%;height:100%;object-fit:cover"/>`
-            : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>`
-          }
-        </div>
-        <div style="flex:1;min-width:0">
-          <div class="order-id">#${o.id.slice(-6).toUpperCase()}</div>
-          <div class="order-date">${new Date(o.created_at).toLocaleDateString('pt-BR')} · ${itens.length} item${itens.length>1?'s':''}</div>
-          <div class="order-items-preview" style="margin-top:2px">${preview}</div>
-        </div>
-        <div style="text-align:right">
-          <div class="order-total">${formatBRL(o.total)}</div>
-          <div style="margin-top:4px">${statusLabel(o.status)}</div>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-function filtrarPedidos(el, status) {
-  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
-  const filtrados = status ? _todosPedidos.filter(o => o.status === status) : _todosPedidos;
-  _renderListaPedidos(filtrados);
-}
 
 async function abrirDetalhePedido(id) {
   const o = _todosPedidos.find(x => x.id === id);

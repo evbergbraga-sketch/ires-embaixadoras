@@ -473,6 +473,22 @@ async function gerarEtiqueta(orderId) {
       body: JSON.stringify({ order_id: orderId }),
     });
     const data = await resp.json();
+    if (data.saldo_insuficiente) {
+      // Etiqueta no carrinho mas saldo insuficiente
+      fecharModal();
+      abrirModal(`
+        <div style="text-align:center;padding:16px 0">
+          <div style="font-size:48px;margin-bottom:12px">⚠️</div>
+          <h3 style="font-size:16px;font-weight:800;color:var(--bord-esc);margin-bottom:8px">Saldo insuficiente</h3>
+          <p style="font-size:13px;color:var(--gray);line-height:1.6;margin-bottom:20px">A etiqueta foi adicionada ao carrinho do Melhor Envio.<br>Adicione saldo e finalize o pagamento lá.</p>
+          <a href="https://melhorenvio.com.br/carrinho" target="_blank" class="btn btn-primary" style="display:inline-block;text-decoration:none;margin-bottom:8px;width:100%">
+            🚚 Abrir carrinho Melhor Envio
+          </a>
+          <button class="btn btn-outline" style="width:100%" onclick="fecharModal();renderPedidos()">Fechar</button>
+        </div>
+      `);
+      return;
+    }
     if (!resp.ok || data.error) throw new Error(data.error || 'Erro ao gerar etiqueta');
     showToast('Etiqueta gerada! Rastreio: ' + (data.tracking || 'aguardando'), 'success');
     fecharModal();

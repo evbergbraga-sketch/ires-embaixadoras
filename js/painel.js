@@ -1753,6 +1753,7 @@ async function _renderTelaModulos() {
 
 // ─────────────────────────────────────────
 // TELA 2: Página do módulo (sub-módulos)
+// — mesmo formato de grade de capas
 // ─────────────────────────────────────────
 async function _abrirModulo(moduloId) {
   const modulo = (window._capModulos||[]).find(m => m.id === moduloId);
@@ -1763,7 +1764,6 @@ async function _abrirModulo(moduloId) {
     <div id="conteudo-mod" style="display:none"></div>
   `;
 
-  // Busca sub-módulos e aulas diretas do módulo
   const [
     { data: submodulos },
     { data: aulasDiretas },
@@ -1784,6 +1784,50 @@ async function _abrirModulo(moduloId) {
   const temSubmodulos = submodulos?.length > 0;
   const itens = temSubmodulos ? submodulos : aulasDiretas;
 
+  // Sub-módulos como grade igual aos módulos
+  const subCards = (itens||[]).map((item, idx) => {
+    if (temSubmodulos) {
+      const aulasItem = item.lessons || [];
+      const concl = aulasItem.filter(l => concluidas.has(l.id)).length;
+      const pct = aulasItem.length ? Math.round((concl/aulasItem.length)*100) : 0;
+      return `
+        <div onclick="_abrirSubmodulo('${item.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:16px;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s" onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(61,14,32,.12)'" onmouseleave="this.style.transform='';this.style.boxShadow=''">
+          <!-- Capa igual ao card de módulo -->
+          <div style="width:100%;aspect-ratio:3/4;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A)">
+            ${item.cover_url ? `<img src="${s(item.cover_url)}" style="width:100%;height:100%;object-fit:cover;display:block"/>` : `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>`}
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.7) 0%,transparent 50%)"></div>
+            <div style="position:absolute;top:8px;left:8px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.4);border-radius:6px;padding:2px 8px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.08em">${String(idx+1).padStart(2,'0')}</div>
+            ${pct===100 ? '<div style="position:absolute;top:8px;right:8px;background:#22C55E;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>' : ''}
+          </div>
+          <!-- Info -->
+          <div style="padding:10px 12px 12px">
+            <div style="font-size:13px;font-weight:700;color:#2C1018;margin-bottom:4px">${s(item.title)}</div>
+            <div style="font-size:11px;color:#8B6050;margin-bottom:6px">${aulasItem.length} aula${aulasItem.length!==1?'s':''}</div>
+            ${aulasItem.length > 0 ? `<div style="height:3px;background:#E8D9C5;border-radius:99px;overflow:hidden"><div style="height:100%;width:${pct}%;background:#C8A96E;border-radius:99px"></div></div>` : ''}
+          </div>
+        </div>
+      `;
+    } else {
+      // Aula direta — card igual
+      const durMin = item.duration_seconds ? Math.ceil(item.duration_seconds/60) : null;
+      const concluida = concluidas.has(item.id);
+      return `
+        <div onclick="_abrirAulaVideo('${item.id}','${s(item.video_url||'')}','${s(item.title)}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:16px;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s" onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(61,14,32,.12)'" onmouseleave="this.style.transform='';this.style.boxShadow=''">
+          <div style="width:100%;aspect-ratio:3/4;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A)">
+            ${item.cover_url ? `<img src="${s(item.cover_url)}" style="width:100%;height:100%;object-fit:cover;display:block"/>` : ''}
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.7) 0%,transparent 50%)"></div>
+            <div style="position:absolute;top:8px;left:8px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.4);border-radius:6px;padding:2px 8px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.08em">AULA ${String(idx+1).padStart(2,'0')}</div>
+            ${concluida ? '<div style="position:absolute;top:8px;right:8px;background:#22C55E;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>' : ''}
+          </div>
+          <div style="padding:10px 12px 12px">
+            <div style="font-size:13px;font-weight:700;color:#2C1018;margin-bottom:4px">${s(item.title)}</div>
+            ${durMin ? `<div style="font-size:11px;color:#8B6050">${durMin} min</div>` : ''}
+          </div>
+        </div>
+      `;
+    }
+  }).join('');
+
   el.innerHTML = `
     <!-- Voltar -->
     <button onclick="_renderTelaModulos()" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--nb-text-lo);font-size:13px;font-weight:600;cursor:pointer;padding:0;margin-bottom:16px">
@@ -1791,72 +1835,23 @@ async function _abrirModulo(moduloId) {
       Capacitação
     </button>
 
-    <!-- Capa do módulo -->
+    <!-- Capa do módulo (banner topo) -->
     <div style="width:100%;aspect-ratio:16/7;border-radius:16px;overflow:hidden;position:relative;background:linear-gradient(135deg,#3D0E20,#6B1A3A);margin-bottom:20px">
       ${(modulo.modal_cover_url||modulo.cover_url) ? `<img src="${s(modulo.modal_cover_url||modulo.cover_url)}" style="width:100%;height:100%;object-fit:cover;display:block"/>` : ''}
       <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.75) 0%,transparent 55%)"></div>
       <div style="position:absolute;bottom:16px;left:16px">
         <div style="font-size:11px;font-weight:600;color:rgba(200,169,110,.7);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">MÓDULO ${String(modulo.order||0).padStart(2,'0')}</div>
-        <div style="font-size:22px;font-weight:800;color:#fff;letter-spacing:-.3px">${s(modulo.title)}</div>
+        <div style="font-size:20px;font-weight:800;color:#fff">${s(modulo.title)}</div>
         <div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px">${itens?.length||0} ${temSubmodulos ? 'módulos' : 'aulas'}</div>
       </div>
     </div>
 
-    <!-- Lista de sub-módulos ou aulas diretas -->
-    <div style="display:flex;flex-direction:column;gap:10px">
-      ${(itens||[]).map((item, idx) => {
-        if (temSubmodulos) {
-          // Sub-módulo card
-          const aulasItem = item.lessons || [];
-          const concl = aulasItem.filter(l => concluidas.has(l.id)).length;
-          const pct = aulasItem.length ? Math.round((concl/aulasItem.length)*100) : 0;
-          return `
-            <div onclick="_abrirSubmodulo('${item.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;display:flex;gap:0;transition:box-shadow .15s" onmouseenter="this.style.boxShadow='0 4px 16px rgba(61,14,32,.1)'" onmouseleave="this.style.boxShadow=''">
-              <!-- Thumb -->
-              <div style="width:90px;flex-shrink:0;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:center;justify-content:center">
-                ${item.cover_url ? `<img src="${s(item.cover_url)}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"/>` : ''}
-                <div style="position:relative;z-index:1;font-size:11px;font-weight:700;color:#C8A96E;text-align:center;padding:4px">${String(idx+1).padStart(2,'0')}</div>
-              </div>
-              <!-- Info -->
-              <div style="flex:1;padding:12px 14px;min-width:0">
-                <div style="font-size:13px;font-weight:700;color:#2C1018;margin-bottom:3px;line-height:1.2">${s(item.title)}</div>
-                ${item.description ? `<div style="font-size:11px;color:#8B6050;margin-bottom:6px;line-height:1.4">${s(item.description)}</div>` : ''}
-                <div style="display:flex;align-items:center;justify-content:space-between">
-                  <span style="font-size:10px;color:#8B6050">${aulasItem.length} aula${aulasItem.length!==1?'s':''}</span>
-                  ${pct > 0 ? `<span style="font-size:10px;color:#C8A96E;font-weight:600">${pct}%</span>` : ''}
-                </div>
-                ${aulasItem.length > 0 ? `<div style="height:2px;background:#E8D9C5;border-radius:99px;overflow:hidden;margin-top:6px"><div style="height:100%;width:${pct}%;background:#C8A96E;border-radius:99px"></div></div>` : ''}
-              </div>
-              <div style="display:flex;align-items:center;padding-right:14px">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-              </div>
-            </div>
-          `;
-        } else {
-          // Aula direta (sem sub-módulo)
-          const durMin = item.duration_seconds ? Math.ceil(item.duration_seconds/60) : null;
-          const concluida = concluidas.has(item.id);
-          return `
-            <div onclick="_abrirAulaVideo('${item.id}','${s(item.video_url||'')}','${s(item.title)}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;display:flex;gap:0;transition:box-shadow .15s" onmouseenter="this.style.boxShadow='0 4px 16px rgba(61,14,32,.1)'" onmouseleave="this.style.boxShadow=''">
-              <div style="width:90px;flex-shrink:0;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:center;justify-content:center">
-                ${item.cover_url ? `<img src="${s(item.cover_url)}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"/>` : ''}
-                <div style="position:relative;z-index:1;width:28px;height:28px;border-radius:50%;border:1.5px solid #C8A96E;display:flex;align-items:center;justify-content:center">
-                  ${concluida ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' : '<div style="width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:8px solid #C8A96E;margin-left:2px"></div>'}
-                </div>
-              </div>
-              <div style="flex:1;padding:12px 14px;min-width:0">
-                <div style="font-size:11px;font-weight:600;color:#C8A96E;margin-bottom:2px">AULA ${String((item.order||0)+1).padStart(2,'0')}</div>
-                <div style="font-size:13px;font-weight:700;color:#2C1018;line-height:1.3">${s(item.title)}</div>
-                ${durMin ? `<div style="font-size:10px;color:#8B6050;margin-top:3px">${durMin} min</div>` : ''}
-              </div>
-            </div>
-          `;
-        }
-      }).join('')}
+    <!-- Grade igual à de módulos -->
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+      ${subCards}
     </div>
   `;
 
-  // Salva sub-módulos em cache
   window._capSubmodulos = submodulos || [];
 }
 

@@ -1557,8 +1557,101 @@ async function toggleCriativo(id,ativo) {
 // ════════════════════════════════════════════
 // CAPACITAÇÃO — Admin
 // ════════════════════════════════════════════
+// ═══════════════════════════════════════
+// SUB-MÓDULOS CRUD
+// ═══════════════════════════════════════
+function abrirFormSubmodulo(subId, moduloId) {
+  const sub = subId ? (window._modulosAdm||[])
+    .flatMap(m => m.submodules||[])
+    .find(s => s.id === subId) : null;
+
+  abrirModal(`
+    <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:16px">${subId ? 'Editar sub-módulo' : 'Novo sub-módulo'}</h3>
+    <div class="form-group">
+      <label>Título *</label>
+      <input type="text" id="sub-titulo" value="${s(sub?.title||'')}" placeholder="Ex: Módulo 1 — Introdução"/>
+    </div>
+    <div class="form-group">
+      <label>Descrição</label>
+      <input type="text" id="sub-desc" value="${s(sub?.description||'')}" placeholder="Breve descrição do conteúdo"/>
+    </div>
+    <div class="form-group">
+      <label>Foto de capa</label>
+      <div style="font-size:11px;color:var(--gray);margin-bottom:6px">Proporção 16:9 — aparece como thumbnail do sub-módulo</div>
+      <div style="width:100%;aspect-ratio:16/9;background:var(--creme2);border:1.5px dashed var(--border);border-radius:10px;overflow:hidden;position:relative;margin-bottom:8px;display:flex;align-items:center;justify-content:center" id="sub-cover-preview-wrap">
+        ${sub?.cover_url
+          ? `<img src="${s(sub.cover_url)}" style="width:100%;height:100%;object-fit:cover;display:block" id="sub-cover-preview-img"/>`
+          : `<div id="sub-cover-preview-placeholder" style="text-align:center;color:var(--gray);font-size:12px;pointer-events:none">
+               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="display:block;margin:0 auto 6px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+               Nenhuma imagem
+             </div>`
+        }
+        <div id="sub-cover-uploading" style="display:none;position:absolute;inset:0;background:rgba(255,255,255,.85);align-items:center;justify-content:center"><div class="spinner"></div></div>
+      </div>
+      <input type="file" id="sub-cover-file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="_previewCover('sub')"/>
+      <input type="hidden" id="sub-cover" value="${s(sub?.cover_url||'')}"/>
+      <button type="button" onclick="document.getElementById('sub-cover-file').click()" style="width:100%;padding:8px;background:transparent;border:0.5px solid var(--border);border-radius:var(--radius-md);color:var(--pink);font-size:13px;cursor:pointer">
+        ${sub?.cover_url ? '🔄 Trocar imagem' : '📷 Selecionar imagem'}
+      </button>
+    </div>
+    <div class="form-group">
+      <label>Ordem</label>
+      <input type="number" id="sub-order" value="${sub?.order||0}" min="0"/>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-outline" style="flex:1" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" style="flex:1" id="btn-sub" onclick="salvarSubmodulo(${subId?`'${subId}'`:'null'},'${moduloId}')">Salvar</button>
+    </div>
+  `);
+}
+
+async function salvarSubmodulo(subId, moduloId) {
+  const titulo  = document.getElementById('sub-titulo').value.trim();
+  const desc    = document.getElementById('sub-desc').value.trim();
+  const cover   = document.getElementById('sub-cover').value.trim() || null;
+  const order   = parseInt(document.getElementById('sub-order').value) || 0;
+
+  if (!titulo) { showToast('Informe o título.', 'error'); return; }
+
+  const btn = document.getElementById('btn-sub');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
+
+  // Upload da capa se arquivo selecionado
+  const file = document.getElementById('sub-cover-file')?.files?.[0];
+  let coverUrl = cover;
+  if (file) {
+    const ext  = file.name.split('.').pop();
+    const path = `mods/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error: upErr } = await _supabase.storage.from('capas').upload(path, file, { upsert: true });
+    if (!upErr) {
+      const { data: urlData } = _supabase.storage.from('capas').getPublicUrl(path);
+      coverUrl = urlData.publicUrl;
+    }
+  }
+
+  const payload = { title: titulo, description: desc||null, cover_url: coverUrl, order, module_id: moduloId, is_active: true };
+  const { error } = subId
+    ? await _supabase.from('submodules').update(payload).eq('id', subId)
+    : await _supabase.from('submodules').insert(payload);
+
+  if (error) { showToast('Erro: ' + error.message, 'error'); btn.disabled = false; btn.textContent = 'Salvar'; return; }
+  showToast(subId ? 'Sub-módulo atualizado!' : 'Sub-módulo criado!', 'success');
+  fecharModal();
+  renderCapacitacaoAdmin();
+}
+
+async function deletarSubmodulo(subId) {
+  if (!confirm('Excluir este sub-módulo? As aulas vinculadas ficarão sem sub-módulo.')) return;
+  const { error } = await _supabase.from('submodules').delete().eq('id', subId);
+  if (error) { showToast('Erro: ' + error.message, 'error'); return; }
+  showToast('Sub-módulo excluído.', 'success');
+  renderCapacitacaoAdmin();
+}
+
 async function renderCapacitacaoAdmin() {
-  const{data:modulos}=await _supabase.from('modules').select('*, lessons(id,title,duration_seconds,"order",is_active)').order('"order"',{ascending:true});
+  const{data:modulos}=await _supabase.from('modules').select('*, submodules(id,title,description,cover_url,"order", lessons(id,title,duration_seconds,"order",is_active)), lessons(id,title,duration_seconds,"order",is_active,submodule_id)').order('"order"',{ascending:true});
   document.getElementById('conteudo-principal').innerHTML=`
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
       <h2 style="font-size:20px;font-weight:800">Capacitação</h2>
@@ -1572,22 +1665,96 @@ async function renderCapacitacaoAdmin() {
 }
 
 function _moduloAdmCard(m) {
-  const aulas=(m.lessons||[]).sort((a,b)=>a.order-b.order);
+  const submodulos = (m.submodules||[]).sort((a,b)=>(a.order||0)-(b.order||0));
+  const aulasDiretas = (m.lessons||[]).filter(l=>!l.submodule_id).sort((a,b)=>a.order-b.order);
+  const totalAulas = (m.lessons||[]).length;
   return `
     <div style="background:var(--creme);border:0.5px solid var(--border);border-radius:14px;overflow:hidden">
-      <div style="padding:16px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--border2)">
-        <div>
-          <div style="font-size:14px;font-weight:700;color:var(--bord-esc)">${m.title}</div>
-          ${m.description?`<div style="font-size:12px;color:var(--gray);margin-top:2px">${m.description}</div>`:''}
-          <div style="font-size:11px;color:var(--gray);margin-top:4px">${aulas.length} aula${aulas.length!==1?'s':''}</div>
+      <!-- Header do módulo -->
+      <div style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--border2);background:#fff">
+        <div style="display:flex;align-items:center;gap:10px">
+          ${m.cover_url?`<div style="width:44px;height:44px;border-radius:8px;overflow:hidden;flex-shrink:0"><img src="${s(m.cover_url)}" style="width:100%;height:100%;object-fit:cover"/></div>`:'<div style="width:44px;height:44px;border-radius:8px;background:var(--pink-faint);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>'}
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--bord-esc)">${s(m.title)}</div>
+            <div style="font-size:11px;color:var(--gray);margin-top:1px">${submodulos.length} sub-módulo${submodulos.length!==1?'s':''} · ${totalAulas} aula${totalAulas!==1?'s':''}</div>
+          </div>
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0">
-          <button class="btn btn-sm btn-outline" onclick="abrirFormAula(null,'${m.id}')">+ Aula</button>
+          <button class="btn btn-sm" style="background:var(--ouro-cl);color:#3D0E20;border:none;font-weight:700" onclick="abrirFormSubmodulo(null,'${m.id}')">+ Sub-módulo</button>
+          <button class="btn btn-sm btn-outline" onclick="abrirFormAula(null,'${m.id}',null)">+ Aula</button>
           <button class="btn btn-sm btn-outline" onclick="abrirFormModulo('${m.id}')">Editar</button>
-          <button class="btn btn-sm btn-danger" onclick="deletarModulo('${m.id}')">Excluir</button>
+          <button class="btn btn-sm btn-danger" onclick="deletarModulo('${m.id}')">✕</button>
         </div>
       </div>
-      ${aulas.length?`<div>${aulas.map((a,ai)=>{const durMin=a.duration_seconds?Math.ceil(a.duration_seconds/60):null;return`<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:0.5px solid var(--border2)${ai===aulas.length-1?';border-bottom:none':''}"><div style="width:28px;height:28px;border-radius:50%;background:var(--pink-faint);border:0.5px solid var(--pink-deep);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--pink);flex-shrink:0">${ai+1}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--bord-esc)">${a.title}</div>${durMin?`<div style="font-size:11px;color:var(--gray)">${durMin} min</div>`:''}</div><span class="pill ${a.is_active?'pill-green':'pill-gray'}" style="font-size:10px">${a.is_active?'Ativa':'Inativa'}</span><div style="display:flex;gap:6px"><button class="btn btn-sm btn-outline" onclick="abrirFormAula('${a.id}','${m.id}')">Editar</button><button class="btn btn-sm btn-danger" onclick="deletarAula('${a.id}')">✕</button></div></div>`;}).join('')}</div>`:`<div style="padding:16px;text-align:center;font-size:13px;color:var(--gray)">Nenhuma aula. <button class="btn btn-sm btn-outline" style="margin-left:8px" onclick="abrirFormAula(null,'${m.id}')">+ Adicionar</button></div>`}
+
+      <!-- Sub-módulos -->
+      ${submodulos.length ? submodulos.map(sub => {
+        const aulasDoSub = (sub.lessons||[]).sort((a,b)=>(a.order||0)-(b.order||0));
+        return `
+          <div style="border-bottom:0.5px solid var(--border2)">
+            <!-- Header sub-módulo -->
+            <div style="padding:10px 16px;display:flex;align-items:center;gap:10px;background:var(--pink-faint)">
+              ${sub.cover_url?`<div style="width:36px;height:36px;border-radius:6px;overflow:hidden;flex-shrink:0"><img src="${s(sub.cover_url)}" style="width:100%;height:100%;object-fit:cover"/></div>`:''}
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:700;color:var(--bord-esc)">${s(sub.title)}</div>
+                ${sub.description?`<div style="font-size:11px;color:var(--gray)">${s(sub.description)}</div>`:''}
+                <div style="font-size:11px;color:var(--gray);margin-top:1px">${aulasDoSub.length} aula${aulasDoSub.length!==1?'s':''}</div>
+              </div>
+              <div style="display:flex;gap:6px;flex-shrink:0">
+                <button class="btn btn-sm btn-outline" onclick="abrirFormAula(null,'${m.id}','${sub.id}')">+ Aula</button>
+                <button class="btn btn-sm btn-outline" onclick="abrirFormSubmodulo('${sub.id}','${m.id}')">Editar</button>
+                <button class="btn btn-sm btn-danger" onclick="deletarSubmodulo('${sub.id}')">✕</button>
+              </div>
+            </div>
+            <!-- Aulas do sub-módulo -->
+            ${aulasDoSub.length ? aulasDoSub.map((a,ai)=>{
+              const durMin=a.duration_seconds?Math.ceil(a.duration_seconds/60):null;
+              return `<div style="display:flex;align-items:center;gap:12px;padding:10px 16px 10px 32px;border-top:0.5px solid var(--border2)">
+                <div style="width:24px;height:24px;border-radius:50%;background:#fff;border:0.5px solid var(--pink-deep);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--pink);flex-shrink:0">${ai+1}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:12px;font-weight:600;color:var(--bord-esc)">${s(a.title)}</div>
+                  ${durMin?`<div style="font-size:10px;color:var(--gray)">${durMin} min</div>`:''}
+                </div>
+                <span class="pill ${a.is_active?'pill-green':'pill-gray'}" style="font-size:9px">${a.is_active?'Ativa':'Inativa'}</span>
+                <div style="display:flex;gap:4px">
+                  <button class="btn btn-sm btn-outline" onclick="abrirFormAula('${a.id}','${m.id}','${sub.id}')">Editar</button>
+                  <button class="btn btn-sm btn-danger" onclick="deletarAula('${a.id}')">✕</button>
+                </div>
+              </div>`;
+            }).join('') : `<div style="padding:10px 16px 10px 32px;font-size:12px;color:var(--gray)">Nenhuma aula. <button class="btn btn-sm btn-outline" style="margin-left:6px" onclick="abrirFormAula(null,'${m.id}','${sub.id}')">+ Adicionar</button></div>`}
+          </div>
+        `;
+      }).join('') : ''}
+
+      <!-- Aulas diretas (sem sub-módulo) -->
+      ${aulasDiretas.length ? `
+        <div style="padding:10px 16px;background:rgba(0,0,0,.02);border-bottom:0.5px solid var(--border2)">
+          <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Aulas diretas</div>
+        </div>
+        ${aulasDiretas.map((a,ai)=>{
+          const durMin=a.duration_seconds?Math.ceil(a.duration_seconds/60):null;
+          return `<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:0.5px solid var(--border2)">
+            <div style="width:26px;height:26px;border-radius:50%;background:var(--pink-faint);border:0.5px solid var(--pink-deep);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--pink);flex-shrink:0">${ai+1}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600;color:var(--bord-esc)">${s(a.title)}</div>
+              ${durMin?`<div style="font-size:11px;color:var(--gray)">${durMin} min</div>`:''}
+            </div>
+            <span class="pill ${a.is_active?'pill-green':'pill-gray'}" style="font-size:10px">${a.is_active?'Ativa':'Inativa'}</span>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-sm btn-outline" onclick="abrirFormAula('${a.id}','${m.id}',null)">Editar</button>
+              <button class="btn btn-sm btn-danger" onclick="deletarAula('${a.id}')">✕</button>
+            </div>
+          </div>`;
+        }).join('')}
+      ` : ''}
+
+      ${!submodulos.length && !aulasDiretas.length ? `
+        <div style="padding:20px;text-align:center;font-size:13px;color:var(--gray)">
+          Nenhum conteúdo ainda.
+          <button class="btn btn-sm btn-outline" style="margin-left:8px" onclick="abrirFormSubmodulo(null,'${m.id}')">+ Sub-módulo</button>
+          <button class="btn btn-sm btn-outline" style="margin-left:4px" onclick="abrirFormAula(null,'${m.id}',null)">+ Aula direta</button>
+        </div>
+      ` : ''}
     </div>`;
 }
 
@@ -1666,7 +1833,7 @@ async function deletarModulo(id) {
   showToast('Módulo excluído.','success');renderCapacitacaoAdmin();
 }
 
-function abrirFormAula(aulaId,moduloId) {
+function abrirFormAula(aulaId, moduloId, submoduloId=null) {
   (async()=>{
     let a={};
     if(aulaId){const{data}=await _supabase.from('lessons').select('*').eq('id',aulaId).single();a=data||{};}
@@ -1710,7 +1877,8 @@ function abrirFormAula(aulaId,moduloId) {
       </div>
       <div style="display:flex;gap:10px;margin-top:4px">
         <button class="btn btn-outline" style="flex:1" onclick="fecharModal()">Cancelar</button>
-        <button class="btn btn-primary" style="flex:1" id="btn-aula" onclick="salvarAula(${aulaId?`'${aulaId}'`:'null'},'${moduloId}')">Salvar aula</button>
+        <input type="hidden" id="aula-submod-id" value="${submoduloId||''}"/>
+      <button class="btn btn-primary" style="flex:1" id="btn-aula" onclick="salvarAula(${aulaId?`'${aulaId}'`:'null'},'${moduloId}')">Salvar aula</button>
       </div>
     `);
   })();
@@ -1771,7 +1939,7 @@ async function _uploadCover(prefix, file) {
   showToast('Imagem enviada!', 'success');
 }
 
-async function salvarAula(aulaId,moduloId) {
+async function salvarAula(aulaId,moduloId,submoduloId=null) {
   const titulo=document.getElementById('aula-titulo').value.trim();
   const url=document.getElementById('aula-url').value.trim();
   const durMin=parseInt(document.getElementById('aula-dur').value)||0;
@@ -1779,13 +1947,14 @@ async function salvarAula(aulaId,moduloId) {
   const desc=document.getElementById('aula-desc').value.trim();
   const coverAula=(document.getElementById('aula-cover')?.value||'').trim()||null;
   const nivelAula=document.getElementById('aula-nivel')?.value||'bronze';
+  const subId=document.getElementById('aula-submod-id')?.value||submoduloId||null;
   if(!titulo){showToast('Informe o título.','error');return;}
   if(!url){showToast('Informe a URL.','error');return;}
   const match=url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/);
   if(!match){showToast('URL do YouTube inválida.','error');return;}
   const btn=document.getElementById('btn-aula');
   btn.disabled=true;btn.innerHTML='<div class="spinner" style="margin:0 auto"></div>';
-  const payload={title:titulo,description:desc||null,video_url:url,duration_seconds:durMin*60,order,module_id:moduloId,cover_url:coverAula,nivel:nivelAula};
+  const payload={title:titulo,description:desc||null,video_url:url,duration_seconds:durMin*60,order,module_id:moduloId,cover_url:coverAula,nivel:nivelAula,submodule_id:subId||null};
   const{error}=aulaId?await _supabase.from('lessons').update(payload).eq('id',aulaId):await _supabase.from('lessons').insert({...payload,is_active:true});
   if(error){showToast('Erro: '+error.message,'error');btn.disabled=false;btn.textContent='Salvar aula';return;}
   showToast(aulaId?'Aula atualizada!':'Aula criada!','success');

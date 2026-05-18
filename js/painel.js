@@ -1691,69 +1691,80 @@ async function _renderTelaModulos() {
   const concluidas = new Set((progresso||[]).map(p=>p.lesson_id));
   const meuNivel = _perfil.nivel || 'iniciante';
 
-  // Banner de nível
   const NIVEL_METAS = { iniciante:1, bronze:5, prata:15, ouro:30 };
   const PROXIMOS = { iniciante:'Bronze', bronze:'Prata', prata:'Ouro', ouro:'Diamante' };
   const metaAtual = NIVEL_METAS[meuNivel];
   const proxNome  = PROXIMOS[meuNivel];
   const pct = metaAtual ? Math.min(100, Math.round(((totalPagos||0) / metaAtual) * 100)) : 100;
-  const COR = {
-    iniciante:'#8B8B8B', bronze:'#CD7F32', prata:'#A8A9AD', ouro:'#C8A96E', diamante:'#B9F2FF'
-  };
+  const COR = { iniciante:'#8B8B8B', bronze:'#CD7F32', prata:'#A8A9AD', ouro:'#C8A96E', diamante:'#B9F2FF' };
   const cor = COR[meuNivel] || '#C8A96E';
 
-  el.innerHTML = `
-    <!-- Banner nível -->
+  // Injeta estilos
+  if (!document.getElementById('cap-styles')) {
+    const style = document.createElement('style');
+    style.id = 'cap-styles';
+    style.textContent = `
+      .cap-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px; }
+      .cap-card { background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease; }
+      .cap-card:hover { transform:translateY(-2px);box-shadow:0 4px 16px rgba(92,26,46,.10); }
+      .cap-card:active { transform:scale(.97); }
+      .cap-cover { width:100%;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A); }
+      .cap-cover img { position:absolute;inset:0;width:100%;height:100%;object-fit:cover; }
+      .cap-badge { position:absolute;top:8px;left:8px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.3);border-radius:6px;padding:2px 7px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.06em;text-transform:uppercase; }
+      .cap-prog { height:2px;background:#E8D9C5;border-radius:0;margin:0; }
+      .cap-pfill { height:100%;background:#C8A96E; }
+      @media(min-width:768px){ .cap-grid { grid-template-columns:repeat(4,minmax(0,1fr));gap:16px; } }
+    `;
+    document.head.appendChild(style);
+  }
+
+  let html = `
     <div style="background:#fff;border:.5px solid ${cor}40;border-radius:14px;padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;gap:14px">
       <div style="width:44px;height:44px;border-radius:50%;background:${cor}18;border:2px solid ${cor};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:${cor};flex-shrink:0;text-align:center;line-height:1.2;text-transform:uppercase">${meuNivel}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:700;color:var(--nb-text-hi);margin-bottom:2px">Nível ${meuNivel.charAt(0).toUpperCase()+meuNivel.slice(1)}</div>
         <div style="font-size:11px;color:var(--nb-text-lo)">${proxNome ? `${totalPagos||0} de ${metaAtual} pedidos para o ${proxNome}` : 'Nível máximo atingido! 🏆'}</div>
-        ${proxNome ? `<div style="margin-top:6px;height:4px;background:#E8D9C5;border-radius:99px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${cor};border-radius:99px;transition:width .5s"></div></div>` : ''}
+        ${proxNome ? `<div style="margin-top:6px;height:4px;background:#E8D9C5;border-radius:99px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${cor};border-radius:99px"></div></div>` : ''}
       </div>
     </div>
-
-    <!-- Título -->
-    <div style="margin-bottom:16px">
-      <h2 style="font-size:18px;font-weight:800;color:var(--nb-text-hi);margin-bottom:2px">Capacitação</h2>
-      <p style="font-size:12px;color:var(--nb-text-lo)">Escolha um módulo para começar</p>
-    </div>
-
-    <!-- Grade de módulos -->
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
-      ${(modulos||[]).map(m => {
-        const totalAulas = m.lessons?.length || 0;
-        const aulasConcluidas = (m.lessons||[]).filter(l => concluidas.has(l.id)).length;
-        const pctMod = totalAulas ? Math.round((aulasConcluidas/totalAulas)*100) : 0;
-        return `
-          <div onclick="_abrirModulo('${m.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:16px;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s" onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(61,14,32,.12)'" onmouseleave="this.style.transform='';this.style.boxShadow=''">
-            <!-- Capa -->
-            <div style="width:100%;aspect-ratio:3/4;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A)">
-              ${m.cover_url ? `<img src="${s(m.cover_url)}" style="width:100%;height:100%;object-fit:cover;display:block"/>` : `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>`}
-              <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.7) 0%,transparent 50%)"></div>
-              <div style="position:absolute;top:8px;left:8px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.4);border-radius:6px;padding:2px 8px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.08em">MOD ${String(m.order||0).padStart(2,'0')}</div>
-              ${pctMod===100 ? '<div style="position:absolute;top:8px;right:8px;background:#22C55E;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>' : ''}
-            </div>
-            <!-- Info -->
-            <div style="padding:10px 12px 12px">
-              <div style="font-size:13px;font-weight:700;color:#2C1018;margin-bottom:4px">${s(m.title)}</div>
-              <div style="font-size:11px;color:#8B6050;margin-bottom:6px">${totalAulas} aula${totalAulas!==1?'s':''}</div>
-              ${totalAulas > 0 ? `<div style="height:3px;background:#E8D9C5;border-radius:99px;overflow:hidden"><div style="height:100%;width:${pctMod}%;background:#C8A96E;border-radius:99px"></div></div>` : ''}
-            </div>
-          </div>
-        `;
-      }).join('')}
-    </div>
+    <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;margin-bottom:10px">Módulos</div>
+    <div class="cap-grid" id="cap-grid-modulos">
   `;
 
-  // Salva dados em cache
-  window._capModulos = modulos || [];
+  (modulos||[]).forEach((mod, mi) => {
+    const aulas  = mod.lessons || [];
+    const concl  = aulas.filter(a => concluidas.has(a.id)).length;
+    const pctMod = aulas.length ? Math.round((concl/aulas.length)*100) : 0;
+    html += `
+      <div class="cap-card" onclick="_abrirModulo('${mod.id}')">
+        <div class="cap-cover" id="cov-${mod.id}" style="height:0">
+          ${mod.cover_url ? `<img src="${s(mod.cover_url)}" loading="lazy"/>` : ''}
+          <div class="cap-badge">Mod ${String(mi+1).padStart(2,'0')}</div>
+          <div style="position:absolute;bottom:8px;left:10px;font-size:10px;color:rgba(200,169,110,.8)">${aulas.length} aula${aulas.length!==1?'s':''}</div>
+        </div>
+        <div class="cap-prog"><div class="cap-pfill" style="width:${pctMod}%"></div></div>
+      </div>`;
+  });
+
+  html += `</div>`;
+  el.innerHTML = html;
+
+  // Altura dinâmica igual ao original
+  const _setHeights = () => {
+    document.querySelectorAll('.cap-cover').forEach(el => {
+      const w = el.offsetWidth;
+      if (w > 0) el.style.height = Math.round(w * (window.innerWidth >= 768 ? 1.5 : 2.0)) + 'px';
+    });
+  };
+  requestAnimationFrame(() => { _setHeights(); setTimeout(_setHeights, 100); });
+  window.addEventListener('resize', _setHeights);
+
+  window._capModulos   = modulos || [];
   window._capConcluidas = concluidas;
 }
 
 // ─────────────────────────────────────────
-// TELA 2: Página do módulo (sub-módulos)
-// — mesmo formato de grade de capas
+// TELA 2: Sub-módulos — mesmo formato de grade
 // ─────────────────────────────────────────
 async function _abrirModulo(moduloId) {
   const modulo = (window._capModulos||[]).find(m => m.id === moduloId);
@@ -1781,76 +1792,59 @@ async function _abrirModulo(moduloId) {
   el.style.display = 'block';
 
   const concluidas = window._capConcluidas || new Set();
-  const temSubmodulos = submodulos?.length > 0;
-  const itens = temSubmodulos ? submodulos : aulasDiretas;
+  const temSub = submodulos?.length > 0;
+  const itens  = temSub ? submodulos : aulasDiretas;
 
-  // Sub-módulos como grade igual aos módulos
-  const subCards = (itens||[]).map((item, idx) => {
-    if (temSubmodulos) {
-      const aulasItem = item.lessons || [];
-      const concl = aulasItem.filter(l => concluidas.has(l.id)).length;
-      const pct = aulasItem.length ? Math.round((concl/aulasItem.length)*100) : 0;
-      return `
-        <div onclick="_abrirSubmodulo('${item.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:16px;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s" onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(61,14,32,.12)'" onmouseleave="this.style.transform='';this.style.boxShadow=''">
-          <!-- Capa igual ao card de módulo -->
-          <div style="width:100%;aspect-ratio:3/4;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A)">
-            ${item.cover_url ? `<img src="${s(item.cover_url)}" style="width:100%;height:100%;object-fit:cover;display:block"/>` : `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>`}
-            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.7) 0%,transparent 50%)"></div>
-            <div style="position:absolute;top:8px;left:8px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.4);border-radius:6px;padding:2px 8px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.08em">${String(idx+1).padStart(2,'0')}</div>
-            ${pct===100 ? '<div style="position:absolute;top:8px;right:8px;background:#22C55E;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>' : ''}
-          </div>
-          <!-- Info -->
-          <div style="padding:10px 12px 12px">
-            <div style="font-size:13px;font-weight:700;color:#2C1018;margin-bottom:4px">${s(item.title)}</div>
-            <div style="font-size:11px;color:#8B6050;margin-bottom:6px">${aulasItem.length} aula${aulasItem.length!==1?'s':''}</div>
-            ${aulasItem.length > 0 ? `<div style="height:3px;background:#E8D9C5;border-radius:99px;overflow:hidden"><div style="height:100%;width:${pct}%;background:#C8A96E;border-radius:99px"></div></div>` : ''}
-          </div>
-        </div>
-      `;
-    } else {
-      // Aula direta — card igual
-      const durMin = item.duration_seconds ? Math.ceil(item.duration_seconds/60) : null;
-      const concluida = concluidas.has(item.id);
-      return `
-        <div onclick="_abrirAulaVideo('${item.id}','${s(item.video_url||'')}','${s(item.title)}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:16px;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s" onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(61,14,32,.12)'" onmouseleave="this.style.transform='';this.style.boxShadow=''">
-          <div style="width:100%;aspect-ratio:3/4;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A)">
-            ${item.cover_url ? `<img src="${s(item.cover_url)}" style="width:100%;height:100%;object-fit:cover;display:block"/>` : ''}
-            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.7) 0%,transparent 50%)"></div>
-            <div style="position:absolute;top:8px;left:8px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.4);border-radius:6px;padding:2px 8px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.08em">AULA ${String(idx+1).padStart(2,'0')}</div>
-            ${concluida ? '<div style="position:absolute;top:8px;right:8px;background:#22C55E;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>' : ''}
-          </div>
-          <div style="padding:10px 12px 12px">
-            <div style="font-size:13px;font-weight:700;color:#2C1018;margin-bottom:4px">${s(item.title)}</div>
-            ${durMin ? `<div style="font-size:11px;color:#8B6050">${durMin} min</div>` : ''}
-          </div>
-        </div>
-      `;
-    }
-  }).join('');
-
-  el.innerHTML = `
-    <!-- Voltar -->
+  let html = `
     <button onclick="_renderTelaModulos()" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--nb-text-lo);font-size:13px;font-weight:600;cursor:pointer;padding:0;margin-bottom:16px">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
       Capacitação
     </button>
-
-    <!-- Capa do módulo (banner topo) -->
-    <div style="width:100%;aspect-ratio:16/7;border-radius:16px;overflow:hidden;position:relative;background:linear-gradient(135deg,#3D0E20,#6B1A3A);margin-bottom:20px">
-      ${(modulo.modal_cover_url||modulo.cover_url) ? `<img src="${s(modulo.modal_cover_url||modulo.cover_url)}" style="width:100%;height:100%;object-fit:cover;display:block"/>` : ''}
-      <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.75) 0%,transparent 55%)"></div>
-      <div style="position:absolute;bottom:16px;left:16px">
-        <div style="font-size:11px;font-weight:600;color:rgba(200,169,110,.7);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">MÓDULO ${String(modulo.order||0).padStart(2,'0')}</div>
-        <div style="font-size:20px;font-weight:800;color:#fff">${s(modulo.title)}</div>
-        <div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px">${itens?.length||0} ${temSubmodulos ? 'módulos' : 'aulas'}</div>
-      </div>
-    </div>
-
-    <!-- Grade igual à de módulos -->
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
-      ${subCards}
-    </div>
+    <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;margin-bottom:10px">${s(modulo.title)}</div>
+    <div class="cap-grid" id="cap-grid-sub">
   `;
+
+  (itens||[]).forEach((item, idx) => {
+    if (temSub) {
+      const aulasItem = item.lessons || [];
+      const concl = aulasItem.filter(l => concluidas.has(l.id)).length;
+      const pct   = aulasItem.length ? Math.round((concl/aulasItem.length)*100) : 0;
+      html += `
+        <div class="cap-card" onclick="_abrirSubmodulo('${item.id}')">
+          <div class="cap-cover" id="cov-sub-${item.id}" style="height:0">
+            ${item.cover_url ? `<img src="${s(item.cover_url)}" loading="lazy"/>` : ''}
+            <div class="cap-badge">${String(idx+1).padStart(2,'0')}</div>
+            <div style="position:absolute;bottom:8px;left:10px;font-size:10px;color:rgba(200,169,110,.8)">${aulasItem.length} aula${aulasItem.length!==1?'s':''}</div>
+          </div>
+          <div class="cap-prog"><div class="cap-pfill" style="width:${pct}%"></div></div>
+        </div>`;
+    } else {
+      const durMin = item.duration_seconds ? Math.ceil(item.duration_seconds/60) : null;
+      const concl  = concluidas.has(item.id);
+      html += `
+        <div class="cap-card" onclick="_abrirAulaVideo('${item.id}','${s(item.video_url||'')}','${s(item.title)}')">
+          <div class="cap-cover" id="cov-aula-${item.id}" style="height:0">
+            ${item.cover_url ? `<img src="${s(item.cover_url)}" loading="lazy"/>` : ''}
+            <div class="cap-badge">Aula ${String(idx+1).padStart(2,'0')}</div>
+            ${concl ? '<div style="position:absolute;top:8px;right:8px;background:#22C55E;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>' : ''}
+            ${durMin ? `<div style="position:absolute;bottom:8px;left:10px;font-size:10px;color:rgba(200,169,110,.8)">${durMin} min</div>` : ''}
+          </div>
+          <div class="cap-prog"><div class="cap-pfill" style="width:${concl?100:0}%"></div></div>
+        </div>`;
+    }
+  });
+
+  html += `</div>`;
+  el.innerHTML = html;
+
+  // Altura dinâmica igual
+  const _setH = () => {
+    document.querySelectorAll('.cap-cover').forEach(cv => {
+      const w = cv.offsetWidth;
+      if (w > 0) cv.style.height = Math.round(w * (window.innerWidth >= 768 ? 1.5 : 2.0)) + 'px';
+    });
+  };
+  requestAnimationFrame(() => { _setH(); setTimeout(_setH, 100); });
 
   window._capSubmodulos = submodulos || [];
 }

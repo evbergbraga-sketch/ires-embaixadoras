@@ -1655,634 +1655,293 @@ function _abrirPreviewCriativo(id) {
 // CAPACITAÇÃO
 // ════════════════════════════════════════════
 async function renderCapacitacao() {
-  const NIVEL_BRONZE   = 1;
-  const NIVEL_PRATA    = 5;
-  const NIVEL_OURO     = 15;
-  const NIVEL_DIAMANTE = 30;
-  const meuNivel    = _perfil.nivel || 'iniciante';
-  const ORDEM_NIVEL = { bronze:0, prata:1, ouro:2 };
+  // ── Estado de navegação ──────────────────────────────────
+  // Tela 1: grade de módulos
+  // Tela 2: página do módulo (sub-módulos)
+  // Tela 3: modal de sub-módulo (aulas)
+  _renderTelaModulos();
+}
 
-  function nivelLiberado(n) { return ORDEM_NIVEL[meuNivel] >= ORDEM_NIVEL[n||'bronze']; }
-  function nivelLabel(n)    { return {iniciante:'Iniciante',bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante'}[n]||'Bronze'; }
-  function nivelCor(n) {
-    return {
-      iniciante:{bg:'#F5F5F5',text:'#555555',border:'#8B8B8B',dot:'#8B8B8B'},
-      bronze:{bg:'#FFF4E6',text:'#7A4A1A',border:'#CD7F32',dot:'#CD7F32'},
-      prata: {bg:'#F4F4F4',text:'#444444',border:'#A8A9AD',dot:'#A8A9AD'},
-      ouro:  {bg:'#FFFBE6',text:'#6B4C1A',border:'#C8A96E',dot:'#C8A96E'},
-      diamante:{bg:'#E8FBFF',text:'#1A5A6B',border:'#B9F2FF',dot:'#B9F2FF'},
-    }[n]||{bg:'#F5F5F5',text:'#555555',border:'#8B8B8B',dot:'#8B8B8B'};
-  }
-  function proximoNivel() {
-    if (meuNivel==='iniciante') return {nome:'Bronze',   faltam:NIVEL_BRONZE};
-    if (meuNivel==='bronze')   return {nome:'Prata',    faltam:NIVEL_PRATA};
-    if (meuNivel==='prata')    return {nome:'Ouro',     faltam:NIVEL_OURO};
-    if (meuNivel==='ouro')     return {nome:'Diamante', faltam:NIVEL_DIAMANTE};
-    return null;
-  }
-
+// ─────────────────────────────────────────
+// TELA 1: Grade de módulos
+// ─────────────────────────────────────────
+async function _renderTelaModulos() {
   document.getElementById('conteudo').innerHTML = `
     <div id="loading-cap" class="loading"><div class="spinner"></div> Carregando...</div>
-    <div id="conteudo-cap"></div>
+    <div id="conteudo-cap" style="display:none"></div>
   `;
 
   const [
     { data: modulos },
     { data: progresso },
-    { count: totalPagosRaw },
-    { data: notificacoes },
+    { count: totalPagos },
   ] = await Promise.all([
     _supabase.from('modules')
-      .select('id,title,description,"order",cover_url,modal_cover_url,lessons(id,title,description,video_url,duration_seconds,"order",cover_url,nivel)')
-      .eq('is_active', true)
-      .order('"order"', { ascending: true }),
+      .select('id,title,description,"order",cover_url,modal_cover_url,lessons(id)')
+      .eq('is_active', true).order('"order"', { ascending: true }),
     _supabase.from('lesson_progress').select('lesson_id').eq('reseller_id', _perfil.id),
-    _supabase.from('orders').select('id',{count:'exact',head:true}).eq('reseller_id',_perfil.id).in('status',['paid','processing','shipped','delivered']),
-    _supabase.from('notifications').select('id,title,body,type,read_at,created_at').eq('user_id',_perfil.id).order('created_at',{ascending:false}).limit(5),
+    _supabase.from('orders').select('id',{count:'exact',head:true})
+      .eq('reseller_id',_perfil.id).in('status',['paid','processing','shipped','delivered']),
   ]);
 
   document.getElementById('loading-cap').style.display = 'none';
+  const el = document.getElementById('conteudo-cap');
+  el.style.display = 'block';
 
   const concluidas = new Set((progresso||[]).map(p=>p.lesson_id));
-  const totalPagos = totalPagosRaw ?? 0;
-  const prox       = proximoNivel();
-  const cor        = nivelCor(meuNivel);
-  const pctNivel   = prox ? Math.min(100,Math.round((totalPagos/prox.faltam)*100)) : 100;
+  const meuNivel = _perfil.nivel || 'iniciante';
 
-  // Notificacoes de nivel nao lidas
-  const notifNivel = (notificacoes||[]).filter(n=>(n.type==='nivel'||n.type==='incentivo')&&!n.read_at);
-  if (notifNivel.length) {
-    _supabase.from('notifications').update({read_at:new Date().toISOString()}).in('id',notifNivel.map(n=>n.id)).then(()=>{});
-  }
-  const nivelBannerHTML = notifNivel.length ? notifNivel.map(n=>`
-    <div style="background:${n.type==='incentivo'?'linear-gradient(135deg,#1a3a1a,#2d5e2d)':'linear-gradient(135deg,#3D0E20,#6B1A3A)'};border-radius:14px;padding:16px 18px;margin-bottom:14px;display:flex;align-items:flex-start;gap:14px;border:.5px solid rgba(200,169,110,.2);box-shadow:0 2px 14px rgba(58,14,29,.18);">
-      <div style="font-size:28px;flex-shrink:0;line-height:1;">${n.title.startsWith('\u{1F947}')?'\u{1F947}':n.title.startsWith('\u{1F948}')?'\u{1F948}':n.title.startsWith('\u2B50')?'\u2B50':'\u{1F389}'}</div>
-      <div style="flex:1;">
-        <div style="font-size:14px;font-weight:700;color:#C8A96E;margin-bottom:4px;">${s(n.title)}</div>
-        <div style="font-size:12px;color:rgba(200,169,110,.75);line-height:1.5;">${s(n.body)}</div>
+  // Banner de nível
+  const NIVEL_METAS = { iniciante:1, bronze:5, prata:15, ouro:30 };
+  const PROXIMOS = { iniciante:'Bronze', bronze:'Prata', prata:'Ouro', ouro:'Diamante' };
+  const metaAtual = NIVEL_METAS[meuNivel];
+  const proxNome  = PROXIMOS[meuNivel];
+  const pct = metaAtual ? Math.min(100, Math.round(((totalPagos||0) / metaAtual) * 100)) : 100;
+  const COR = {
+    iniciante:'#8B8B8B', bronze:'#CD7F32', prata:'#A8A9AD', ouro:'#C8A96E', diamante:'#B9F2FF'
+  };
+  const cor = COR[meuNivel] || '#C8A96E';
+
+  el.innerHTML = `
+    <!-- Banner nível -->
+    <div style="background:#fff;border:.5px solid ${cor}40;border-radius:14px;padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;gap:14px">
+      <div style="width:44px;height:44px;border-radius:50%;background:${cor}18;border:2px solid ${cor};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:${cor};flex-shrink:0;text-align:center;line-height:1.2;text-transform:uppercase">${meuNivel}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:var(--nb-text-hi);margin-bottom:2px">Nível ${meuNivel.charAt(0).toUpperCase()+meuNivel.slice(1)}</div>
+        <div style="font-size:11px;color:var(--nb-text-lo)">${proxNome ? `${totalPagos||0} de ${metaAtual} pedidos para o ${proxNome}` : 'Nível máximo atingido! 🏆'}</div>
+        ${proxNome ? `<div style="margin-top:6px;height:4px;background:#E8D9C5;border-radius:99px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${cor};border-radius:99px;transition:width .5s"></div></div>` : ''}
       </div>
     </div>
-  `).join('') : '';
 
-  // Banner de nivel
-  const bannerNivel = `
-    <div style="background:#fff;border:.5px solid ${cor.border}40;border-radius:14px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:14px;">
-      <div style="width:44px;height:44px;border-radius:50%;background:${cor.bg};border:2px solid ${cor.border};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:${cor.text};flex-shrink:0;text-align:center;line-height:1.2;">${nivelLabel(meuNivel)}</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:600;color:#2C1018;margin-bottom:2px;">Nivel ${nivelLabel(meuNivel)}</div>
-        <div style="font-size:11px;color:#8B6050;">${prox?`${totalPagos} de ${prox.faltam} pedidos para o ${prox.nome}`:'Nivel maximo atingido! &#127942;'}</div>
-        ${prox?`<div style="margin-top:6px;height:5px;background:#EDD9C0;border-radius:99px;overflow:hidden;"><div style="height:100%;width:${pctNivel}%;background:${cor.dot};border-radius:99px;"></div></div>`:''}
-      </div>
+    <!-- Título -->
+    <div style="margin-bottom:16px">
+      <h2 style="font-size:18px;font-weight:800;color:var(--nb-text-hi);margin-bottom:2px">Capacitação</h2>
+      <p style="font-size:12px;color:var(--nb-text-lo)">Escolha um módulo para começar</p>
+    </div>
+
+    <!-- Grade de módulos -->
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+      ${(modulos||[]).map(m => {
+        const totalAulas = m.lessons?.length || 0;
+        const aulasConcluidas = (m.lessons||[]).filter(l => concluidas.has(l.id)).length;
+        const pctMod = totalAulas ? Math.round((aulasConcluidas/totalAulas)*100) : 0;
+        return `
+          <div onclick="_abrirModulo('${m.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:16px;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s" onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(61,14,32,.12)'" onmouseleave="this.style.transform='';this.style.boxShadow=''">
+            <!-- Capa -->
+            <div style="width:100%;aspect-ratio:3/4;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A)">
+              ${m.cover_url ? `<img src="${s(m.cover_url)}" style="width:100%;height:100%;object-fit:cover;display:block"/>` : `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>`}
+              <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.7) 0%,transparent 50%)"></div>
+              <div style="position:absolute;top:8px;left:8px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.4);border-radius:6px;padding:2px 8px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.08em">MOD ${String(m.order||0).padStart(2,'0')}</div>
+              ${pctMod===100 ? '<div style="position:absolute;top:8px;right:8px;background:#22C55E;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>' : ''}
+            </div>
+            <!-- Info -->
+            <div style="padding:10px 12px 12px">
+              <div style="font-size:13px;font-weight:700;color:#2C1018;margin-bottom:4px">${s(m.title)}</div>
+              <div style="font-size:11px;color:#8B6050;margin-bottom:6px">${totalAulas} aula${totalAulas!==1?'s':''}</div>
+              ${totalAulas > 0 ? `<div style="height:3px;background:#E8D9C5;border-radius:99px;overflow:hidden"><div style="height:100%;width:${pctMod}%;background:#C8A96E;border-radius:99px"></div></div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('')}
     </div>
   `;
 
-  if (!modulos?.length) {
-    document.getElementById('conteudo-cap').innerHTML = bannerNivel + `
-      <div class="empty-state">
-        <div class="empty-state-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--bord)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
-        <div class="empty-state-title">Em breve!</div>
-        <div class="empty-state-body">Os treinamentos estao sendo preparados com carinho para voce.</div>
-      </div>
-    `;
-    return;
-  }
-
-  // Injeta estilos uma vez
-  if (!document.getElementById('cap-styles')) {
-    const style = document.createElement('style');
-    style.id = 'cap-styles';
-    style.textContent = `
-      /* Cards de módulos */
-      .cap-scroll-row {
-        display:grid !important;
-        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-        gap:12px !important;
-        width:100% !important;
-        box-sizing:border-box !important;
-      }
-      .cap-scroll-row::-webkit-scrollbar { display:none; }
-      .cap-mod-card {
-        width:100% !important;
-        background:#fff;
-        border:.5px solid #E8D9C5;
-        border-radius:14px;
-        overflow:hidden;
-        cursor:pointer;
-        transition:transform .15s ease,box-shadow .15s ease;
-      }
-      .cap-mod-card:hover { transform:translateY(-2px);box-shadow:0 4px 16px rgba(92,26,46,.10); }
-      .cap-mod-card:active { transform:scale(.97); }
-      .cap-mod-cover { width:100%;aspect-ratio:4/2;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:flex-end;justify-content:flex-start; }
-      .cap-mod-cover img { width:100%;height:100%;object-fit:cover; }
-      .cap-mod-cover-label { font-size:10px;font-weight:600;color:rgba(200,169,110,.6);letter-spacing:.05em; }
-      .cap-mod-badge { position:absolute;top:8px;left:8px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.3);border-radius:6px;padding:2px 7px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.06em;text-transform:uppercase; }
-      .cap-mod-play { position:absolute;bottom:8px;right:8px;width:38px;height:38px;border-radius:50%;background:transparent;border:1.8px solid rgba(200,169,110,.95);display:flex;align-items:center;justify-content:center; }
-      .cap-mod-play-tri { width:14px;height:14px;display:block; }
-      .cap-mod-play-tri polygon { fill:none;stroke:rgba(200,169,110,.95);stroke-width:2;stroke-linejoin:round; }
-      .cap-mod-body { padding:10px 12px 12px; }
-      .cap-mod-title { font-size:13px;font-weight:600;color:#2C1018;line-height:1.2; }
-      .cap-mod-meta { font-size:10px;color:#8B6050;margin-top:2px; }
-      .cap-mod-prog { height:2px;background:#E8D9C5;border-radius:99px;margin-top:6px;overflow:hidden; }
-      .cap-mod-pfill { height:100%;background:#C8A96E;border-radius:99px; }
-      .cap-dots { display:none; }
-      .cap-aula-cover { width:100%;aspect-ratio:16/9;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:center;justify-content:center; }
-      .cap-aula-cover img { width:100%;height:100%;object-fit:cover; }
-      .cap-aula-cover-overlay { position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.85) 0%,transparent 55%); }
-      .cap-aula-cover-title { position:absolute;bottom:14px;left:14px;font-size:17px;font-weight:700;color:#fff;font-family:'DM Sans',sans-serif;letter-spacing:-.3px;max-width:70%; }
-      .cap-aula-cover-meta { position:absolute;bottom:17px;right:14px;font-size:10px;color:rgba(200,169,110,.85); }
-      .cap-aula-row { display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:.5px solid #E8D9C5;cursor:pointer;transition:opacity .15s; }
-      .cap-aula-row:last-child { border-bottom:none; }
-      .cap-aula-row:active { opacity:.65; }
-      .cap-aula-thumb { width:72px;height:46px;border-radius:8px;flex-shrink:0;overflow:hidden;position:relative;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:center;justify-content:center; }
-      .cap-aula-thumb img { width:100%;height:100%;object-fit:cover; }
-      .cap-aula-thumb-label { font-size:8px;font-weight:600;color:rgba(200,169,110,.6); }
-      .cap-aula-play { position:absolute;bottom:4px;right:4px;width:18px;height:18px;border-radius:50%;background:rgba(200,169,110,.9);display:flex;align-items:center;justify-content:center; }
-      .cap-aula-tri { width:0;height:0;border-top:3px solid transparent;border-bottom:3px solid transparent;border-left:5px solid #3D0E20;margin-left:1px; }
-      .cap-aula-lock { position:absolute;inset:0;background:rgba(26,10,18,.72);border-radius:8px;display:flex;align-items:center;justify-content:center; }
-      .cap-aula-info { flex:1;min-width:0; }
-      .cap-aula-badge { display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:600;padding:1px 6px;border-radius:999px;margin-bottom:3px;border:.5px solid transparent; }
-      .cap-aula-title { font-size:12px;font-weight:600;color:#2C1018;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-      .cap-aula-meta { font-size:10px;color:#8B6050;margin-top:1px; }
-      .cap-aula-prog { height:2px;background:#E8D9C5;border-radius:99px;margin-top:4px;overflow:hidden; }
-      .cap-aula-pfill { height:100%;background:#C8A96E;border-radius:99px; }
-      .cap-player-wrap { position:fixed;inset:0;z-index:9999;background:#F5EFE6;display:flex;flex-direction:column;overflow-y:auto; }
-      .cap-player-header { background:#3D0E20;padding:14px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0; }
-      .cap-back { width:30px;height:30px;border-radius:50%;background:rgba(200,169,110,.15);border:.5px solid rgba(200,169,110,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0; }
-      .cap-back-tri { width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-right:6px solid #C8A96E;margin-right:2px; }
-      .cap-player-modtitle { font-size:12px;font-weight:600;color:#C8A96E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-      .cap-video-wrap { width:100%;background:#0d0508;flex-shrink:0; }
-      .cap-video-inner { position:relative;padding-bottom:56.25%;height:0; }
-      .cap-video-inner iframe, .cap-video-inner > div > iframe { position:absolute;top:0;left:0;width:100%;height:100%;border:none !important; }
-      .cap-aula-detail { background:#fff;padding:14px 16px;border-bottom:.5px solid #E8D9C5; }
-      .cap-aula-detail-mod { font-size:9px;color:#8B6050;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px; }
-      .cap-aula-detail-title { font-size:15px;font-weight:600;color:#2C1018;line-height:1.3;margin-bottom:10px; }
-      .cap-aula-actions { display:flex;gap:14px; }
-      .cap-aula-action { display:flex;align-items:center;gap:5px;font-size:11px;color:#6B1A3A;cursor:pointer;background:none;border:none;font-family:inherit;padding:0; }
-      .cap-playlist { padding:0 16px;background:#F5EFE6; }
-      .cap-playlist-title { font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;padding:12px 0 8px;border-bottom:.5px solid #E8D9C5; }
-      .cap-pl-item { display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:.5px solid #E8D9C5;cursor:pointer; }
-      .cap-pl-num { font-size:10px;color:#8B6050;width:16px;text-align:center;flex-shrink:0; }
-      .cap-pl-thumb { width:56px;height:36px;border-radius:6px;overflow:hidden;position:relative;flex-shrink:0;background:#D9C5B0;display:flex;align-items:center;justify-content:center; }
-      .cap-pl-thumb img { width:100%;height:100%;object-fit:cover; }
-      .cap-pl-info { flex:1;min-width:0; }
-      .cap-pl-title { font-size:13px;font-weight:600;color:#2C1018;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-      .cap-pl-meta { font-size:12px;color:#8B6050;margin-top:1px; }
-      .cap-pl-check { width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
-      @keyframes slideDown {
-        from { opacity:0;transform:translateY(-8px); }
-        to   { opacity:1;transform:translateY(0); }
-      }
-      @media (min-width: 768px) {
-        .cap-scroll-row { grid-template-columns:repeat(4,minmax(0,1fr)) !important;gap:16px !important; }
-        .cap-mod-card { width:100% !important; }
-        .cap-mod-cover { height:auto !important;aspect-ratio:3/4 !important; }
-        .cap-dots { display:none; }
-        .cap-player-wrap { position:relative;flex-direction:row;align-items:flex-start;max-width:1500px;margin:0 auto; }
-        .cap-player-left { flex:1;min-width:0;max-width:980px; }
-        .cap-player-right { width:560px;flex-shrink:0;border-left:.5px solid #E8D9C5;background:#fff;max-height:600px;overflow-y:auto; }
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  window._capModulos    = modulos;
+  // Salva dados em cache
+  window._capModulos = modulos || [];
   window._capConcluidas = concluidas;
-
-  let html = nivelBannerHTML + bannerNivel;
-  html += `<div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;margin-bottom:10px;">Modulos</div>`;
-  html += `<div id="cap-scroll-row" class="cap-scroll-row">`;
-
-  modulos.forEach((mod, mi) => {
-    const aulas   = (mod.lessons||[]).sort((a,b)=>a.order-b.order);
-    const modConc = aulas.filter(a=>concluidas.has(a.id)).length;
-    const pctMod  = aulas.length ? Math.round((modConc/aulas.length)*100) : 0;
-    const thumb   = mod.cover_url || '';
-
-    html += `
-      <div class="cap-mod-card" onclick="_abrirModuloModal('${mod.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;flex-shrink:0;scroll-snap-align:start;">
-        <div class="cap-mod-cover-inner" style="width:100%;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);height:0;padding-bottom:0;" id="cover-${mod.id}">
-          ${thumb ? `<img src="${s(thumb)}" alt="${s(mod.title)}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>` : ''}
-          <div class="cap-mod-badge">Mod ${String(mi+1).padStart(2,'0')}</div>
-          <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 10px;">
-            <div style="font-size:10px;color:rgba(200,169,110,.8);">${aulas.length} aula${aulas.length!==1?'s':''}</div>
-          </div>
-          <div class="cap-mod-play" style="top:50%;left:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);opacity:.95;"><svg class="cap-mod-play-tri" viewBox="0 0 16 16" aria-hidden="true"><polygon points="5,3 13,8 5,13"></polygon></svg></div>
-        </div>
-        <div class="cap-mod-prog" style="margin:0;border-radius:0;"><div class="cap-mod-pfill" style="width:${pctMod}%"></div></div>
-      </div>
-    `;
-  });
-
-  html += `</div>`;
-  html += `<div class="cap-dots" id="cap-dots">`;
-  modulos.forEach((_,i) => { html += `<div class="cap-dot${i===0?' on':''}"></div>`; });
-  html += `</div>`;
-
-  document.getElementById('conteudo-cap').innerHTML = html;
-
-  // Seta altura proporcional baseada na largura real renderizada
-  const _setModuleHeights = () => {
-    const covers = document.querySelectorAll('.cap-mod-cover-inner');
-    const isDesktop = window.innerWidth >= 768;
-    const multiplier = isDesktop ? 1.5 : 2.0; // 2:3 poster no desktop, tall no mobile
-    covers.forEach(el => {
-      el.style.height = '0';
-      el.style.paddingBottom = '0';
-    });
-    covers.forEach(el => {
-      const w = el.offsetWidth;
-      if (w > 0) el.style.height = Math.round(w * multiplier) + 'px';
-    });
-  };
-  requestAnimationFrame(() => {
-    _setModuleHeights();
-    // Segunda tentativa para garantir que o layout finalizou
-    setTimeout(_setModuleHeights, 100);
-  });
-
-  const scrollEl = document.getElementById('cap-scroll-row');
-  if (scrollEl) {
-    scrollEl.addEventListener('scroll', () => {
-      const idx = Math.round(scrollEl.scrollLeft / 232);
-      document.querySelectorAll('.cap-dot').forEach((d,i) => d.classList.toggle('on', i===idx));
-    }, { passive: true });
-  }
 }
 
-function _abrirModuloModal(moduloId) {
-  const modulos    = window._capModulos || [];
-  const concluidas = window._capConcluidas || new Set();
-  const mod        = modulos.find(m => m.id === moduloId);
-  if (!mod) return;
+// ─────────────────────────────────────────
+// TELA 2: Página do módulo (sub-módulos)
+// ─────────────────────────────────────────
+async function _abrirModulo(moduloId) {
+  const modulo = (window._capModulos||[]).find(m => m.id === moduloId);
+  if (!modulo) return;
 
-  const aulas      = (mod.lessons||[]).sort((a,b)=>a.order-b.order);
-  const mi         = modulos.indexOf(mod);
-  const modalThumb = mod.modal_cover_url || mod.cover_url || '';
-  const modConc    = aulas.filter(a=>concluidas.has(a.id)).length;
-  const pctMod     = aulas.length ? Math.round((modConc/aulas.length)*100) : 0;
-  const meuNivel   = _perfil.nivel || 'iniciante';
-  const ORDEM_NIVEL = { bronze:0, prata:1, ouro:2 };
-  function nivelLiberado(n) { return ORDEM_NIVEL[meuNivel] >= ORDEM_NIVEL[n||'bronze']; }
-  const proximaAula = aulas.find(a => !concluidas.has(a.id) && nivelLiberado(a.nivel)) || aulas[0];
-
-  // Criar overlay modal
-  const overlay = document.createElement('div');
-  overlay.id = 'mod-modal-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:16px;';
-  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
-
-  const aulasHTML = aulas.map(aula => {
-    const feita    = concluidas.has(aula.id);
-    const liberada = nivelLiberado(aula.nivel);
-    const durMin   = aula.duration_seconds ? Math.ceil(aula.duration_seconds/60) : null;
-    const aulaCover = aula.cover_url || '';
-    return `
-      <div onclick="${liberada ? `_abrirPlayer('${aula.id}');document.getElementById('mod-modal-overlay')?.remove()` : ''}"
-        style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:.5px solid #F0EAE2;cursor:${liberada?'pointer':'default'};${!liberada?'opacity:.55;':''}">
-        <div style="width:68px;height:44px;border-radius:8px;overflow:hidden;position:relative;flex-shrink:0;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
-          ${aulaCover ? `<img src="${s(aulaCover)}" style="width:100%;height:100%;object-fit:cover;" loading="lazy"/>` : ''}
-          ${liberada ? `<div style="position:absolute;bottom:3px;right:3px;width:16px;height:16px;border-radius:50%;background:rgba(200,169,110,.9);display:flex;align-items:center;justify-content:center;"><div style="width:0;height:0;border-top:3px solid transparent;border-bottom:3px solid transparent;border-left:5px solid #3D0E20;margin-left:1px;"></div></div>` : `<div style="position:absolute;inset:0;background:rgba(26,10,18,.7);display:flex;align-items:center;justify-content:center;"><svg width="10" height="12" viewBox="0 0 12 14" fill="none"><rect x="1" y="6" width="10" height="8" rx="1.5" fill="none" stroke="#C8A96E" stroke-width="1.2"/><path d="M3 6V4a3 3 0 016 0v2" stroke="#C8A96E" stroke-width="1.2" stroke-linecap="round"/></svg></div>`}
-        </div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:600;color:#2C1018;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s(aula.title)}</div>
-          <div style="font-size:10px;color:#8B6050;margin-top:1px;">${durMin?durMin+' min':''}${!liberada?' · Nível bloqueado':''}</div>
-        </div>
-        ${feita ? `<div style="width:18px;height:18px;border-radius:50%;background:rgba(200,169,110,.15);border:1px solid #C8A96E;display:flex;align-items:center;justify-content:center;font-size:9px;color:#C8A96E;flex-shrink:0;">✓</div>` : ''}
-      </div>`;
-  }).join('');
-
-  overlay.innerHTML = `
-    <div style="background:#fff;border-radius:16px;overflow:hidden;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;position:relative;">
-      <!-- Hero 16:9 -->
-      <div style="width:100%;aspect-ratio:16/9;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
-        ${modalThumb ? `<img src="${s(modalThumb)}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;" loading="lazy"/>` : ''}
-        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.5) 0%,transparent 60%);"></div>
-        <button onclick="document.getElementById('mod-modal-overlay').remove()"
-          style="position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:50%;background:rgba(26,10,18,.6);border:.5px solid rgba(200,169,110,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#C8A96E;">✕</button>
-      </div>
-      <!-- Conteúdo -->
-      <div style="padding:16px;">
-        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;margin-bottom:3px;">Módulo ${String(mi+1).padStart(2,'0')}</div>
-        <div style="font-size:19px;font-weight:700;color:#2C1018;font-family:'DM Sans',sans-serif;letter-spacing:-.3px;margin-bottom:3px;line-height:1.2;">${s(mod.title)}</div>
-        <div style="font-size:12px;color:#8B6050;margin-bottom:14px;">${aulas.length} aula${aulas.length!==1?'s':''} · ${pctMod}% concluído</div>
-        ${proximaAula ? `
-        <div onclick="_abrirPlayer('${proximaAula.id}');document.getElementById('mod-modal-overlay')?.remove()"
-          style="display:flex;align-items:center;gap:10px;padding:11px 16px;background:#3D0E20;border-radius:10px;cursor:pointer;margin-bottom:14px;">
-          <div style="width:30px;height:30px;border-radius:50%;background:rgba(200,169,110,.15);border:1px solid rgba(200,169,110,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <div style="width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:8px solid #C8A96E;margin-left:2px;"></div>
-          </div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:600;color:#C8A96E;">${modConc>0?'Continuar de onde parei':'Começar módulo'}</div>
-            <div style="font-size:10px;color:rgba(200,169,110,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s(proximaAula.title)}</div>
-          </div>
-        </div>` : ''}
-        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;margin-bottom:8px;">Aulas</div>
-        ${aulasHTML}
-      </div>
-    </div>
+  document.getElementById('conteudo').innerHTML = `
+    <div id="loading-mod" class="loading"><div class="spinner"></div> Carregando...</div>
+    <div id="conteudo-mod" style="display:none"></div>
   `;
 
-  document.body.appendChild(overlay);
-}
+  // Busca sub-módulos e aulas diretas do módulo
+  const [
+    { data: submodulos },
+    { data: aulasDiretas },
+  ] = await Promise.all([
+    _supabase.from('submodules')
+      .select('id,title,description,cover_url,"order",lessons(id,title,duration_seconds,"order",cover_url,video_url)')
+      .eq('module_id', moduloId).eq('is_active', true).order('"order"', { ascending: true }),
+    _supabase.from('lessons')
+      .select('id,title,duration_seconds,"order",cover_url,video_url')
+      .eq('module_id', moduloId).is('submodule_id', null).order('"order"', { ascending: true }),
+  ]);
 
-function _abrirModulo(moduloId) {
-  const modulos    = window._capModulos || [];
+  document.getElementById('loading-mod').style.display = 'none';
+  const el = document.getElementById('conteudo-mod');
+  el.style.display = 'block';
+
   const concluidas = window._capConcluidas || new Set();
-  const mod        = modulos.find(m => m.id === moduloId);
-  if (!mod) return;
+  const temSubmodulos = submodulos?.length > 0;
+  const itens = temSubmodulos ? submodulos : aulasDiretas;
 
-  const meuNivel    = _perfil.nivel || 'iniciante';
-  const ORDEM_NIVEL = { bronze:0, prata:1, ouro:2 };
-  function nivelLiberado(n) { return ORDEM_NIVEL[meuNivel] >= ORDEM_NIVEL[n||'bronze']; }
-  function nivelLabel(n)    { return {iniciante:'Iniciante',bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante'}[n]||'Bronze'; }
-  function nivelCor(n) {
-    return {
-      iniciante:{bg:'#F5F5F5',text:'#555555',border:'#8B8B8B',dot:'#8B8B8B'},
-      bronze:{bg:'#FFF4E6',text:'#7A4A1A',border:'#CD7F32',dot:'#CD7F32'},
-      prata: {bg:'#F4F4F4',text:'#444444',border:'#A8A9AD',dot:'#A8A9AD'},
-      ouro:  {bg:'#FFFBE6',text:'#6B4C1A',border:'#C8A96E',dot:'#C8A96E'},
-      diamante:{bg:'#E8FBFF',text:'#1A5A6B',border:'#B9F2FF',dot:'#B9F2FF'},
-    }[n]||{bg:'#F5F5F5',text:'#555555',border:'#8B8B8B',dot:'#8B8B8B'};
-  }
+  el.innerHTML = `
+    <!-- Voltar -->
+    <button onclick="_renderTelaModulos()" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--nb-text-lo);font-size:13px;font-weight:600;cursor:pointer;padding:0;margin-bottom:16px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Capacitação
+    </button>
 
-  const aulas   = (mod.lessons||[]).sort((a,b)=>a.order-b.order);
-  const mi      = modulos.indexOf(mod);
-  const thumb      = mod.cover_url || '';
-  const modalThumb = mod.modal_cover_url || mod.cover_url || '';
-  const modConc = aulas.filter(a=>concluidas.has(a.id)).length;
-  const pctMod  = aulas.length ? Math.round((modConc/aulas.length)*100) : 0;
-
-  // Primeira aula não concluída (para o botão "Continuar")
-  const proximaAula = aulas.find(a => !concluidas.has(a.id) && nivelLiberado(a.nivel)) || aulas[0];
-
-  let html = `
-    <!-- Hero do módulo com capa contida -->
-    <div style="border-radius:14px;overflow:hidden;margin-bottom:14px;position:relative;">
-      <div style="width:100%;aspect-ratio:16/9;max-height:420px;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
-        ${modalThumb ? `<img src="${s(modalThumb)}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;" loading="lazy"/>` : (thumb ? `<img src="${s(thumb)}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;" loading="lazy"/>` : '')}
-        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.92) 0%,transparent 50%);"></div>
-        <button onclick="renderCapacitacao()" style="position:absolute;top:12px;left:12px;width:32px;height:32px;border-radius:50%;background:rgba(26,10,18,.55);border:.5px solid rgba(200,169,110,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <div style="position:absolute;bottom:14px;left:14px;right:14px;">
-          <div style="font-size:19px;font-weight:700;color:#fff;font-family:'DM Sans',sans-serif;letter-spacing:-.3px;margin-bottom:3px;">${s(mod.title)}</div>
-          <div style="font-size:11px;color:rgba(200,169,110,.8);">${aulas.length} aula${aulas.length!==1?'s':''} · ${pctMod}% concluído</div>
-          <div style="margin-top:7px;height:3px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden;">
-            <div style="height:100%;width:${pctMod}%;background:#C8A96E;border-radius:99px;"></div>
-          </div>
-        </div>
+    <!-- Capa do módulo -->
+    <div style="width:100%;aspect-ratio:16/7;border-radius:16px;overflow:hidden;position:relative;background:linear-gradient(135deg,#3D0E20,#6B1A3A);margin-bottom:20px">
+      ${(modulo.modal_cover_url||modulo.cover_url) ? `<img src="${s(modulo.modal_cover_url||modulo.cover_url)}" style="width:100%;height:100%;object-fit:cover;display:block"/>` : ''}
+      <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.75) 0%,transparent 55%)"></div>
+      <div style="position:absolute;bottom:16px;left:16px">
+        <div style="font-size:11px;font-weight:600;color:rgba(200,169,110,.7);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">MÓDULO ${String(modulo.order||0).padStart(2,'0')}</div>
+        <div style="font-size:22px;font-weight:800;color:#fff;letter-spacing:-.3px">${s(modulo.title)}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px">${itens?.length||0} ${temSubmodulos ? 'módulos' : 'aulas'}</div>
       </div>
     </div>
 
-    ${proximaAula ? `
-    <!-- Botão continuar -->
-    <div onclick="_abrirPlayer('${proximaAula.id}')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#3D0E20;border-radius:12px;cursor:pointer;margin-bottom:14px;">
-      <div style="width:36px;height:36px;border-radius:50%;background:rgba(200,169,110,.15);border:1px solid rgba(200,169,110,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <div style="width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:10px solid #C8A96E;margin-left:2px;"></div>
-      </div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:600;color:#C8A96E;margin-bottom:2px;">${modConc > 0 ? 'Continuar de onde parei' : 'Começar módulo'}</div>
-        <div style="font-size:11px;color:rgba(200,169,110,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s(proximaAula.title)}</div>
-      </div>
-    </div>
-    ` : ''}
-
-    <!-- Lista de aulas -->
-    <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;margin-bottom:8px;">Aulas</div>
-  `;
-
-  aulas.forEach((aula) => {
-    const feita     = concluidas.has(aula.id);
-    const liberada  = nivelLiberado(aula.nivel);
-    const durMin    = aula.duration_seconds ? Math.ceil(aula.duration_seconds/60) : null;
-    const nivelAula = aula.nivel||'iniciante';
-    const cor       = nivelCor(nivelAula);
-    const aulaCover = aula.cover_url||mod.cover_url||'';
-
-    html += `
-      <div class="cap-aula-row" ${liberada?`onclick="_abrirPlayer('${aula.id}')"`:'style="cursor:default;opacity:.6"'}>
-        <div class="cap-aula-thumb">
-          ${aulaCover ? `<img src="${s(aulaCover)}" loading="lazy"/>` : `<div class="cap-aula-thumb-label">ires emb.</div>`}
-          ${liberada ? `<div class="cap-aula-play"><div class="cap-aula-tri"></div></div>` : `<div class="cap-aula-lock"><svg width="11" height="13" viewBox="0 0 12 14" fill="none"><rect x="1" y="6" width="10" height="8" rx="1.5" fill="none" stroke="#C8A96E" stroke-width="1.2"/><path d="M3 6V4a3 3 0 016 0v2" stroke="#C8A96E" stroke-width="1.2" stroke-linecap="round"/></svg></div>`}
-        </div>
-        <div class="cap-aula-info">
-          <div class="cap-aula-badge" style="background:${cor.bg};color:${cor.text};border-color:${cor.border};">
-            <div style="width:5px;height:5px;border-radius:50%;background:${cor.dot};flex-shrink:0;"></div>
-            ${nivelLabel(nivelAula)}
-          </div>
-          <div class="cap-aula-title">${s(aula.title)}</div>
-          <div class="cap-aula-meta">${durMin?durMin+' min':''}${!liberada?' &middot; '+nivelLabel(nivelAula):''}</div>
-        </div>
-        ${feita
-          ? `<div style="width:20px;height:20px;border-radius:50%;background:rgba(200,169,110,.15);border:1px solid #C8A96E;display:flex;align-items:center;justify-content:center;font-size:10px;color:#C8A96E;flex-shrink:0;">&#10003;</div>`
-          : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D9C5B0" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>`
+    <!-- Lista de sub-módulos ou aulas diretas -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${(itens||[]).map((item, idx) => {
+        if (temSubmodulos) {
+          // Sub-módulo card
+          const aulasItem = item.lessons || [];
+          const concl = aulasItem.filter(l => concluidas.has(l.id)).length;
+          const pct = aulasItem.length ? Math.round((concl/aulasItem.length)*100) : 0;
+          return `
+            <div onclick="_abrirSubmodulo('${item.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;display:flex;gap:0;transition:box-shadow .15s" onmouseenter="this.style.boxShadow='0 4px 16px rgba(61,14,32,.1)'" onmouseleave="this.style.boxShadow=''">
+              <!-- Thumb -->
+              <div style="width:90px;flex-shrink:0;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:center;justify-content:center">
+                ${item.cover_url ? `<img src="${s(item.cover_url)}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"/>` : ''}
+                <div style="position:relative;z-index:1;font-size:11px;font-weight:700;color:#C8A96E;text-align:center;padding:4px">${String(idx+1).padStart(2,'0')}</div>
+              </div>
+              <!-- Info -->
+              <div style="flex:1;padding:12px 14px;min-width:0">
+                <div style="font-size:13px;font-weight:700;color:#2C1018;margin-bottom:3px;line-height:1.2">${s(item.title)}</div>
+                ${item.description ? `<div style="font-size:11px;color:#8B6050;margin-bottom:6px;line-height:1.4">${s(item.description)}</div>` : ''}
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <span style="font-size:10px;color:#8B6050">${aulasItem.length} aula${aulasItem.length!==1?'s':''}</span>
+                  ${pct > 0 ? `<span style="font-size:10px;color:#C8A96E;font-weight:600">${pct}%</span>` : ''}
+                </div>
+                ${aulasItem.length > 0 ? `<div style="height:2px;background:#E8D9C5;border-radius:99px;overflow:hidden;margin-top:6px"><div style="height:100%;width:${pct}%;background:#C8A96E;border-radius:99px"></div></div>` : ''}
+              </div>
+              <div style="display:flex;align-items:center;padding-right:14px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+          `;
+        } else {
+          // Aula direta (sem sub-módulo)
+          const durMin = item.duration_seconds ? Math.ceil(item.duration_seconds/60) : null;
+          const concluida = concluidas.has(item.id);
+          return `
+            <div onclick="_abrirAulaVideo('${item.id}','${s(item.video_url||'')}','${s(item.title)}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;display:flex;gap:0;transition:box-shadow .15s" onmouseenter="this.style.boxShadow='0 4px 16px rgba(61,14,32,.1)'" onmouseleave="this.style.boxShadow=''">
+              <div style="width:90px;flex-shrink:0;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:center;justify-content:center">
+                ${item.cover_url ? `<img src="${s(item.cover_url)}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"/>` : ''}
+                <div style="position:relative;z-index:1;width:28px;height:28px;border-radius:50%;border:1.5px solid #C8A96E;display:flex;align-items:center;justify-content:center">
+                  ${concluida ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' : '<div style="width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:8px solid #C8A96E;margin-left:2px"></div>'}
+                </div>
+              </div>
+              <div style="flex:1;padding:12px 14px;min-width:0">
+                <div style="font-size:11px;font-weight:600;color:#C8A96E;margin-bottom:2px">AULA ${String((item.order||0)+1).padStart(2,'0')}</div>
+                <div style="font-size:13px;font-weight:700;color:#2C1018;line-height:1.3">${s(item.title)}</div>
+                ${durMin ? `<div style="font-size:10px;color:#8B6050;margin-top:3px">${durMin} min</div>` : ''}
+              </div>
+            </div>
+          `;
         }
-      </div>
-    `;
-  });
+      }).join('')}
+    </div>
+  `;
 
-  document.getElementById('conteudo-cap').innerHTML = html;
+  // Salva sub-módulos em cache
+  window._capSubmodulos = submodulos || [];
 }
 
+// ─────────────────────────────────────────
+// TELA 3: Modal de sub-módulo (lista de aulas)
+// ─────────────────────────────────────────
+function _abrirSubmodulo(submoduloId) {
+  const submod = (window._capSubmodulos||[]).find(s => s.id === submoduloId);
+  if (!submod) return;
 
-// Converte nome de cor em hex
-function _corHex(nome) {
-  const mapa = {
-    'preto':'#1a1a1a','branco':'#f0f0f0','vermelho':'#e63946',
-    'azul':'#2176ae','verde':'#2dc653','amarelo':'#ffd60a',
-    'rosa':'#ff6b9d','roxo':'#7b2d8b','laranja':'#f4a261',
-    'cinza':'#9e9e9e','marrom':'#795548','bege':'#f5e6d3',
-    'sandia':'#ff6b6b','lilas':'#c084fc','lilás':'#c084fc',
-    'romance':'#ffb3c6','aço':'#90a4ae','marinho':'#1b3a6b',
-    'chumbo':'#616161','verde água':'#00b4d8','azul claro':'#90caf9',
-    'azul marinho':'#1b3a6b','cinza chumbo':'#616161',
-  };
-  return mapa[nome.toLowerCase()] || '#888';
-}
-
-function _loadYTPlayer(aulaId) {
-  const inner    = document.getElementById('cap-video-inner-' + aulaId);
-  const embedUrl = (window._ytEmbedUrls || {})[aulaId];
-  if (!inner || !embedUrl) return;
-  // Remove poster
-  const poster = document.getElementById('yt-poster-' + aulaId);
-  if (poster) poster.remove();
-  // Extract video ID from embed URL
-  const vidMatch = embedUrl.match(/embed\/([a-zA-Z0-9_-]{11})/);
-  if (!vidMatch) return;
-  const vidId = vidMatch[1];
-  // Use YouTube IFrame API for single-tap play on iOS
-  inner.innerHTML = '<div id="yt-player-' + aulaId + '"></div>';
-  if (window.YT && window.YT.Player) {
-    new window.YT.Player('yt-player-' + aulaId, {
-      videoId: vidId,
-      playerVars: { autoplay:1, rel:0, modestbranding:1, playsinline:1, controls:1 },
-      host: 'https://www.youtube-nocookie.com',
-      events: { onReady: e => e.target.playVideo() }
-    });
-  } else {
-    // Fallback: load YT API then create player
-    window._ytPendingPlayers = window._ytPendingPlayers || [];
-    window._ytPendingPlayers.push({ aulaId, vidId });
-    if (!document.getElementById('yt-api-script')) {
-      window.onYouTubeIframeAPIReady = function() {
-        (window._ytPendingPlayers || []).forEach(({ aulaId: aid, vidId: vid }) => {
-          const el = document.getElementById('yt-player-' + aid);
-          if (!el) return;
-          new window.YT.Player('yt-player-' + aid, {
-            videoId: vid,
-            playerVars: { autoplay:1, rel:0, modestbranding:1, playsinline:1, controls:1 },
-            host: 'https://www.youtube-nocookie.com',
-            events: { onReady: e => e.target.playVideo() }
-          });
-        });
-        window._ytPendingPlayers = [];
-      };
-      const s = document.createElement('script');
-      s.id = 'yt-api-script';
-      s.src = 'https://www.youtube.com/iframe_api';
-      document.head.appendChild(s);
-    }
-  }
-}
-
-function _youtubeEmbedUrl(url) {
-  if (!url) return '';
-  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/);
-  if (match) return `https://www.youtube-nocookie.com/embed/${match[1]}?rel=0&modestbranding=1&controls=1&showinfo=0&iv_load_policy=3&cc_load_policy=0`;
-  return url;
-}
-
-function _abrirPlayer(aulaId) {
-  const modulos   = window._capModulos || [];
   const concluidas = window._capConcluidas || new Set();
+  const aulas = (submod.lessons || []).sort((a,b) => (a.order||0)-(b.order||0));
+  const concl  = aulas.filter(l => concluidas.has(l.id)).length;
 
-  let aulaAtual = null;
-  let modAtual  = null;
-
-  for (const mod of modulos) {
-    const found = (mod.lessons || []).find(a => a.id === aulaId);
-    if (found) { aulaAtual = found; modAtual = mod; break; }
+  // Garante modal
+  let modal = document.getElementById('modal-submodulo');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-submodulo';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.55);align-items:flex-end;justify-content:center';
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) _fecharSubmodulo(); });
   }
-  if (!aulaAtual) return;
 
-  const aulas     = (modAtual.lessons || []).sort((a, b) => a.order - b.order);
-  const durMin    = aulaAtual.duration_seconds ? Math.ceil(aulaAtual.duration_seconds / 60) : null;
-  const feita     = concluidas.has(aulaAtual.id);
-  const idxAtual  = aulas.findIndex(a => a.id === aulaId);
-
-  function nivelCor2(n) {
-    return {
-      bronze: { bg:'#FFF4E6', text:'#7A4A1A', border:'#CD7F32', dot:'#CD7F32' },
-      prata:  { bg:'#F4F4F4', text:'#444444', border:'#A8A9AD', dot:'#A8A9AD' },
-      ouro:   { bg:'#FFFBE6', text:'#6B4C1A', border:'#C8A96E', dot:'#C8A96E' },
-    }[n] || { bg:'#FFF4E6', text:'#7A4A1A', border:'#CD7F32', dot:'#CD7F32' };
-  }
-  function nivelLabel2(n) { return {iniciante:'Iniciante',bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante'}[n]||'Bronze'; }
-
-  const embedUrl = _youtubeEmbedUrl(aulaAtual.video_url);
-  // Store embed URL in JS — never expose in HTML attributes (prevents iOS prefetch)
-  window._ytEmbedUrls = window._ytEmbedUrls || {};
-  window._ytEmbedUrls[aulaId] = embedUrl;
-
-  const playlistHtml = aulas.map((a, i) => {
-    const aCor   = nivelCor2(a.nivel || 'bronze');
-    const aFeita = concluidas.has(a.id);
-    const isNow  = a.id === aulaId;
-    const thumb  = a.cover_url || modAtual.cover_url || '';
-
-    return `
-      <div class="cap-pl-item" onclick="_abrirPlayer('${a.id}')">
-        <div class="cap-pl-num" style="${isNow ? 'color:#C8A96E;font-weight:700;' : ''}">${isNow ? '▶' : i+1}</div>
-        <div class="cap-pl-thumb">
-          ${thumb ? `<img src="${s(thumb)}" loading="lazy"/>` : `<div style="width:100%;height:100%;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:center;justify-content:center;font-size:7px;color:rgba(200,169,110,.6)">ires</div>`}
-        </div>
-        <div class="cap-pl-info">
-          <div class="cap-pl-title" style="${isNow ? 'color:#C8A96E;' : ''}">${s(a.title)}</div>
-          <div class="cap-pl-meta">${a.duration_seconds ? Math.ceil(a.duration_seconds/60)+' min' : ''}</div>
-        </div>
-        <div class="cap-pl-check" style="${aFeita ? 'background:rgba(200,169,110,.15);border:1px solid #C8A96E;color:#C8A96E;font-size:9px;' : 'border:1px solid #E8D9C5;'}">${aFeita ? '✓' : ''}</div>
-      </div>
-    `;
-  }).join('');
-
-  const proximaAula = idxAtual < aulas.length - 1 ? aulas[idxAtual + 1] : null;
-
-  const playerHtml = `
-    <div class="cap-player-wrap" id="cap-player-overlay">
-      <div class="cap-player-left" style="flex:1;min-width:0;">
-        <div class="cap-player-header">
-          <div class="cap-back" onclick="document.getElementById('cap-player-overlay').remove()">
-            <div class="cap-back-tri"></div>
-          </div>
-          <div class="cap-player-modtitle">Módulo ${String(modulos.indexOf(modAtual)+1).padStart(2,'0')} · ${s(modAtual.title)}</div>
-        </div>
-
-        <div class="cap-video-wrap" id="cap-video-wrap-${aulaId}">
-          <div class="cap-video-inner" id="cap-video-inner-${aulaId}">
-            ${aulaAtual.cover_url || modAtual.cover_url ? `
-              <div id="yt-poster-${aulaId}" data-aula="${aulaId}" role="button" tabindex="0"
-                onclick="_loadYTPlayer(this.dataset.aula)"
-                style="position:absolute;inset:0;cursor:pointer;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden;-webkit-tap-highlight-color:transparent;touch-action:manipulation;">
-                <img src="${s(aulaAtual.cover_url||modAtual.cover_url||'')}" style="width:100%;height:100%;object-fit:cover;opacity:.85;"/>
-                <div style="position:absolute;width:64px;height:64px;border-radius:50%;background:rgba(61,14,32,.85);border:2px solid rgba(200,169,110,.6);display:flex;align-items:center;justify-content:center;">
-                  <div style="width:0;height:0;border-top:10px solid transparent;border-bottom:10px solid transparent;border-left:18px solid #C8A96E;margin-left:4px;"></div>
-                </div>
-              </div>
-            ` : `
-              <div id="yt-poster-${aulaId}" data-aula="${aulaId}" role="button" tabindex="0"
-                onclick="_loadYTPlayer(this.dataset.aula)"
-                style="position:absolute;inset:0;cursor:pointer;background:#0d0508;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;touch-action:manipulation;">
-                <div style="width:64px;height:64px;border-radius:50%;background:rgba(61,14,32,.85);border:2px solid rgba(200,169,110,.6);display:flex;align-items:center;justify-content:center;">
-                  <div style="width:0;height:0;border-top:10px solid transparent;border-bottom:10px solid transparent;border-left:18px solid #C8A96E;margin-left:4px;"></div>
-                </div>
-              </div>
-            `}
-          </div>
-        </div>
-        <div class="cap-video-prog"><div class="cap-video-pfill"></div></div>
-
-        <div class="cap-aula-detail">
-          <div class="cap-aula-detail-mod">Módulo ${modulos.indexOf(modAtual)+1} · Aula ${idxAtual+1}</div>
-          <div class="cap-aula-detail-title">${s(aulaAtual.title)}</div>
-          ${aulaAtual.description ? `<p style="font-size:12px;color:#8B6050;margin-bottom:10px;line-height:1.6">${s(aulaAtual.description)}</p>` : ''}
-          <div class="cap-aula-actions">
-            ${!feita ? `
-              <button class="cap-aula-action" onclick="_marcarConcluida('${aulaAtual.id}')">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                Marcar como concluída
-              </button>
-            ` : `
-              <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:#5A8A5A;">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                Concluída
-              </span>
-            `}
-            ${proximaAula ? `
-              <button class="cap-aula-action" onclick="_abrirPlayer('${proximaAula.id}')">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-                Próxima aula
-              </button>
-            ` : ''}
-          </div>
+  modal.innerHTML = `
+    <div style="background:#F5EFE6;border-radius:22px 22px 0 0;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;position:relative">
+      <!-- Capa do sub-módulo -->
+      <div style="width:100%;aspect-ratio:16/7;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A)">
+        ${submod.cover_url ? `<img src="${s(submod.cover_url)}" style="width:100%;height:100%;object-fit:cover;display:block"/>` : '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" stroke-width="1.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>'}
+        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.8) 0%,transparent 50%)"></div>
+        <button onclick="_fecharSubmodulo()" style="position:absolute;top:12px;right:12px;background:rgba(26,10,18,.6);border:.5px solid rgba(255,255,255,.2);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:16px;line-height:1">✕</button>
+        <div style="position:absolute;bottom:14px;left:16px">
+          <div style="font-size:20px;font-weight:800;color:#fff">${s(submod.title)}</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px">${aulas.length} aulas · ${concl} concluída${concl!==1?'s':''}</div>
         </div>
       </div>
 
-      <div class="cap-player-right">
-        <div class="cap-playlist" style="padding:0 14px;">
-          <div class="cap-playlist-title">Aulas do módulo</div>
-          ${playlistHtml}
+      <!-- Botão começar -->
+      ${aulas.length > 0 ? `
+        <div style="padding:14px 16px 0">
+          <button onclick="_abrirAulaVideo('${aulas[0].id}','${s(aulas[0].video_url||'')}','${s(aulas[0].title)}')" style="width:100%;padding:14px;background:#3D0E20;color:#C8A96E;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#C8A96E"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            ${concl > 0 ? 'Continuar módulo' : 'Começar módulo'}
+            <span style="font-size:11px;opacity:.7;font-weight:400">${s(aulas[concl < aulas.length ? concl : 0]?.title||'')}</span>
+          </button>
         </div>
+      ` : ''}
+
+      <!-- Lista de aulas -->
+      <div style="padding:16px">
+        <div style="font-size:11px;font-weight:700;color:#8B6050;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">AULAS</div>
+        ${aulas.map((aula, idx) => {
+          const durMin = aula.duration_seconds ? Math.ceil(aula.duration_seconds/60) : null;
+          const concluida = concluidas.has(aula.id);
+          return `
+            <div onclick="_abrirAulaVideo('${aula.id}','${s(aula.video_url||'')}','${s(aula.title)}')" style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:.5px solid #E8D9C5;cursor:pointer" onmouseenter="this.style.opacity='.7'" onmouseleave="this.style.opacity='1'">
+              <!-- Thumb -->
+              <div style="width:72px;height:46px;border-radius:8px;flex-shrink:0;overflow:hidden;position:relative;background:linear-gradient(135deg,#3D0E20,#6B1A3A);display:flex;align-items:center;justify-content:center">
+                ${aula.cover_url ? `<img src="${s(aula.cover_url)}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"/>` : ''}
+                <div style="position:relative;z-index:1;width:22px;height:22px;border-radius:50%;background:${concluida?'#22C55E':'rgba(200,169,110,.9)'};display:flex;align-items:center;justify-content:center">
+                  ${concluida ? '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' : '<div style="width:0;height:0;border-top:3.5px solid transparent;border-bottom:3.5px solid transparent;border-left:6px solid #3D0E20;margin-left:1px"></div>'}
+                </div>
+              </div>
+              <!-- Info -->
+              <div style="flex:1;min-width:0">
+                <div style="font-size:11px;font-weight:600;color:#C8A96E;margin-bottom:1px">0${idx+1}</div>
+                <div style="font-size:13px;font-weight:600;color:#2C1018;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s(aula.title)}</div>
+                ${durMin ? `<div style="font-size:10px;color:#8B6050;margin-top:1px">${durMin} min</div>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('')}
       </div>
     </div>
   `;
 
-  // Remove player anterior se existir
-  const old = document.getElementById('cap-player-overlay');
-  if (old) old.remove();
-
-  document.body.insertAdjacentHTML('beforeend', playerHtml);
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
 }
+
+function _fecharSubmodulo() {
+  const modal = document.getElementById('modal-submodulo');
+  if (modal) { modal.style.display = 'none'; document.body.style.overflow = ''; }
+}
+
 
 async function _marcarConcluida(lessonId) {
   const { error } = await _supabase

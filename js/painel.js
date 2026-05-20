@@ -261,7 +261,7 @@ async function renderInicio() {
   `;
 
   // Capacitação — cards com capa do módulo + % conclusão
-  const capModulosVisiveis = (modulos||[]).slice(0,3);
+  const capModulosVisiveis = (modulos||[]).slice(0,2);
   const capHTML = capModulosVisiveis.length > 0 ? (() => {
     const cardsHTML = capModulosVisiveis.map((mod, mi) => {
       const aulasDoMod = (mod.lessons||[]);

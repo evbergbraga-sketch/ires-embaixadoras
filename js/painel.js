@@ -1975,22 +1975,26 @@ async function _abrirPaginaSubmodulos(moduloId) {
       Capacitação
     </button>
     <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;margin-bottom:10px">${s(mod.title)}</div>
-    <div class="cap-grid" id="cap-grid-subs">
+    <div class="cap-scroll-row" id="cap-grid-subs" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">
   `;
 
   subs.forEach((sub, si) => {
     const aulasDoSub = (sub.lessons||[]).sort((a,b)=>(a.order||0)-(b.order||0));
     const concl  = aulasDoSub.filter(a => concluidas.has(a.id)).length;
     const pctSub = aulasDoSub.length ? Math.round((concl/aulasDoSub.length)*100) : 0;
+    const thumb  = sub.cover_url || '';
 
     html += `
-      <div class="cap-card" onclick="_abrirModalSubmodulo('${sub.id}')">
-        <div class="cap-cover" id="cov-sub-${sub.id}" style="height:0">
-          ${sub.cover_url ? `<img src="${s(sub.cover_url)}" loading="lazy"/>` : ''}
-          <div class="cap-badge">${String(si+1).padStart(2,'0')}</div>
-          <div style="position:absolute;bottom:8px;left:10px;font-size:10px;color:rgba(200,169,110,.8)">${aulasDoSub.length} aula${aulasDoSub.length!==1?'s':''}</div>
+      <div class="cap-mod-card" onclick="_abrirModalSubmodulo('${sub.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;flex-shrink:0;">
+        <div class="cap-mod-cover-inner" style="width:100%;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);height:0;padding-bottom:0;" id="cover-sub-${sub.id}">
+          ${thumb ? `<img src="${s(thumb)}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>` : ''}
+          <div class="cap-mod-badge">${String(si+1).padStart(2,'0')}</div>
+          <div style="position:absolute;bottom:0;left:0;right:0;padding:10px;">
+            <div style="font-size:10px;color:rgba(200,169,110,.8);">${aulasDoSub.length} aula${aulasDoSub.length!==1?'s':''}</div>
+          </div>
+          <div class="cap-mod-play" style="top:50%;left:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);opacity:.95;"><svg class="cap-mod-play-tri" viewBox="0 0 16 16" aria-hidden="true"><polygon points="5,3 13,8 5,13"></polygon></svg></div>
         </div>
-        <div class="cap-prog"><div class="cap-pfill" style="width:${pctSub}%"></div></div>
+        <div class="cap-mod-prog" style="margin:0;border-radius:0;"><div class="cap-mod-pfill" style="width:${pctSub}%"></div></div>
       </div>`;
   });
 
@@ -1999,9 +2003,9 @@ async function _abrirPaginaSubmodulos(moduloId) {
 
   // Altura dinâmica igual aos módulos
   const _setH = () => {
-    document.querySelectorAll('#cap-grid-subs .cap-cover').forEach(cv => {
-      const w = cv.offsetWidth;
-      if (w > 0) cv.style.height = Math.round(w * (window.innerWidth >= 768 ? 1.5 : 2.0)) + 'px';
+    document.querySelectorAll('#cap-grid-subs .cap-mod-cover-inner').forEach(el => {
+      const w = el.offsetWidth;
+      if (w > 0) el.style.height = Math.round(w * (window.innerWidth >= 768 ? 1.5 : 2.0)) + 'px';
     });
   };
   requestAnimationFrame(() => { _setH(); setTimeout(_setH, 100); });

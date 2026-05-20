@@ -1837,7 +1837,8 @@ async function renderCapacitacao() {
         .cap-mod-card { width:100% !important; }
         .cap-mod-cover { height:auto !important;aspect-ratio:3/4 !important; }
         .cap-dots { display:none; }
-        .cap-player-wrap { position:relative;flex-direction:row;align-items:flex-start;max-width:1500px;margin:0 auto; }
+        .cap-player-wrap { position:fixed;inset:0;flex-direction:row;align-items:flex-start;overflow-y:auto; }
+        .cap-player-inner { display:flex;flex-direction:row;width:100%;min-height:100vh; }
         .cap-player-left { flex:1;min-width:0;max-width:980px; }
         .cap-player-right { width:560px;flex-shrink:0;border-left:.5px solid #E8D9C5;background:#fff;max-height:600px;overflow-y:auto; }
       }
@@ -2558,8 +2559,6 @@ function _abrirPlayer(aulaId) {
   document.body.insertAdjacentHTML('beforeend', playerHtml);
   // Bloqueia scroll e esconde navbar para fullscreen real
   document.body.style.overflow = 'hidden';
-  document.body.style.position = 'fixed';
-  document.body.style.width = '100%';
   const navbar = document.getElementById('navbar') || document.querySelector('nav') || document.querySelector('.navbar');
   if (navbar) navbar.style.display = 'none';
 }
@@ -2570,8 +2569,6 @@ function _fecharPlayer() {
   if (overlay) overlay.remove();
   // Restaura scroll e navbar
   document.body.style.overflow = '';
-  document.body.style.position = '';
-  document.body.style.width = '';
   const navbar = document.getElementById('navbar') || document.querySelector('nav') || document.querySelector('.navbar');
   if (navbar) navbar.style.display = '';
 }

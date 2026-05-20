@@ -1872,15 +1872,13 @@ function _abrirSubmodulo(submoduloId) {
 
   modal.innerHTML = `
     <div style="background:#F5EFE6;border-radius:22px 22px 0 0;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;position:relative">
-      <!-- Capa do sub-módulo -->
-      <div style="width:100%;aspect-ratio:16/7;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A)">
-        ${submod.cover_url ? `<img src="${s(submod.cover_url)}" style="width:100%;height:100%;object-fit:cover;display:block"/>` : '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#C8A96E" stroke-width="1.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>'}
-        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(26,10,18,.8) 0%,transparent 50%)"></div>
-        <button onclick="_fecharSubmodulo()" style="position:absolute;top:12px;right:12px;background:rgba(26,10,18,.6);border:.5px solid rgba(255,255,255,.2);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:16px;line-height:1">✕</button>
-        <div style="position:absolute;bottom:14px;left:16px">
-          <div style="font-size:20px;font-weight:800;color:#fff">${s(submod.title)}</div>
-          <div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px">${aulas.length} aulas · ${concl} concluída${concl!==1?'s':''}</div>
+      <!-- Header sem capa -->
+      <div style="padding:16px 16px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:.5px solid #E8D9C5">
+        <div>
+          <div style="font-size:16px;font-weight:800;color:#2C1018">${s(submod.title)}</div>
+          <div style="font-size:12px;color:#8B6050;margin-top:2px">${aulas.length} aulas · ${concl} concluída${concl!==1?'s':''}</div>
         </div>
+        <button onclick="_fecharSubmodulo()" style="background:rgba(61,14,32,.08);border:none;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#3D0E20;font-size:16px;line-height:1;flex-shrink:0">✕</button>
       </div>
 
       <!-- Botão começar -->
@@ -1931,6 +1929,170 @@ function _fecharSubmodulo() {
   if (modal) { modal.style.display = 'none'; document.body.style.overflow = ''; }
 }
 
+
+// ─────────────────────────────────────────
+// VIDEO PLAYER + FUNÇÕES AUXILIARES
+// ─────────────────────────────────────────
+function _youtubeEmbedUrl(url) {
+  if (!url) return '';
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/);
+  if (match) return `https://www.youtube-nocookie.com/embed/${match[1]}?rel=0&modestbranding=1&controls=1&showinfo=0&iv_load_policy=3&cc_load_policy=0`;
+  return url;
+}
+
+function _loadYTPlayer(aulaId) {
+  const inner    = document.getElementById('cap-video-inner-' + aulaId);
+  const embedUrl = (window._ytEmbedUrls || {})[aulaId];
+  if (!inner || !embedUrl) return;
+  const poster = document.getElementById('yt-poster-' + aulaId);
+  if (poster) poster.remove();
+  const vidMatch = embedUrl.match(/embed\/([a-zA-Z0-9_-]{11})/);
+  if (!vidMatch) return;
+  const vidId = vidMatch[1];
+  inner.innerHTML = '<div id="yt-player-' + aulaId + '"></div>';
+  if (window.YT && window.YT.Player) {
+    new window.YT.Player('yt-player-' + aulaId, {
+      videoId: vidId,
+      playerVars: { autoplay:1, rel:0, modestbranding:1, playsinline:1, controls:1 },
+      host: 'https://www.youtube-nocookie.com',
+      events: { onReady: e => e.target.playVideo() }
+    });
+  } else {
+    window._ytPendingPlayers = window._ytPendingPlayers || [];
+    window._ytPendingPlayers.push({ aulaId, vidId });
+    if (!document.getElementById('yt-api-script')) {
+      window.onYouTubeIframeAPIReady = function() {
+        (window._ytPendingPlayers || []).forEach(({ aulaId: aid, vidId: vid }) => {
+          const el = document.getElementById('yt-player-' + aid);
+          if (!el) return;
+          new window.YT.Player('yt-player-' + aid, {
+            videoId: vid,
+            playerVars: { autoplay:1, rel:0, modestbranding:1, playsinline:1, controls:1 },
+            host: 'https://www.youtube-nocookie.com',
+            events: { onReady: e => e.target.playVideo() }
+          });
+        });
+        window._ytPendingPlayers = [];
+      };
+      const sc = document.createElement('script');
+      sc.id = 'yt-api-script';
+      sc.src = 'https://www.youtube.com/iframe_api';
+      document.head.appendChild(sc);
+    }
+  }
+}
+
+// _abrirAulaVideo — chamado pelos cards de sub-módulo e aulas diretas
+// Busca a aula no cache de sub-módulos ou módulos e abre o player
+function _abrirAulaVideo(aulaId, videoUrl, titulo) {
+  // Tenta achar a aula nos sub-módulos em cache
+  const submodulos = window._capSubmodulos || [];
+  for (const sub of submodulos) {
+    const found = (sub.lessons || []).find(a => a.id === aulaId);
+    if (found) {
+      _abrirPlayerSubmod(aulaId, sub);
+      return;
+    }
+  }
+  // Tenta nos módulos diretos
+  _abrirPlayer(aulaId);
+}
+
+// Player para aulas de sub-módulo (busca aulas do sub-módulo)
+function _abrirPlayerSubmod(aulaId, submodulo) {
+  const concluidas = window._capConcluidas || new Set();
+  const aulas = (submodulo.lessons || []).sort((a, b) => (a.order||0) - (b.order||0));
+  const aulaAtual = aulas.find(a => a.id === aulaId);
+  if (!aulaAtual) return;
+
+  const idxAtual = aulas.findIndex(a => a.id === aulaId);
+  const feita    = concluidas.has(aulaId);
+  const proximaAula = idxAtual < aulas.length - 1 ? aulas[idxAtual + 1] : null;
+
+  const embedUrl = _youtubeEmbedUrl(aulaAtual.video_url);
+  window._ytEmbedUrls = window._ytEmbedUrls || {};
+  window._ytEmbedUrls[aulaId] = embedUrl;
+
+  const playlistHtml = aulas.map((a, i) => {
+    const aFeita = concluidas.has(a.id);
+    const isNow  = a.id === aulaId;
+    const thumb  = a.cover_url || '';
+    return `
+      <div class="cap-pl-item" onclick="_abrirPlayerSubmod('${a.id}',window._capSubmodulos.find(s=>s.id==='${submodulo.id}'))">
+        <div class="cap-pl-num" style="${isNow?'color:#C8A96E;font-weight:700;':''}">${isNow ? '▶' : i+1}</div>
+        <div class="cap-pl-thumb">
+          ${thumb ? `<img src="${s(thumb)}" loading="lazy"/>` : `<div style="width:100%;height:100%;background:linear-gradient(135deg,#3D0E20,#6B1A3A)"></div>`}
+        </div>
+        <div class="cap-pl-info">
+          <div class="cap-pl-title" style="${isNow?'color:#C8A96E;':''}">${s(a.title)}</div>
+          <div class="cap-pl-meta">${a.duration_seconds ? Math.ceil(a.duration_seconds/60)+' min' : ''}</div>
+        </div>
+        <div class="cap-pl-check" style="${aFeita?'background:rgba(200,169,110,.15);border:1px solid #C8A96E;color:#C8A96E;font-size:9px;':'border:1px solid #E8D9C5;'}">${aFeita?'✓':''}</div>
+      </div>
+    `;
+  }).join('');
+
+  const playerHtml = `
+    <div class="cap-player-wrap" id="cap-player-overlay">
+      <div class="cap-player-left" style="flex:1;min-width:0;">
+        <div class="cap-player-header">
+          <div class="cap-back" onclick="document.getElementById('cap-player-overlay').remove()">
+            <div class="cap-back-tri"></div>
+          </div>
+          <div class="cap-player-modtitle">${s(submodulo.title)}</div>
+        </div>
+        <div class="cap-video-wrap" id="cap-video-wrap-${aulaId}">
+          <div class="cap-video-inner" id="cap-video-inner-${aulaId}">
+            <div id="yt-poster-${aulaId}" data-aula="${aulaId}" role="button" tabindex="0"
+              onclick="_loadYTPlayer(this.dataset.aula)"
+              style="position:absolute;inset:0;cursor:pointer;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden;-webkit-tap-highlight-color:transparent;touch-action:manipulation;">
+              ${aulaAtual.cover_url ? `<img src="${s(aulaAtual.cover_url)}" style="width:100%;height:100%;object-fit:cover;opacity:.85;"/>` : ''}
+              <div style="position:absolute;width:64px;height:64px;border-radius:50%;background:rgba(61,14,32,.85);border:2px solid rgba(200,169,110,.6);display:flex;align-items:center;justify-content:center;">
+                <div style="width:0;height:0;border-top:10px solid transparent;border-bottom:10px solid transparent;border-left:18px solid #C8A96E;margin-left:4px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="cap-video-prog"><div class="cap-video-pfill"></div></div>
+        <div class="cap-aula-detail">
+          <div class="cap-aula-detail-mod">Aula ${idxAtual+1} de ${aulas.length}</div>
+          <div class="cap-aula-detail-title">${s(aulaAtual.title)}</div>
+          <div class="cap-aula-actions">
+            ${!feita ? `<button class="cap-aula-action" onclick="_marcarConcluidaSubmod('${aulaId}','${submodulo.id}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              Marcar como concluída
+            </button>` : `<span style="display:flex;align-items:center;gap:4px;font-size:11px;color:#5A8A5A;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Concluída</span>`}
+            ${proximaAula ? `<button class="cap-aula-action" onclick="_abrirPlayerSubmod('${proximaAula.id}',window._capSubmodulos.find(s=>s.id==='${submodulo.id}'))">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>Próxima aula
+            </button>` : ''}
+          </div>
+        </div>
+      </div>
+      <div class="cap-player-right">
+        <div class="cap-playlist" style="padding:0 14px;">
+          <div class="cap-playlist-title">Aulas do módulo</div>
+          ${playlistHtml}
+        </div>
+      </div>
+    </div>
+  `;
+
+  const old = document.getElementById('cap-player-overlay');
+  if (old) old.remove();
+  document.body.insertAdjacentHTML('beforeend', playerHtml);
+}
+
+async function _marcarConcluidaSubmod(lessonId, submoduloId) {
+  const { error } = await _supabase
+    .from('lesson_progress')
+    .upsert({ reseller_id: _perfil.id, lesson_id: lessonId }, { onConflict: 'reseller_id,lesson_id' });
+  if (error) { showToast('Erro ao salvar progresso.', 'error'); return; }
+  showToast('Aula concluída! 🎉', 'success');
+  if (window._capConcluidas) window._capConcluidas.add(lessonId);
+  const sub = (window._capSubmodulos||[]).find(s => s.id === submoduloId);
+  if (sub) _abrirPlayerSubmod(lessonId, sub);
+}
 
 async function _marcarConcluida(lessonId) {
   const { error } = await _supabase

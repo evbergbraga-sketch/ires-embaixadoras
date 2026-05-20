@@ -417,13 +417,13 @@ async function renderPedidos() {
       </div>
     </div>
 
-    <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
-      <div class="filter-pill active" onclick="filtrarPedidos(this,'')">Todos</div>
-      <div class="filter-pill" onclick="filtrarPedidos(this,'pending')">Pendente</div>
-      <div class="filter-pill" onclick="filtrarPedidos(this,'paid')">Pago</div>
-      <div class="filter-pill" onclick="filtrarPedidos(this,'processing')">Em processo</div>
-      <div class="filter-pill" onclick="filtrarPedidos(this,'shipped')">Enviado</div>
-      <div class="filter-pill" onclick="filtrarPedidos(this,'delivered')">Entregue</div>
+    <div style="display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px">
+      <div class="filter-pill active" onclick="filtrarPedidos(this,'')" style="flex-shrink:0">Todos</div>
+      <div class="filter-pill" onclick="filtrarPedidos(this,'pending')" style="flex-shrink:0">Pendente</div>
+      <div class="filter-pill" onclick="filtrarPedidos(this,'paid')" style="flex-shrink:0">Pago</div>
+      <div class="filter-pill" onclick="filtrarPedidos(this,'processing')" style="flex-shrink:0">Em processo</div>
+      <div class="filter-pill" onclick="filtrarPedidos(this,'shipped')" style="flex-shrink:0">Enviado</div>
+      <div class="filter-pill" onclick="filtrarPedidos(this,'delivered')" style="flex-shrink:0">Entregue</div>
     </div>
 
     <div id="loading-pedidos" class="loading"><div class="spinner"></div> Carregando...</div>
@@ -1477,12 +1477,12 @@ async function renderCriativos() {
       </div>
     </div>
 
-    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
-      <div class="filter-pill active" onclick="filtrarCriativos(this,'')">Todos</div>
-      <div class="filter-pill" onclick="filtrarCriativos(this,'story')">Story</div>
-      <div class="filter-pill" onclick="filtrarCriativos(this,'feed')">Feed</div>
-      <div class="filter-pill" onclick="filtrarCriativos(this,'reels')">Reels</div>
-      <div class="filter-pill" onclick="filtrarCriativos(this,'outro')">Outros</div>
+    <div style="display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px">
+      <div class="filter-pill active" onclick="filtrarCriativos(this,'')" style="flex-shrink:0">Todos</div>
+      <div class="filter-pill" onclick="filtrarCriativos(this,'story')" style="flex-shrink:0">Story</div>
+      <div class="filter-pill" onclick="filtrarCriativos(this,'feed')" style="flex-shrink:0">Feed</div>
+      <div class="filter-pill" onclick="filtrarCriativos(this,'reels')" style="flex-shrink:0">Reels</div>
+      <div class="filter-pill" onclick="filtrarCriativos(this,'outro')" style="flex-shrink:0">Outros</div>
     </div>
 
     <div id="loading-criativos" class="loading"><div class="spinner"></div> Carregando...</div>

@@ -1488,24 +1488,19 @@ async function renderCriativos() {
     <div id="loading-criativos" class="loading"><div class="spinner"></div> Carregando...</div>
     <div id="grid-criativos" style="display:none;grid-template-columns:repeat(2,1fr);gap:12px"></div>
     <style>
-      /* Mobile: 2 colunas, proporção real do formato */
+      /* Sempre usa aspect-ratio — sem espaço branco nunca */
       #grid-criativos { grid-template-columns:repeat(2,1fr); gap:12px; }
       #grid-criativos .criativo-thumb { aspect-ratio:9/16; }
-      /* Tablet: 3 colunas, altura fixa para alinhar */
+      #grid-criativos .criativo-thumb.feed { aspect-ratio:1/1; }
       @media(min-width:600px){
         #grid-criativos { grid-template-columns:repeat(3,1fr); gap:14px; }
-        #grid-criativos .criativo-thumb { aspect-ratio:unset; height:220px; }
       }
-      /* Desktop: 4 colunas, altura fixa compacta */
       @media(min-width:900px){
         #grid-criativos { grid-template-columns:repeat(4,1fr); gap:16px; }
-        #grid-criativos .criativo-thumb { height:200px; }
       }
       @media(min-width:1200px){
         #grid-criativos { grid-template-columns:repeat(5,1fr); }
-        #grid-criativos .criativo-thumb { height:180px; }
       }
-      /* Garante que imagem cobre sem distorcer */
       #grid-criativos .criativo-thumb img { width:100%;height:100%;object-fit:cover;display:block; }
     </style>
     <div id="empty-criativos" style="display:none" class="empty-state">
@@ -1560,7 +1555,7 @@ function _renderGridCriativos(lista) {
         onmouseout="this.style.borderColor='var(--nb-border-s)'">
 
         <!-- Thumb: aspect-ratio por formato -->
-        <div class="criativo-thumb" style="position:relative;aspect-ratio:${c.format==='story'||c.format==='reels'?'9/16':'1/1'};background:var(--nb-inset);overflow:hidden;cursor:pointer"
+        <div class="criativo-thumb${c.format==='feed'||c.format==='outro'?' feed':''}" style="position:relative;background:var(--nb-inset);overflow:hidden;cursor:pointer"
           onclick="_abrirPreviewCriativo('${c.id}')">
           ${thumb
             ? `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s"

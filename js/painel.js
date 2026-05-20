@@ -1915,15 +1915,41 @@ function _abrirModuloModal(moduloId) {
   const mod        = modulos.find(m => m.id === moduloId);
   if (!mod) return;
 
-  const aulas      = (mod.lessons||[]).sort((a,b)=>a.order-b.order);
-  const mi         = modulos.indexOf(mod);
   const modalThumb = mod.modal_cover_url || mod.cover_url || '';
-  const modConc    = aulas.filter(a=>concluidas.has(a.id)).length;
-  const pctMod     = aulas.length ? Math.round((modConc/aulas.length)*100) : 0;
+  const mi         = modulos.indexOf(mod);
   const meuNivel   = _perfil.nivel || 'iniciante';
   const ORDEM_NIVEL = { bronze:0, prata:1, ouro:2 };
   function nivelLiberado(n) { return ORDEM_NIVEL[meuNivel] >= ORDEM_NIVEL[n||'bronze']; }
-  const proximaAula = aulas.find(a => !concluidas.has(a.id) && nivelLiberado(a.nivel)) || aulas[0];
+
+  // Verifica se tem sub-módulos em cache para este módulo
+  const subsCached = (window._submodulosCache || {})[moduloId];
+
+  if (subsCached !== undefined) {
+    // Já tem cache — renderiza direto
+    _renderModuloModalContent(mod, subsCached, concluidas, modalThumb, nivelLiberado);
+    return;
+  }
+
+  // Busca sub-módulos no Supabase
+  _supabase.from('submodules')
+    .select('id,title,description,cover_url,"order",lessons(id,title,duration_seconds,"order",cover_url,video_url,nivel,description)')
+    .eq('module_id', moduloId).eq('is_active', true).order('"order"', { ascending: true })
+    .then(({ data: subs }) => {
+      window._submodulosCache = window._submodulosCache || {};
+      window._submodulosCache[moduloId] = subs || [];
+      // Salva aulas de sub-módulos no cache global para o player
+      window._capSubmodulos = (window._capSubmodulos || []).filter(s => s.module_id !== moduloId);
+      (subs||[]).forEach(s => { s.module_id = moduloId; window._capSubmodulos.push(s); });
+      _renderModuloModalContent(mod, subs || [], concluidas, modalThumb, nivelLiberado);
+    });
+}
+
+function _renderModuloModalContent(mod, submodulos, concluidas, modalThumb, nivelLiberado) {
+  const temSubs = submodulos.length > 0;
+  const aulas   = (mod.lessons||[]).sort((a,b)=>a.order-b.order);
+  const meuNivel = _perfil.nivel || 'iniciante';
+  const ORDEM_NIVEL = { bronze:0, prata:1, ouro:2 };
+  if (!nivelLiberado) nivelLiberado = n => (ORDEM_NIVEL[meuNivel]||0) >= (ORDEM_NIVEL[n||'bronze']||0);
 
   // Criar overlay modal
   const overlay = document.createElement('div');
@@ -1931,7 +1957,40 @@ function _abrirModuloModal(moduloId) {
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:16px;';
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
 
-  const aulasHTML = aulas.map(aula => {
+  // HTML dos sub-módulos (se existirem)
+  const subsHTML = temSubs ? submodulos.map((sub, si) => {
+    const aulasDoSub = (sub.lessons||[]).sort((a,b)=>(a.order||0)-(b.order||0));
+    const concl = aulasDoSub.filter(a=>concluidas.has(a.id)).length;
+    const pct   = aulasDoSub.length ? Math.round((concl/aulasDoSub.length)*100) : 0;
+    return `
+      <div style="margin-bottom:12px">
+        <!-- Header sub-módulo -->
+        <div style="font-size:10px;font-weight:700;color:#8B6050;text-transform:uppercase;letter-spacing:.05em;padding:8px 0 6px;border-bottom:.5px solid #F0EAE2;margin-bottom:4px">${s(sub.title)}</div>
+        <!-- Aulas do sub-módulo -->
+        ${aulasDoSub.map((aula, ai) => {
+          const feita   = concluidas.has(aula.id);
+          const durMin  = aula.duration_seconds ? Math.ceil(aula.duration_seconds/60) : null;
+          const thumb   = aula.cover_url || sub.cover_url || '';
+          return `
+            <div onclick="_abrirPlayer('${aula.id}');document.getElementById('mod-modal-overlay')?.remove()"
+              style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:.5px solid #F0EAE2;cursor:pointer">
+              <div style="width:68px;height:44px;border-radius:8px;overflow:hidden;position:relative;flex-shrink:0;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
+                ${thumb ? `<img src="${s(thumb)}" style="width:100%;height:100%;object-fit:cover;" loading="lazy"/>` : ''}
+                <div style="position:absolute;bottom:3px;right:3px;width:16px;height:16px;border-radius:50%;background:rgba(200,169,110,.9);display:flex;align-items:center;justify-content:center;">
+                  <div style="width:0;height:0;border-top:3px solid transparent;border-bottom:3px solid transparent;border-left:5px solid #3D0E20;margin-left:1px;"></div>
+                </div>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:12px;font-weight:600;color:#2C1018;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s(aula.title)}</div>
+                <div style="font-size:10px;color:#8B6050;margin-top:1px;">${durMin?durMin+' min':''}</div>
+              </div>
+              ${feita ? `<div style="width:18px;height:18px;border-radius:50%;background:rgba(200,169,110,.15);border:1px solid #C8A96E;display:flex;align-items:center;justify-content:center;font-size:9px;color:#C8A96E;flex-shrink:0;">✓</div>` : ''}
+            </div>`;
+        }).join('')}
+      </div>`;
+  }).join('') : '';
+
+  const aulasHTML = !temSubs ? aulas.map(aula => {
     const feita    = concluidas.has(aula.id);
     const liberada = nivelLiberado(aula.nivel);
     const durMin   = aula.duration_seconds ? Math.ceil(aula.duration_seconds/60) : null;
@@ -1976,8 +2035,8 @@ function _abrirModuloModal(moduloId) {
             <div style="font-size:10px;color:rgba(200,169,110,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s(proximaAula.title)}</div>
           </div>
         </div>` : ''}
-        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;margin-bottom:8px;">Aulas</div>
-        ${aulasHTML}
+        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;margin-bottom:8px;">${temSubs ? "Módulos" : "Aulas"}</div>
+        ${temSubs ? subsHTML : aulasHTML}
       </div>
     </div>
   `;
@@ -2012,8 +2071,11 @@ function _abrirModulo(moduloId) {
   const modConc = aulas.filter(a=>concluidas.has(a.id)).length;
   const pctMod  = aulas.length ? Math.round((modConc/aulas.length)*100) : 0;
 
-  // Primeira aula não concluída (para o botão "Continuar")
-  const proximaAula = aulas.find(a => !concluidas.has(a.id) && nivelLiberado(a.nivel)) || aulas[0];
+  // Primeira aula não concluída (usa sub-módulos se existirem)
+  const todasAulasModal = temSubs
+    ? submodulos.flatMap(s=>(s.lessons||[]).sort((a,b)=>(a.order||0)-(b.order||0)))
+    : aulas;
+  const proximaAula = todasAulasModal.find(a => !concluidas.has(a.id)) || todasAulasModal[0];
 
   let html = `
     <!-- Hero do módulo com capa contida -->
@@ -2086,6 +2148,49 @@ function _abrirModulo(moduloId) {
 
 
 
+function _loadYTPlayer(aulaId) {
+  const inner    = document.getElementById('cap-video-inner-' + aulaId);
+  const embedUrl = (window._ytEmbedUrls || {})[aulaId];
+  if (!inner || !embedUrl) return;
+  const poster = document.getElementById('yt-poster-' + aulaId);
+  if (poster) poster.remove();
+  const vidMatch = embedUrl.match(/embed\/([a-zA-Z0-9_-]{11})/);
+  if (!vidMatch) return;
+  const vidId = vidMatch[1];
+  inner.innerHTML = '<div id="yt-player-' + aulaId + '"></div>';
+  if (window.YT && window.YT.Player) {
+    new window.YT.Player('yt-player-' + aulaId, {
+      videoId: vidId,
+      playerVars: { autoplay:1, rel:0, modestbranding:1, playsinline:1, controls:1 },
+      host: 'https://www.youtube-nocookie.com',
+      events: { onReady: e => e.target.playVideo() }
+    });
+  } else {
+    window._ytPendingPlayers = window._ytPendingPlayers || [];
+    window._ytPendingPlayers.push({ aulaId, vidId });
+    if (!document.getElementById('yt-api-script')) {
+      window.onYouTubeIframeAPIReady = function() {
+        (window._ytPendingPlayers || []).forEach(({ aulaId: aid, vidId: vid }) => {
+          const el = document.getElementById('yt-player-' + aid);
+          if (!el) return;
+          new window.YT.Player('yt-player-' + aid, {
+            videoId: vid,
+            playerVars: { autoplay:1, rel:0, modestbranding:1, playsinline:1, controls:1 },
+            host: 'https://www.youtube-nocookie.com',
+            events: { onReady: e => e.target.playVideo() }
+          });
+        });
+        window._ytPendingPlayers = [];
+      };
+      const sc = document.createElement('script');
+      sc.id = 'yt-api-script';
+      sc.src = 'https://www.youtube.com/iframe_api';
+      document.head.appendChild(sc);
+    }
+  }
+}
+
+
 function _youtubeEmbedUrl(url) {
   if (!url) return '';
   const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/);
@@ -2099,11 +2204,31 @@ function _abrirPlayer(aulaId) {
 
   let aulaAtual = null;
   let modAtual  = null;
+  let aulasLista = null; // lista de aulas para a playlist (pode ser do sub-módulo)
+  let contextoLabel = ''; // label para o header
 
+  // 1. Tenta encontrar nos módulos diretos
   for (const mod of modulos) {
     const found = (mod.lessons || []).find(a => a.id === aulaId);
     if (found) { aulaAtual = found; modAtual = mod; break; }
   }
+
+  // 2. Se não achou, tenta nos sub-módulos em cache
+  if (!aulaAtual) {
+    const subs = window._capSubmodulos || [];
+    for (const sub of subs) {
+      const found = (sub.lessons || []).find(a => a.id === aulaId);
+      if (found) {
+        aulaAtual = found;
+        aulasLista = (sub.lessons || []).sort((a,b)=>(a.order||0)-(b.order||0));
+        contextoLabel = sub.title;
+        // Cria modAtual fake para compatibilidade
+        modAtual = { id: sub.id, title: sub.title, cover_url: sub.cover_url || '', lessons: sub.lessons };
+        break;
+      }
+    }
+  }
+
   if (!aulaAtual) return;
 
   const aulas     = (modAtual.lessons || []).sort((a, b) => a.order - b.order);

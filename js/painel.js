@@ -1486,7 +1486,7 @@ async function renderCriativos() {
     </div>
 
     <div id="loading-criativos" class="loading"><div class="spinner"></div> Carregando...</div>
-    <div id="grid-criativos" style="display:none;grid-template-columns:repeat(2,1fr);gap:12px"></div>
+    <div id="grid-criativos" style="display:none"></div>
     <style>
       /* Mobile: 2 colunas, card poster */
       #grid-criativos {

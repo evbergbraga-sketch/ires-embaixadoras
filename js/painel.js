@@ -1805,7 +1805,7 @@ async function renderCapacitacao() {
       .cap-aula-meta { font-size:10px;color:#8B6050;margin-top:1px; }
       .cap-aula-prog { height:2px;background:#E8D9C5;border-radius:99px;margin-top:4px;overflow:hidden; }
       .cap-aula-pfill { height:100%;background:#C8A96E;border-radius:99px; }
-      .cap-player-wrap { position:fixed;inset:0;z-index:9999;background:#F5EFE6;display:flex;flex-direction:column;overflow-y:auto; }
+      .cap-player-wrap { position:fixed;inset:0;z-index:99999;background:#F5EFE6;display:flex;flex-direction:column;overflow-y:auto;touch-action:pan-y; }
       .cap-player-header { background:#3D0E20;padding:14px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0; }
       .cap-back { width:30px;height:30px;border-radius:50%;background:rgba(200,169,110,.15);border:.5px solid rgba(200,169,110,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0; }
       .cap-back-tri { width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-right:6px solid #C8A96E;margin-right:2px; }
@@ -2487,7 +2487,7 @@ function _abrirPlayer(aulaId) {
     <div class="cap-player-wrap" id="cap-player-overlay">
       <div class="cap-player-left" style="flex:1;min-width:0;">
         <div class="cap-player-header">
-          <div class="cap-back" onclick="document.getElementById('cap-player-overlay').remove()">
+          <div class="cap-back" onclick="_fecharPlayer()">
             <div class="cap-back-tri"></div>
           </div>
           <div class="cap-player-modtitle">Módulo ${String(modulos.indexOf(modAtual)+1).padStart(2,'0')} · ${s(modAtual.title)}</div>
@@ -2552,12 +2552,30 @@ function _abrirPlayer(aulaId) {
     </div>
   `;
 
-  // Remove player anterior se existir
-  const old = document.getElementById('cap-player-overlay');
-  if (old) old.remove();
+  // Remove player anterior e restaura estado
+  _fecharPlayer();
 
   document.body.insertAdjacentHTML('beforeend', playerHtml);
+  // Bloqueia scroll e esconde navbar para fullscreen real
+  document.body.style.overflow = 'hidden';
+  document.body.style.position = 'fixed';
+  document.body.style.width = '100%';
+  const navbar = document.getElementById('navbar') || document.querySelector('nav') || document.querySelector('.navbar');
+  if (navbar) navbar.style.display = 'none';
 }
+
+function _fecharPlayer() {
+  // Remove o player
+  const overlay = document.getElementById('cap-player-overlay');
+  if (overlay) overlay.remove();
+  // Restaura scroll e navbar
+  document.body.style.overflow = '';
+  document.body.style.position = '';
+  document.body.style.width = '';
+  const navbar = document.getElementById('navbar') || document.querySelector('nav') || document.querySelector('.navbar');
+  if (navbar) navbar.style.display = '';
+}
+
 
 async function _marcarConcluida(lessonId) {
   const { error } = await _supabase

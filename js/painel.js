@@ -1859,7 +1859,7 @@ async function renderCapacitacao() {
     const thumb   = mod.cover_url || '';
 
     html += `
-      <div class="cap-mod-card" onclick="_abrirModuloModal('${mod.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;flex-shrink:0;scroll-snap-align:start;">
+      <div class="cap-mod-card" onclick="_abrirPaginaSubmodulos('${mod.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;flex-shrink:0;scroll-snap-align:start;">
         <div class="cap-mod-cover-inner" style="width:100%;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);height:0;padding-bottom:0;" id="cover-${mod.id}">
           ${thumb ? `<img src="${s(thumb)}" alt="${s(mod.title)}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>` : ''}
           <div class="cap-mod-badge">Mod ${String(mi+1).padStart(2,'0')}</div>
@@ -1908,6 +1908,185 @@ async function renderCapacitacao() {
     }, { passive: true });
   }
 }
+
+// ═══════════════════════════════════════════════════════════
+// TELA 2 — Página de sub-módulos (mesma grade de capas)
+// ═══════════════════════════════════════════════════════════
+async function _abrirPaginaSubmodulos(moduloId) {
+  const mod = (window._capModulos||[]).find(m => m.id === moduloId);
+  if (!mod) return;
+
+  // Exibe loading na área de conteúdo
+  document.getElementById('conteudo').innerHTML = `
+    <div id="loading-sub" class="loading"><div class="spinner"></div> Carregando...</div>
+    <div id="conteudo-sub" style="display:none"></div>
+  `;
+
+  // Busca sub-módulos + suas aulas
+  const { data: subs } = await _supabase
+    .from('submodules')
+    .select('id,title,description,cover_url,"order",lessons(id,title,duration_seconds,"order",cover_url,video_url,nivel)')
+    .eq('module_id', moduloId).eq('is_active', true).order('"order"', { ascending: true });
+
+  // Salva no cache para o player
+  window._capSubmodulos = window._capSubmodulos || [];
+  const outrosIds = new Set((subs||[]).map(s=>s.id));
+  window._capSubmodulos = window._capSubmodulos.filter(s => !outrosIds.has(s.id));
+  (subs||[]).forEach(s => { s.module_id = moduloId; window._capSubmodulos.push(s); });
+
+  document.getElementById('loading-sub').style.display = 'none';
+  const el = document.getElementById('conteudo-sub');
+  el.style.display = 'block';
+
+  const concluidas = window._capConcluidas || new Set();
+
+  // Se não tem sub-módulos, abre o modal antigo (módulo com aulas diretas)
+  if (!subs || subs.length === 0) {
+    document.getElementById('conteudo').innerHTML = '';
+    renderCapacitacao();
+    _abrirModuloModal(moduloId);
+    return;
+  }
+
+  // Injeta estilos (reutiliza cap-styles se já existir)
+  if (!document.getElementById('cap-styles')) {
+    const style = document.createElement('style');
+    style.id = 'cap-styles';
+    style.textContent = `
+      .cap-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px; }
+      .cap-card { background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease; }
+      .cap-card:hover { transform:translateY(-2px);box-shadow:0 4px 16px rgba(92,26,46,.10); }
+      .cap-card:active { transform:scale(.97); }
+      .cap-cover { width:100%;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A); }
+      .cap-cover img { position:absolute;inset:0;width:100%;height:100%;object-fit:cover; }
+      .cap-badge { position:absolute;top:8px;left:8px;background:rgba(26,10,18,.65);border:.5px solid rgba(200,169,110,.3);border-radius:6px;padding:2px 7px;font-size:9px;font-weight:700;color:#C8A96E;letter-spacing:.06em;text-transform:uppercase; }
+      .cap-prog { height:2px;background:#E8D9C5;border-radius:0;margin:0; }
+      .cap-pfill { height:100%;background:#C8A96E; }
+      @media(min-width:768px){ .cap-grid { grid-template-columns:repeat(4,minmax(0,1fr));gap:16px; } }
+    `;
+    document.head.appendChild(style);
+  }
+
+  let html = `
+    <!-- Botão voltar -->
+    <button onclick="renderCapacitacao()"
+      style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--nb-text-lo);font-size:13px;font-weight:600;cursor:pointer;padding:0;margin-bottom:16px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Capacitação
+    </button>
+    <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;margin-bottom:10px">${s(mod.title)}</div>
+    <div class="cap-grid" id="cap-grid-subs">
+  `;
+
+  subs.forEach((sub, si) => {
+    const aulasDoSub = (sub.lessons||[]).sort((a,b)=>(a.order||0)-(b.order||0));
+    const concl  = aulasDoSub.filter(a => concluidas.has(a.id)).length;
+    const pctSub = aulasDoSub.length ? Math.round((concl/aulasDoSub.length)*100) : 0;
+
+    html += `
+      <div class="cap-card" onclick="_abrirModalSubmodulo('${sub.id}')">
+        <div class="cap-cover" id="cov-sub-${sub.id}" style="height:0">
+          ${sub.cover_url ? `<img src="${s(sub.cover_url)}" loading="lazy"/>` : ''}
+          <div class="cap-badge">${String(si+1).padStart(2,'0')}</div>
+          <div style="position:absolute;bottom:8px;left:10px;font-size:10px;color:rgba(200,169,110,.8)">${aulasDoSub.length} aula${aulasDoSub.length!==1?'s':''}</div>
+        </div>
+        <div class="cap-prog"><div class="cap-pfill" style="width:${pctSub}%"></div></div>
+      </div>`;
+  });
+
+  html += `</div>`;
+  el.innerHTML = html;
+
+  // Altura dinâmica igual aos módulos
+  const _setH = () => {
+    document.querySelectorAll('#cap-grid-subs .cap-cover').forEach(cv => {
+      const w = cv.offsetWidth;
+      if (w > 0) cv.style.height = Math.round(w * (window.innerWidth >= 768 ? 1.5 : 2.0)) + 'px';
+    });
+  };
+  requestAnimationFrame(() => { _setH(); setTimeout(_setH, 100); });
+}
+
+// ═══════════════════════════════════════════════════════════
+// TELA 3 — Modal de sub-módulo com lista de aulas
+// ═══════════════════════════════════════════════════════════
+function _abrirModalSubmodulo(subId) {
+  const sub = (window._capSubmodulos||[]).find(s => s.id === subId);
+  if (!sub) return;
+
+  const concluidas = window._capConcluidas || new Set();
+  const aulas = (sub.lessons||[]).sort((a,b)=>(a.order||0)-(b.order||0));
+  const concl = aulas.filter(a => concluidas.has(a.id)).length;
+  const primeiraAula = aulas.find(a => !concluidas.has(a.id)) || aulas[0];
+
+  // Remove modal anterior
+  document.getElementById('sub-modal-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'sub-modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center;';
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+
+  const aulasHTML = aulas.map((aula, ai) => {
+    const feita  = concluidas.has(aula.id);
+    const durMin = aula.duration_seconds ? Math.ceil(aula.duration_seconds/60) : null;
+    const thumb  = aula.cover_url || '';
+    return `
+      <div onclick="_abrirPlayer('${aula.id}');document.getElementById('sub-modal-overlay')?.remove()"
+        style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:.5px solid #F0EAE2;cursor:pointer">
+        <div style="width:68px;height:44px;border-radius:8px;overflow:hidden;position:relative;flex-shrink:0;background:linear-gradient(135deg,#3D0E20,#6B1A3A);">
+          ${thumb ? `<img src="${s(thumb)}" style="width:100%;height:100%;object-fit:cover;" loading="lazy"/>` : ''}
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+            ${feita
+              ? '<div style="width:18px;height:18px;border-radius:50%;background:rgba(200,169,110,.9);display:flex;align-items:center;justify-content:center;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#3D0E20" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>'
+              : '<div style="width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-left:7px solid rgba(200,169,110,.9);margin-left:2px;"></div>'
+            }
+          </div>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:600;color:#2C1018;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s(aula.title)}</div>
+          <div style="font-size:10px;color:#8B6050;margin-top:1px;">${durMin ? durMin+' min' : ''}</div>
+        </div>
+        ${feita ? '<div style="width:18px;height:18px;border-radius:50%;background:rgba(200,169,110,.15);border:1px solid #C8A96E;display:flex;align-items:center;justify-content:center;font-size:9px;color:#C8A96E;flex-shrink:0;">✓</div>' : ''}
+      </div>`;
+  }).join('');
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;">
+      <!-- Header -->
+      <div style="padding:16px 16px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:.5px solid #F0EAE2;position:sticky;top:0;background:#fff;z-index:1;">
+        <div>
+          <div style="font-size:15px;font-weight:700;color:#2C1018;">${s(sub.title)}</div>
+          <div style="font-size:11px;color:#8B6050;margin-top:1px;">${aulas.length} aulas · ${concl} concluída${concl!==1?'s':''}</div>
+        </div>
+        <button onclick="document.getElementById('sub-modal-overlay').remove()"
+          style="background:rgba(61,14,32,.06);border:none;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#3D0E20;flex-shrink:0;">✕</button>
+      </div>
+      <!-- Botão começar/continuar -->
+      ${primeiraAula ? `
+        <div style="padding:12px 16px;border-bottom:.5px solid #F0EAE2;">
+          <div onclick="_abrirPlayer('${primeiraAula.id}');document.getElementById('sub-modal-overlay')?.remove()"
+            style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#3D0E20;border-radius:12px;cursor:pointer;">
+            <div style="width:30px;height:30px;border-radius:50%;background:rgba(200,169,110,.15);border:1px solid rgba(200,169,110,.4);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <div style="width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:9px solid #C8A96E;margin-left:2px;"></div>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:700;color:#C8A96E;">${concl > 0 ? 'Continuar de onde parei' : 'Começar módulo'}</div>
+              <div style="font-size:10px;color:rgba(200,169,110,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s(primeiraAula.title)}</div>
+            </div>
+          </div>
+        </div>` : ''}
+      <!-- Lista de aulas -->
+      <div style="padding:0 16px 16px;">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8B6050;padding:12px 0 6px;">Aulas</div>
+        ${aulasHTML}
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+}
+
 
 function _abrirModuloModal(moduloId) {
   const modulos    = window._capModulos || [];

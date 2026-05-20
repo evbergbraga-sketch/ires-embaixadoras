@@ -1488,20 +1488,28 @@ async function renderCriativos() {
     <div id="loading-criativos" class="loading"><div class="spinner"></div> Carregando...</div>
     <div id="grid-criativos" style="display:none;grid-template-columns:repeat(2,1fr);gap:12px"></div>
     <style>
-      /* Sempre usa aspect-ratio — sem espaço branco nunca */
-      #grid-criativos { grid-template-columns:repeat(2,1fr); gap:12px; }
-      #grid-criativos .criativo-thumb { aspect-ratio:9/16; }
-      #grid-criativos .criativo-thumb.feed { aspect-ratio:1/1; }
-      @media(min-width:600px){
-        #grid-criativos { grid-template-columns:repeat(3,1fr); gap:14px; }
+      /* Mesmo padrão dos módulos da capacitação */
+      #grid-criativos {
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:12px;
+        width:100%;
       }
-      @media(min-width:900px){
-        #grid-criativos { grid-template-columns:repeat(4,1fr); gap:16px; }
+      #grid-criativos .criativo-thumb {
+        width:100%;
+        aspect-ratio:3/4;
+        position:relative;
+        overflow:hidden;
+        background:linear-gradient(135deg,#3D0E20,#6B1A3A);
       }
-      @media(min-width:1200px){
-        #grid-criativos { grid-template-columns:repeat(5,1fr); }
+      #grid-criativos .criativo-thumb img {
+        position:absolute;inset:0;
+        width:100%;height:100%;
+        object-fit:cover;
       }
-      #grid-criativos .criativo-thumb img { width:100%;height:100%;object-fit:cover;display:block; }
+      @media(min-width:768px){
+        #grid-criativos { grid-template-columns:repeat(4,minmax(0,1fr));gap:16px; }
+      }
     </style>
     <div id="empty-criativos" style="display:none" class="empty-state">
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--gray)" stroke-width="1.5">
@@ -1555,7 +1563,7 @@ function _renderGridCriativos(lista) {
         onmouseout="this.style.borderColor='var(--nb-border-s)'">
 
         <!-- Thumb: aspect-ratio por formato -->
-        <div class="criativo-thumb${c.format==='feed'||c.format==='outro'?' feed':''}" style="position:relative;background:var(--nb-inset);overflow:hidden;cursor:pointer"
+        <div class="criativo-thumb" style="cursor:pointer"
           onclick="_abrirPreviewCriativo('${c.id}')">
           ${thumb
             ? `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s"

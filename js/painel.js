@@ -2027,6 +2027,17 @@ function _renderModuloModalContent(mod, submodulos, concluidas, modalThumb, nive
       </div>`;
   }).join('') : '';
 
+
+  // Métricas de progresso do módulo
+  const modConc = aulas.filter(a => concluidas.has(a.id)).length;
+  const pctMod  = aulas.length ? Math.round((modConc / aulas.length) * 100) : 0;
+
+  // Primeira aula não concluída
+  const todasAulasRender = temSubs
+    ? submodulos.flatMap(s => (s.lessons||[]).sort((a,b) => (a.order||0)-(b.order||0)))
+    : aulas;
+  const proximaAula = todasAulasRender.find(a => !concluidas.has(a.id)) || todasAulasRender[0];
+
   overlay.innerHTML = `
     <div style="background:#fff;border-radius:16px;overflow:hidden;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;position:relative;">
       <!-- Hero 16:9 -->
@@ -2084,12 +2095,13 @@ function _abrirModulo(moduloId) {
   // aulas and mi already defined above
   const thumb      = mod.cover_url || '';
   const modalThumb = mod.modal_cover_url || mod.cover_url || '';
-  const modConc = aulas.filter(a=>concluidas.has(a.id)).length;
-  const pctMod  = aulas.length ? Math.round((modConc/aulas.length)*100) : 0;
+  // Métricas de progresso do módulo
+  const modConc = aulas.filter(a => concluidas.has(a.id)).length;
+  const pctMod  = aulas.length ? Math.round((modConc / aulas.length) * 100) : 0;
 
   // Primeira aula não concluída (usa sub-módulos se existirem)
   const todasAulasModal = temSubs
-    ? submodulos.flatMap(s=>(s.lessons||[]).sort((a,b)=>(a.order||0)-(b.order||0)))
+    ? submodulos.flatMap(s => (s.lessons||[]).sort((a,b) => (a.order||0) - (b.order||0)))
     : aulas;
   const proximaAula = todasAulasModal.find(a => !concluidas.has(a.id)) || todasAulasModal[0];
 

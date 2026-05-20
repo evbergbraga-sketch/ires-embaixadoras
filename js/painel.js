@@ -1487,7 +1487,18 @@ async function renderCriativos() {
 
     <div id="loading-criativos" class="loading"><div class="spinner"></div> Carregando...</div>
     <div id="grid-criativos" style="display:none;grid-template-columns:repeat(2,1fr);gap:12px"></div>
-    <style>#grid-criativos{} @media(min-width:640px){#grid-criativos{grid-template-columns:repeat(3,1fr);gap:16px}} @media(min-width:1024px){#grid-criativos{grid-template-columns:repeat(4,1fr)}}</style>
+    <style>
+      #grid-criativos{}
+      #grid-criativos .criativo-thumb { aspect-ratio: var(--thumb-ratio, 9/16); }
+      @media(min-width:640px){
+        #grid-criativos { grid-template-columns:repeat(3,1fr);gap:16px; }
+        #grid-criativos .criativo-thumb { max-height:280px; aspect-ratio: unset; }
+      }
+      @media(min-width:1024px){
+        #grid-criativos { grid-template-columns:repeat(4,1fr); }
+        #grid-criativos .criativo-thumb { max-height:260px; }
+      }
+    </style>
     <div id="empty-criativos" style="display:none" class="empty-state">
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--gray)" stroke-width="1.5">
         <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -1540,7 +1551,7 @@ function _renderGridCriativos(lista) {
         onmouseout="this.style.borderColor='var(--nb-border-s)'">
 
         <!-- Thumb: aspect-ratio por formato -->
-        <div style="position:relative;aspect-ratio:${c.format==='story'||c.format==='reels'?'9/16':'1/1'};background:var(--nb-inset);overflow:hidden;cursor:pointer"
+        <div class="criativo-thumb" style="position:relative;aspect-ratio:${c.format==='story'||c.format==='reels'?'9/16':'1/1'};background:var(--nb-inset);overflow:hidden;cursor:pointer"
           onclick="_abrirPreviewCriativo('${c.id}')">
           ${thumb
             ? `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s"

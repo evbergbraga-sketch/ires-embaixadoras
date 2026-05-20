@@ -2008,7 +2008,7 @@ function _renderModuloModalContent(mod, submodulos, concluidas, modalThumb, nive
         </div>
         ${feita ? `<div style="width:18px;height:18px;border-radius:50%;background:rgba(200,169,110,.15);border:1px solid #C8A96E;display:flex;align-items:center;justify-content:center;font-size:9px;color:#C8A96E;flex-shrink:0;">✓</div>` : ''}
       </div>`;
-  }).join('');
+  }).join('') : '';
 
   overlay.innerHTML = `
     <div style="background:#fff;border-radius:16px;overflow:hidden;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;position:relative;">

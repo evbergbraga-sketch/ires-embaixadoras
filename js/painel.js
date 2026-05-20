@@ -1488,11 +1488,11 @@ async function renderCriativos() {
     <div id="loading-criativos" class="loading"><div class="spinner"></div> Carregando...</div>
     <div id="grid-criativos" style="display:none;grid-template-columns:repeat(2,1fr);gap:12px"></div>
     <style>
-      /* Mesmo padrão dos módulos da capacitação */
+      /* Mobile: 2 colunas, card poster */
       #grid-criativos {
         display:grid;
         grid-template-columns:repeat(2,minmax(0,1fr));
-        gap:12px;
+        gap:10px;
         width:100%;
       }
       #grid-criativos .criativo-thumb {
@@ -1507,8 +1507,15 @@ async function renderCriativos() {
         width:100%;height:100%;
         object-fit:cover;
       }
+      /* Desktop: 4 colunas — mantém proporção 3/4 mas menor */
       @media(min-width:768px){
-        #grid-criativos { grid-template-columns:repeat(4,minmax(0,1fr));gap:16px; }
+        #grid-criativos {
+          grid-template-columns:repeat(4,minmax(0,1fr));
+          gap:14px;
+        }
+      }
+      @media(min-width:1200px){
+        #grid-criativos { grid-template-columns:repeat(5,minmax(0,1fr)); }
       }
     </style>
     <div id="empty-criativos" style="display:none" class="empty-state">

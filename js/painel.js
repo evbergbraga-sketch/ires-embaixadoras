@@ -1945,11 +1945,28 @@ function _abrirModuloModal(moduloId) {
 }
 
 function _renderModuloModalContent(mod, submodulos, concluidas, modalThumb, nivelLiberado) {
-  const temSubs = submodulos.length > 0;
-  const aulas   = (mod.lessons||[]).sort((a,b)=>a.order-b.order);
+  const temSubs  = submodulos.length > 0;
+  const aulas    = (mod.lessons||[]).sort((a,b)=>a.order-b.order);
   const meuNivel = _perfil.nivel || 'iniciante';
   const ORDEM_NIVEL = { bronze:0, prata:1, ouro:2 };
   if (!nivelLiberado) nivelLiberado = n => (ORDEM_NIVEL[meuNivel]||0) >= (ORDEM_NIVEL[n||'bronze']||0);
+
+  // mi: índice do módulo no array global (usado no header "Módulo 01")
+  const modulos = window._capModulos || [];
+  const mi      = modulos.findIndex(m => m.id === mod.id);
+
+  // nivelCor e nivelLabel (usados nas badges de aula)
+  function nivelCor(n) {
+    return {
+      bronze:   { bg:'#FFF4E6', text:'#7A4A1A', border:'#CD7F32', dot:'#CD7F32' },
+      prata:    { bg:'#F4F4F4', text:'#444444', border:'#A8A9AD', dot:'#A8A9AD' },
+      ouro:     { bg:'#FFFBE6', text:'#6B4C1A', border:'#C8A96E', dot:'#C8A96E' },
+      diamante: { bg:'#E8FBFF', text:'#1A5A6B', border:'#B9F2FF', dot:'#B9F2FF' },
+    }[n] || { bg:'#F5F5F5', text:'#555', border:'#8B8B8B', dot:'#8B8B8B' };
+  }
+  function nivelLabel(n) {
+    return { iniciante:'Iniciante', bronze:'Bronze', prata:'Prata', ouro:'Ouro', diamante:'Diamante' }[n] || 'Bronze';
+  }
 
   // Criar overlay modal
   const overlay = document.createElement('div');
@@ -2064,8 +2081,7 @@ function _abrirModulo(moduloId) {
     }[n]||{bg:'#F5F5F5',text:'#555555',border:'#8B8B8B',dot:'#8B8B8B'};
   }
 
-  const aulas   = (mod.lessons||[]).sort((a,b)=>a.order-b.order);
-  const mi      = modulos.indexOf(mod);
+  // aulas and mi already defined above
   const thumb      = mod.cover_url || '';
   const modalThumb = mod.modal_cover_url || mod.cover_url || '';
   const modConc = aulas.filter(a=>concluidas.has(a.id)).length;

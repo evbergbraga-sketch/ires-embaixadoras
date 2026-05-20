@@ -1488,16 +1488,25 @@ async function renderCriativos() {
     <div id="loading-criativos" class="loading"><div class="spinner"></div> Carregando...</div>
     <div id="grid-criativos" style="display:none;grid-template-columns:repeat(2,1fr);gap:12px"></div>
     <style>
-      #grid-criativos{}
-      #grid-criativos .criativo-thumb { aspect-ratio: var(--thumb-ratio, 9/16); }
-      @media(min-width:640px){
-        #grid-criativos { grid-template-columns:repeat(3,1fr);gap:16px; }
-        #grid-criativos .criativo-thumb { max-height:280px; aspect-ratio: unset; }
+      /* Mobile: 2 colunas, proporção real do formato */
+      #grid-criativos { grid-template-columns:repeat(2,1fr); gap:12px; }
+      #grid-criativos .criativo-thumb { aspect-ratio:9/16; }
+      /* Tablet: 3 colunas, altura fixa para alinhar */
+      @media(min-width:600px){
+        #grid-criativos { grid-template-columns:repeat(3,1fr); gap:14px; }
+        #grid-criativos .criativo-thumb { aspect-ratio:unset; height:220px; }
       }
-      @media(min-width:1024px){
-        #grid-criativos { grid-template-columns:repeat(4,1fr); }
-        #grid-criativos .criativo-thumb { max-height:260px; }
+      /* Desktop: 4 colunas, altura fixa compacta */
+      @media(min-width:900px){
+        #grid-criativos { grid-template-columns:repeat(4,1fr); gap:16px; }
+        #grid-criativos .criativo-thumb { height:200px; }
       }
+      @media(min-width:1200px){
+        #grid-criativos { grid-template-columns:repeat(5,1fr); }
+        #grid-criativos .criativo-thumb { height:180px; }
+      }
+      /* Garante que imagem cobre sem distorcer */
+      #grid-criativos .criativo-thumb img { width:100%;height:100%;object-fit:cover;display:block; }
     </style>
     <div id="empty-criativos" style="display:none" class="empty-state">
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--gray)" stroke-width="1.5">

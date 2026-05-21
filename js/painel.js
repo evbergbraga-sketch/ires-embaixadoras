@@ -1132,7 +1132,7 @@ function abrirProdutoPainel(id) {
               </tr>
             </thead>
             <tbody>
-              ${colors.map(cor => `
+              ${colors.map((cor,ci) => `
                 <tr style="border-bottom:.5px solid #F0EAE2;">
                   <td style="padding:7px 8px;white-space:nowrap;">
                     <div style="display:flex;align-items:center;gap:7px;">
@@ -1140,11 +1140,11 @@ function abrirProdutoPainel(id) {
                       <span style="font-size:13px;font-weight:500;color:#2C1018;">${s(cor)}</span>
                     </div>
                   </td>
-                  ${sizes.map(sz => `
+                  ${sizes.map((sz,si) => `
                     <td style="padding:5px 4px;text-align:center;">
                       <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
-                        id="vi-${s(sz)}-${s(cor).replace(/\s/g,'_')}"
-                        data-size="${s(sz)}" data-color="${s(cor).replace(/"/g,'&quot;')}"
+                        id="vi-${si}-${ci}"
+                        data-size="${sz.replace(/"/g,'')}" data-color="${cor.replace(/"/g,'')}" 
                         placeholder="0"
                         style="width:52px;height:40px;text-align:center;font-size:16px;font-weight:600;color:#2C1018;background:#fff;border:.5px solid #E8D9C5;border-radius:8px;outline:none;-webkit-appearance:none;display:block;margin:0 auto;"
                         oninput="_varInput(this)"/>

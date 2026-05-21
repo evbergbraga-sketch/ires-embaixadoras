@@ -1967,7 +1967,7 @@ async function _abrirPaginaSubmodulos(moduloId) {
   // Busca sub-módulos + suas aulas
   const { data: subs } = await _supabase
     .from('submodules')
-    .select('id,title,description,cover_url,"order",lessons(id,title,duration_seconds,"order",cover_url,video_url,nivel)')
+    .select('id,title,description,cover_url,"order",nivel,lessons(id,title,duration_seconds,"order",cover_url,video_url,nivel)')
     .eq('module_id', moduloId).eq('is_active', true).order('"order"', { ascending: true });
 
   // Salva no cache para o player
@@ -2027,7 +2027,7 @@ async function _abrirPaginaSubmodulos(moduloId) {
     const thumb  = sub.cover_url || '';
 
     html += `
-      <div class="cap-mod-card" onclick="_abrirModalSubmodulo('${sub.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;flex-shrink:0;">
+      <div class="cap-mod-card" onclick="${nivelLiberado(sub.nivel) ? `_abrirModalSubmodulo('${sub.id}')` : `_mostrarBloqueio('${sub.nivel}')`}" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:${nivelLiberado(sub.nivel)?'pointer':'not-allowed'};transition:transform .15s ease,box-shadow .15s ease;flex-shrink:0;">
         <div class="cap-mod-cover-inner" style="width:100%;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);height:0;padding-bottom:0;" id="cover-sub-${sub.id}">
           ${thumb ? `<img src="${s(thumb)}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>` : ''}
           ${!nivelLiberado(sub.nivel) ? `
@@ -2062,6 +2062,15 @@ async function _abrirPaginaSubmodulos(moduloId) {
 // ═══════════════════════════════════════════════════════════
 // TELA 3 — Modal de sub-módulo com lista de aulas
 // ═══════════════════════════════════════════════════════════
+function _mostrarBloqueio(nivel) {
+  const nomes = { iniciante:'Iniciante', bronze:'Bronze', prata:'Prata', ouro:'Ouro', diamante:'Diamante' };
+  const metas = { iniciante:0, bronze:4, prata:8, ouro:14, diamante:20 };
+  const nome  = nomes[nivel] || nivel;
+  const meta  = metas[nivel] || 0;
+  showToast(`🔒 Conteúdo ${nome} — desbloqueado a partir de ${meta} pedidos pagos`, 'error');
+}
+
+
 function _abrirModalSubmodulo(subId) {
   const sub = (window._capSubmodulos||[]).find(s => s.id === subId);
   if (!sub) return;
@@ -2163,7 +2172,7 @@ function _abrirModuloModal(moduloId) {
 
   // Busca sub-módulos no Supabase
   _supabase.from('submodules')
-    .select('id,title,description,cover_url,"order",lessons(id,title,duration_seconds,"order",cover_url,video_url,nivel,description)')
+    .select('id,title,description,cover_url,"order",nivel,lessons(id,title,duration_seconds,"order",cover_url,video_url,nivel,description)')
     .eq('module_id', moduloId).eq('is_active', true).order('"order"', { ascending: true })
     .then(({ data: subs }) => {
       window._submodulosCache = window._submodulosCache || {};

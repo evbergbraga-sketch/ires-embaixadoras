@@ -1804,6 +1804,7 @@ function abrirFormModulo(id) {
       </button>
     </div>
     <div class="form-group"><label>Ordem</label><input type="number" id="mod-order" value="${mod?.order||0}" min="0"/></div>
+    <div class="form-group"><label>Nível mínimo para acessar</label><select id="mod-nivel"><option value="iniciante" ${(!mod?.nivel||mod?.nivel==='iniciante')?'selected':''}>🟢 Iniciante — liberado para todos</option><option value="bronze" ${mod?.nivel==='bronze'?'selected':''}>🟤 Bronze — a partir de 4 pedidos</option><option value="prata" ${mod?.nivel==='prata'?'selected':''}>⚪ Prata — a partir de 8 pedidos</option><option value="ouro" ${mod?.nivel==='ouro'?'selected':''}>🟡 Ouro — a partir de 14 pedidos</option><option value="diamante" ${mod?.nivel==='diamante'?'selected':''}>💎 Diamante — a partir de 20 pedidos</option></select></div>
     <div style="display:flex;gap:10px;margin-top:4px">
       <button class="btn btn-outline" style="flex:1" onclick="fecharModal()">Cancelar</button>
       <button class="btn btn-primary" style="flex:1" id="btn-mod" onclick="salvarModulo(${id?`'${id}'`:'null'})">Salvar</button>
@@ -1817,10 +1818,12 @@ async function salvarModulo(id) {
   const cover=document.getElementById('mod-cover').value.trim()||null;
   const modalCover=document.getElementById('mod-modal-cover').value.trim()||null;
   const order=parseInt(document.getElementById('mod-order').value)||0;
+  const nivelMod=document.getElementById('mod-nivel')?.value||'iniciante';
   if(!titulo){showToast('Informe o título.','error');return;}
   const btn=document.getElementById('btn-mod');
   btn.disabled=true;btn.innerHTML='<div class="spinner" style="margin:0 auto"></div>';
-  const{error}=id?await _supabase.from('modules').update({title:titulo,description:desc||null,cover_url:cover,modal_cover_url:modalCover,order}).eq('id',id):await _supabase.from('modules').insert({title:titulo,description:desc||null,cover_url:cover,modal_cover_url:modalCover,order,is_active:true});
+  const nivelMod=document.getElementById('mod-nivel')?.value||'iniciante';
+  const{error}=id?await _supabase.from('modules').update({title:titulo,description:desc||null,cover_url:cover,modal_cover_url:modalCover,order,nivel:nivelMod}).eq('id',id):await _supabase.from('modules').insert({title:titulo,description:desc||null,cover_url:cover,modal_cover_url:modalCover,order,nivel:nivelMod,is_active:true});
   if(error){showToast('Erro: '+error.message,'error');btn.disabled=false;btn.textContent='Salvar';return;}
   showToast(id?'Módulo atualizado!':'Módulo criado!','success');
   fecharModal();renderCapacitacaoAdmin();
@@ -1870,7 +1873,7 @@ function abrirFormAula(aulaId, moduloId, submoduloId=null) {
           ${a.cover_url ? '🔄 Trocar imagem' : '📷 Selecionar imagem'}
         </button>
       </div>
-      <div class="form-group"><label>Nível necessário</label><select id="aula-nivel"><option value="bronze" ${(!a.nivel||a.nivel==='bronze')?'selected':''}>Bronze — disponível para todos</option><option value="prata" ${a.nivel==='prata'?'selected':''}>Prata — a partir de 5 pedidos pagos</option><option value="ouro" ${a.nivel==='ouro'?'selected':''}>Ouro — a partir de 15 pedidos pagos</option></select></div>
+      <div class="form-group"><label>Nível necessário</label><select id="aula-nivel"><option value="iniciante" ${(!a.nivel||a.nivel==='iniciante')?'selected':''}>🟢 Iniciante — liberado para todos</option><option value="bronze" ${a.nivel==='bronze'?'selected':''}>🟤 Bronze — a partir de 4 pedidos</option><option value="prata" ${a.nivel==='prata'?'selected':''}>⚪ Prata — a partir de 8 pedidos</option><option value="ouro" ${a.nivel==='ouro'?'selected':''}>🟡 Ouro — a partir de 14 pedidos</option><option value="diamante" ${a.nivel==='diamante'?'selected':''}>💎 Diamante — a partir de 20 pedidos</option></select></div>
       <div class="form-group">
         <button type="button" onclick="_previewYoutubeAdmin()" style="width:100%;padding:8px;background:transparent;border:0.5px solid var(--border);border-radius:var(--radius-md);color:var(--pink);font-size:13px;cursor:pointer">▶ Pré-visualizar</button>
         <div id="aula-preview" style="margin-top:10px;display:none;border-radius:10px;overflow:hidden"><div style="position:relative;padding-bottom:56.25%;height:0;background:#000"><iframe id="aula-iframe" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none" allowfullscreen></iframe></div></div>

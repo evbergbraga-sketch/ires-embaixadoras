@@ -913,10 +913,10 @@ let _categoriaAtiva = '';
 
 async function renderVitrine() {
   const meuNivel  = _perfil.nivel || 'iniciante';
-  const NIVEL_BRONZE   = 1;
-  const NIVEL_PRATA    = 5;
-  const NIVEL_OURO     = 15;
-  const NIVEL_DIAMANTE = 30;
+  const NIVEL_BRONZE   = 4;
+  const NIVEL_PRATA    = 8;
+  const NIVEL_OURO     = 14;
+  const NIVEL_DIAMANTE = 20;
   const corDot = meuNivel === 'diamante' ? '#B9F2FF' : meuNivel === 'ouro' ? '#C8A96E' : meuNivel === 'prata' ? '#A8A9AD' : meuNivel === 'bronze' ? '#CD7F32' : '#8B8B8B';
   const corBorder = meuNivel === 'diamante' ? 'rgba(185,242,255,.3)' : meuNivel === 'ouro' ? 'rgba(200,169,110,.3)' : meuNivel === 'prata' ? 'rgba(168,169,173,.3)' : meuNivel === 'bronze' ? 'rgba(205,127,50,.3)' : 'rgba(139,139,139,.3)';
   const nivelLabel = {iniciante:'Iniciante',bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante'}[meuNivel] || 'Iniciante';
@@ -1686,12 +1686,12 @@ function _abrirPreviewCriativo(id) {
 // CAPACITAÇÃO
 // ════════════════════════════════════════════
 async function renderCapacitacao() {
-  const NIVEL_BRONZE   = 1;
-  const NIVEL_PRATA    = 5;
-  const NIVEL_OURO     = 15;
-  const NIVEL_DIAMANTE = 30;
+  const NIVEL_BRONZE   = 4;
+  const NIVEL_PRATA    = 8;
+  const NIVEL_OURO     = 14;
+  const NIVEL_DIAMANTE = 20;
   const meuNivel    = _perfil.nivel || 'iniciante';
-  const ORDEM_NIVEL = { bronze:0, prata:1, ouro:2 };
+  const ORDEM_NIVEL = { iniciante:0, bronze:1, prata:2, ouro:3, diamante:4 };
 
   function nivelLiberado(n) { return ORDEM_NIVEL[meuNivel] >= ORDEM_NIVEL[n||'bronze']; }
   function nivelLabel(n)    { return {iniciante:'Iniciante',bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante'}[n]||'Bronze'; }
@@ -1708,6 +1708,7 @@ async function renderCapacitacao() {
     if (meuNivel==='iniciante') return {nome:'Bronze',   faltam:NIVEL_BRONZE};
     if (meuNivel==='bronze')   return {nome:'Prata',    faltam:NIVEL_PRATA};
     if (meuNivel==='prata')    return {nome:'Ouro',     faltam:NIVEL_OURO};
+    if (meuNivel==='ouro')     return {nome:'Diamante', faltam:NIVEL_DIAMANTE};
     if (meuNivel==='ouro')     return {nome:'Diamante', faltam:NIVEL_DIAMANTE};
     return null;
   }
@@ -2133,7 +2134,7 @@ function _abrirModuloModal(moduloId) {
   const modalThumb = mod.modal_cover_url || mod.cover_url || '';
   const mi         = modulos.indexOf(mod);
   const meuNivel   = _perfil.nivel || 'iniciante';
-  const ORDEM_NIVEL = { bronze:0, prata:1, ouro:2 };
+  const ORDEM_NIVEL = { iniciante:0, bronze:1, prata:2, ouro:3, diamante:4 };
   function nivelLiberado(n) { return ORDEM_NIVEL[meuNivel] >= ORDEM_NIVEL[n||'bronze']; }
 
   // Verifica se tem sub-módulos em cache para este módulo
@@ -2163,7 +2164,7 @@ function _renderModuloModalContent(mod, submodulos, concluidas, modalThumb, nive
   const temSubs  = submodulos.length > 0;
   const aulas    = (mod.lessons||[]).sort((a,b)=>a.order-b.order);
   const meuNivel = _perfil.nivel || 'iniciante';
-  const ORDEM_NIVEL = { bronze:0, prata:1, ouro:2 };
+  const ORDEM_NIVEL = { iniciante:0, bronze:1, prata:2, ouro:3, diamante:4 };
   if (!nivelLiberado) nivelLiberado = n => (ORDEM_NIVEL[meuNivel]||0) >= (ORDEM_NIVEL[n||'bronze']||0);
 
   // mi: índice do módulo no array global (usado no header "Módulo 01")
@@ -2293,7 +2294,7 @@ function _abrirModulo(moduloId) {
   if (!mod) return;
 
   const meuNivel    = _perfil.nivel || 'iniciante';
-  const ORDEM_NIVEL = { bronze:0, prata:1, ouro:2 };
+  const ORDEM_NIVEL = { iniciante:0, bronze:1, prata:2, ouro:3, diamante:4 };
   function nivelLiberado(n) { return ORDEM_NIVEL[meuNivel] >= ORDEM_NIVEL[n||'bronze']; }
   function nivelLabel(n)    { return {iniciante:'Iniciante',bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante'}[n]||'Bronze'; }
   function nivelCor(n) {

@@ -1895,7 +1895,13 @@ async function renderCapacitacao() {
       <div class="cap-mod-card" onclick="_abrirPaginaSubmodulos('${mod.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;flex-shrink:0;scroll-snap-align:start;">
         <div class="cap-mod-cover-inner" style="width:100%;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);height:0;padding-bottom:0;" id="cover-${mod.id}">
           ${thumb ? `<img src="${s(thumb)}" alt="${s(mod.title)}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>` : ''}
-          <div class="cap-mod-badge">Mod ${String(mi+1).padStart(2,'0')}</div>
+          ${!nivelLiberado(mod.nivel) ? `
+          <div style="position:absolute;inset:0;background:rgba(30,8,16,.45);z-index:1"></div>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;z-index:2">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.95)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span style="font-size:9px;color:rgba(255,255,255,.85);font-weight:700;letter-spacing:.7px;text-transform:uppercase">${{'iniciante':'Iniciante','bronze':'Bronze','prata':'Prata','ouro':'Ouro','diamante':'Diamante'}[mod.nivel]||'Iniciante'}</span>
+          </div>` : ''}
+          <div class="cap-mod-badge" style="z-index:3">Mod ${String(mi+1).padStart(2,'0')}</div>
           <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 10px;">
             <div style="font-size:10px;color:rgba(200,169,110,.8);">${aulas.length} aula${aulas.length!==1?'s':''}</div>
           </div>
@@ -1948,6 +1954,9 @@ async function renderCapacitacao() {
 async function _abrirPaginaSubmodulos(moduloId) {
   const mod = (window._capModulos||[]).find(m => m.id === moduloId);
   if (!mod) return;
+  const ORDEM_NIVEL = { iniciante:0, bronze:1, prata:2, ouro:3, diamante:4 };
+  const meuNivel    = _perfil.nivel || 'iniciante';
+  function nivelLiberado(n) { return (ORDEM_NIVEL[meuNivel]||0) >= (ORDEM_NIVEL[n||'iniciante']||0); }
 
   // Exibe loading na área de conteúdo
   document.getElementById('conteudo').innerHTML = `
@@ -2021,7 +2030,13 @@ async function _abrirPaginaSubmodulos(moduloId) {
       <div class="cap-mod-card" onclick="_abrirModalSubmodulo('${sub.id}')" style="background:#fff;border:.5px solid #E8D9C5;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;flex-shrink:0;">
         <div class="cap-mod-cover-inner" style="width:100%;position:relative;overflow:hidden;background:linear-gradient(135deg,#3D0E20,#6B1A3A);height:0;padding-bottom:0;" id="cover-sub-${sub.id}">
           ${thumb ? `<img src="${s(thumb)}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>` : ''}
-          <div class="cap-mod-badge">${String(si+1).padStart(2,'0')}</div>
+          ${!nivelLiberado(sub.nivel) ? `
+          <div style="position:absolute;inset:0;background:rgba(30,8,16,.45);z-index:1"></div>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;z-index:2">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.95)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span style="font-size:9px;color:rgba(255,255,255,.85);font-weight:700;letter-spacing:.7px;text-transform:uppercase">${{'iniciante':'Iniciante','bronze':'Bronze','prata':'Prata','ouro':'Ouro','diamante':'Diamante'}[sub.nivel]||'Iniciante'}</span>
+          </div>` : ''}
+          <div class="cap-mod-badge" style="z-index:3">${String(si+1).padStart(2,'0')}</div>
           <div style="position:absolute;bottom:0;left:0;right:0;padding:10px;">
             <div style="font-size:10px;color:rgba(200,169,110,.8);">${aulasDoSub.length} aula${aulasDoSub.length!==1?'s':''}</div>
           </div>

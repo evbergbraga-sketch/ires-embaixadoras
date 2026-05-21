@@ -1599,6 +1599,16 @@ function abrirFormSubmodulo(subId, moduloId) {
       <label>Ordem</label>
       <input type="number" id="sub-order" value="${sub?.order||0}" min="0"/>
     </div>
+        <div class="form-group">
+      <label>Nível mínimo para acessar</label>
+      <select id="sub-nivel">
+        <option value="iniciante" ${(!sub?.nivel||sub?.nivel==='iniciante')?'selected':''}>🟢 Iniciante — liberado para todos</option>
+        <option value="bronze" ${sub?.nivel==='bronze'?'selected':''}>🟤 Bronze — a partir de 4 pedidos</option>
+        <option value="prata" ${sub?.nivel==='prata'?'selected':''}>⚪ Prata — a partir de 8 pedidos</option>
+        <option value="ouro" ${sub?.nivel==='ouro'?'selected':''}>🟡 Ouro — a partir de 14 pedidos</option>
+        <option value="diamante" ${sub?.nivel==='diamante'?'selected':''}>💎 Diamante — a partir de 20 pedidos</option>
+      </select>
+    </div>
     <div style="display:flex;gap:10px;margin-top:4px">
       <button class="btn btn-outline" style="flex:1" onclick="fecharModal()">Cancelar</button>
       <button class="btn btn-primary" style="flex:1" id="btn-sub" onclick="salvarSubmodulo(${subId?`'${subId}'`:'null'},'${moduloId}')">Salvar</button>
@@ -1611,6 +1621,7 @@ async function salvarSubmodulo(subId, moduloId) {
   const desc    = document.getElementById('sub-desc').value.trim();
   const cover   = document.getElementById('sub-cover').value.trim() || null;
   const order   = parseInt(document.getElementById('sub-order').value) || 0;
+  const nivel   = document.getElementById('sub-nivel')?.value || 'iniciante';
 
   if (!titulo) { showToast('Informe o título.', 'error'); return; }
 
@@ -1631,7 +1642,7 @@ async function salvarSubmodulo(subId, moduloId) {
     }
   }
 
-  const payload = { title: titulo, description: desc||null, cover_url: coverUrl, order, module_id: moduloId, is_active: true };
+  const payload = { title: titulo, description: desc||null, cover_url: coverUrl, order, nivel, module_id: moduloId, is_active: true };
   const { error } = subId
     ? await _supabase.from('submodules').update(payload).eq('id', subId)
     : await _supabase.from('submodules').insert(payload);

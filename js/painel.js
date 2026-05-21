@@ -1693,7 +1693,7 @@ async function renderCapacitacao() {
   const meuNivel    = _perfil.nivel || 'iniciante';
   const ORDEM_NIVEL = { iniciante:0, bronze:1, prata:2, ouro:3, diamante:4 };
 
-  function nivelLiberado(n) { return ORDEM_NIVEL[meuNivel] >= ORDEM_NIVEL[n||'bronze']; }
+  function nivelLiberado(n) { return (ORDEM_NIVEL[meuNivel]||0) >= (ORDEM_NIVEL[n||'iniciante']||0); }
   function nivelLabel(n)    { return {iniciante:'Iniciante',bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante'}[n]||'Bronze'; }
   function nivelCor(n) {
     return {
@@ -2150,7 +2150,7 @@ function _abrirModuloModal(moduloId) {
   const mi         = modulos.indexOf(mod);
   const meuNivel   = _perfil.nivel || 'iniciante';
   const ORDEM_NIVEL = { iniciante:0, bronze:1, prata:2, ouro:3, diamante:4 };
-  function nivelLiberado(n) { return ORDEM_NIVEL[meuNivel] >= ORDEM_NIVEL[n||'bronze']; }
+  function nivelLiberado(n) { return (ORDEM_NIVEL[meuNivel]||0) >= (ORDEM_NIVEL[n||'iniciante']||0); }
 
   // Verifica se tem sub-módulos em cache para este módulo
   const subsCached = (window._submodulosCache || {})[moduloId];
@@ -2310,7 +2310,7 @@ function _abrirModulo(moduloId) {
 
   const meuNivel    = _perfil.nivel || 'iniciante';
   const ORDEM_NIVEL = { iniciante:0, bronze:1, prata:2, ouro:3, diamante:4 };
-  function nivelLiberado(n) { return ORDEM_NIVEL[meuNivel] >= ORDEM_NIVEL[n||'bronze']; }
+  function nivelLiberado(n) { return (ORDEM_NIVEL[meuNivel]||0) >= (ORDEM_NIVEL[n||'iniciante']||0); }
   function nivelLabel(n)    { return {iniciante:'Iniciante',bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante'}[n]||'Bronze'; }
   function nivelCor(n) {
     return {

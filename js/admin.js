@@ -1822,7 +1822,6 @@ async function salvarModulo(id) {
   if(!titulo){showToast('Informe o título.','error');return;}
   const btn=document.getElementById('btn-mod');
   btn.disabled=true;btn.innerHTML='<div class="spinner" style="margin:0 auto"></div>';
-  const nivelMod=document.getElementById('mod-nivel')?.value||'iniciante';
   const{error}=id?await _supabase.from('modules').update({title:titulo,description:desc||null,cover_url:cover,modal_cover_url:modalCover,order,nivel:nivelMod}).eq('id',id):await _supabase.from('modules').insert({title:titulo,description:desc||null,cover_url:cover,modal_cover_url:modalCover,order,nivel:nivelMod,is_active:true});
   if(error){showToast('Erro: '+error.message,'error');btn.disabled=false;btn.textContent='Salvar';return;}
   showToast(id?'Módulo atualizado!':'Módulo criado!','success');

@@ -1725,7 +1725,7 @@ async function renderCapacitacao() {
     { data: notificacoes },
   ] = await Promise.all([
     _supabase.from('modules')
-      .select('id,title,description,"order",cover_url,modal_cover_url,lessons(id,title,description,video_url,duration_seconds,"order",cover_url,nivel)')
+      .select('id,title,description,"order",cover_url,modal_cover_url,nivel,lessons(id,title,description,video_url,duration_seconds,"order",cover_url,nivel)')
       .eq('is_active', true)
       .order('"order"', { ascending: true }),
     _supabase.from('lesson_progress').select('lesson_id').eq('reseller_id', _perfil.id),

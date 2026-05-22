@@ -1062,9 +1062,11 @@ function filtrarProdutosPainel() {
 }
 
 function abrirProdutoPainel(id) {
+  try {
   const p      = _todosProdutos.find(x => x.id === id);
-  if (!p) return;
+  if (!p) { console.error('Produto não encontrado:', id); return; }
   const modal  = document.getElementById('modal-produto');
+  if (!modal) { console.error('modal-produto não existe'); return; }
   const imgs   = Array.isArray(p.images) && p.images.length ? p.images : [];
   const sizes  = Array.isArray(p.sizes)  && p.sizes.length  ? p.sizes  : [];
   const colors = Array.isArray(p.colors) && p.colors.length ? p.colors : [];
@@ -1214,6 +1216,7 @@ function abrirProdutoPainel(id) {
   window._pmodalProdId   = id;
   modal.style.display    = 'flex';
   document.body.style.overflow = 'hidden';
+  } catch(err) { console.error('abrirProdutoPainel erro:', err); showToast('Erro ao abrir produto: ' + err.message, 'error'); }
 }
 
 function _varInput(el) {

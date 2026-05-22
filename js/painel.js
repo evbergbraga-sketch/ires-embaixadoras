@@ -519,8 +519,32 @@ function filtrarPedidos(el, status) {
 
 
 async function abrirDetalhePedido(id) {
-  const o = _todosPedidos.find(x => x.id === id);
-  if (!o) return;
+  // Garante que o modal existe no DOM
+  if (!document.getElementById('modal-pedido')) {
+    const m = document.createElement('div');
+    m.id = 'modal-pedido';
+    m.style.cssText = 'display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.55);align-items:flex-end;justify-content:center';
+    m.innerHTML = '<div id="modal-pedido-body" style="background:var(--nb-bg);border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;position:relative"></div>';
+    document.body.appendChild(m);
+    m.addEventListener('click', e => { if (e.target === m) _fecharModalPedido(); });
+  }
+
+  // Mostra loading imediatamente
+  document.getElementById('modal-pedido-body').innerHTML = '<div class="loading" style="padding:32px 0"><div class="spinner"></div></div>';
+  document.getElementById('modal-pedido').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+
+  // Busca no cache ou direto no banco
+  let o = (_todosPedidos||[]).find(x => x.id === id);
+  if (!o || !o.order_items) {
+    const { data } = await _supabase
+      .from('orders')
+      .select('id,status,total,notes,payment_url,payment_ref,shipping_name,shipping_price,shipping_tracking,created_at,order_items(quantity,unit_price,subtotal,size,color,products(name,images,min_quantity,price))')
+      .eq('id', id).eq('reseller_id', _perfil.id).single();
+    o = data;
+  }
+  if (!o) { _fecharModalPedido(); showToast('Pedido não encontrado.','error'); return; }
+
   const itens = o.order_items || [];
 
   document.getElementById('modal-pedido-body').innerHTML = `
@@ -561,8 +585,6 @@ async function abrirDetalhePedido(id) {
       <button class="btn btn-outline" style="flex:1" onclick="_fecharModalPedido()">Fechar</button>
     </div>
   `;
-  document.getElementById('modal-pedido').style.display = 'flex';
-  document.body.style.overflow = 'hidden';
 }
 
 async function recomprarPainel(orderId) {

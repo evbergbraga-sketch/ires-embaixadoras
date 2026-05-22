@@ -1,0 +1,27 @@
+# Secrets
+.env
+.env.*
+*.key
+*.pem
+secrets/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
+
+# Node (se usar build)
+node_modules/
+dist/
+
+# Supabase local
+supabase/.temp/
+supabase/functions/.cache/

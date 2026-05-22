@@ -457,8 +457,15 @@ async function abrirPedido(id) {
       </a>
     ` : ''}
     ${o.shipping_tracking ? `
-      <div style="margin-top:8px;padding:10px;background:rgba(196,154,122,.07);border:0.5px solid rgba(196,154,122,.2);border-radius:10px;font-size:12px">
-        📦 Rastreio: <strong>${s(o.shipping_tracking)}</strong>
+      <div style="margin-top:8px;padding:12px;background:rgba(196,154,122,.07);border:0.5px solid rgba(196,154,122,.3);border-radius:10px">
+        <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">📦 Código de rastreio</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <code style="flex:1;font-size:13px;font-weight:700;color:var(--bord-esc);background:rgba(0,0,0,.04);padding:6px 10px;border-radius:6px;letter-spacing:.05em">${s(o.shipping_tracking)}</code>
+          <button onclick="navigator.clipboard.writeText('${s(o.shipping_tracking)}').then(()=>showToast('Código copiado!','success'))" style="background:var(--bord);border:none;color:var(--ouro-cl);border-radius:6px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">Copiar</button>
+        </div>
+        <a href="https://rastreamento.melhorenvio.com.br/rastreamento/${s(o.shipping_tracking)}" target="_blank" style="display:block;margin-top:8px;text-align:center;font-size:11px;font-weight:600;color:#0ea5e9;text-decoration:none">
+          🔍 Rastrear no Melhor Envio →
+        </a>
       </div>
     ` : ''}
   `);

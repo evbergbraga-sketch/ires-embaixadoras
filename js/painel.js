@@ -578,6 +578,24 @@ async function abrirDetalhePedido(id) {
       ${statusLabel(o.status)}
     </div>
     ${o.notes ? `<div class="info-box" style="margin-bottom:16px"><div class="info-box-dot"></div><p>${s(o.notes)}</p></div>` : ''}
+
+    ${o.shipping_tracking ? `
+      <div style="margin-bottom:16px;padding:14px;background:#F0EAE2;border-radius:12px;border:0.5px solid #D9C5B0">
+        <div style="font-size:10px;font-weight:700;color:#8B6050;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">📦 Código de rastreio</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <code style="flex:1;font-size:14px;font-weight:800;color:#2C1018;background:rgba(255,255,255,.7);padding:8px 10px;border-radius:8px;letter-spacing:.06em">${s(o.shipping_tracking)}</code>
+          <button onclick="navigator.clipboard.writeText('${s(o.shipping_tracking)}').then(()=>showToast('Código copiado! 📋','success')).catch(()=>{window.prompt('Copie o código:','${s(o.shipping_tracking)}')})" style="background:#3D0E20;border:none;color:#C8A96E;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">Copiar</button>
+        </div>
+        <a href="https://rastreamento.melhorenvio.com.br/rastreamento/${s(o.shipping_tracking)}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:#fff;border-radius:8px;font-size:12px;font-weight:700;color:#0ea5e9;text-decoration:none;border:0.5px solid #D9C5B0">
+          🔍 Rastrear entrega em tempo real →
+        </a>
+      </div>
+    ` : (o.status === 'shipped' ? `
+      <div style="margin-bottom:16px;padding:12px;background:#F0EAE2;border-radius:12px;text-align:center;font-size:12px;color:#8B6050">
+        📦 Pedido enviado — código de rastreio em breve
+      </div>
+    ` : '')}
+
     ${o.status === 'pending' ? (o.payment_url
       ? `<a href="${o.payment_url}" target="_blank" class="btn btn-primary" style="margin-bottom:10px">Finalizar pagamento agora ↗</a>`
       : `<button class="btn btn-primary" style="margin-bottom:10px" id="btn-gerar-${o.id}" onclick="gerarCobrancaPainel('${o.id}',${o.total})">Gerar link de pagamento</button>`

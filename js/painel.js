@@ -501,7 +501,7 @@ function _renderListaPedidos(lista) {
             <div style="font-size:12px;color:var(--nb-text-lo);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px">${s(nomesProdutos)}</div>
             <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
               <span style="font-size:11px;color:var(--nb-text-lo)">${new Date(o.created_at).toLocaleDateString('pt-BR')}</span>
-              <button onclick="event.stopPropagation();abrirDetalhePedido('${o.id}')" style="background:none;border:0.5px solid var(--nb-borda);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--nb-text-hi);cursor:pointer">
+              <button onclick="event.stopPropagation();abrirDetalhePedido('${o.id}')" style="background:#3D0E20;border:none;border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;color:#C8A96E;cursor:pointer;letter-spacing:.02em;transition:opacity .15s" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">
                 Ver detalhes
               </button>
             </div>

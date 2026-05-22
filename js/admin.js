@@ -683,6 +683,9 @@ function embRow(e, statusCores, statusNomes) {
         <span class="pill ${statusCores[e.status]||'pill-gray'}">${statusNomes[e.status]||e.status}</span>
       </div>
       <div style="display:flex;gap:6px;justify-content:flex-end">
+        <button class="btn btn-sm btn-outline" onclick="abrirAlterarNivel('${e.id}','${e.full_name||''}','${e.nivel||'iniciante'}')" style="font-weight:700;gap:4px">
+          ${{iniciante:'🟢',bronze:'🟤',prata:'⚪',ouro:'🟡',diamante:'💎'}[e.nivel||'iniciante']} ${{iniciante:'Iniciante',bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante'}[e.nivel||'iniciante']}
+        </button>
         ${e.status==='pending'   ?`<button class="btn btn-sm btn-primary" style="width:auto" onclick="aprovarEmb('${e.id}')">Aprovar</button>`:''}
         ${e.status==='active'    ?`<button class="btn btn-sm btn-danger" onclick="suspenderEmb('${e.id}')">Suspender</button>`:''}
         ${e.status==='suspended' ?`<button class="btn btn-sm btn-outline" onclick="aprovarEmb('${e.id}')">Reativar</button>`:''}
@@ -715,9 +718,14 @@ async function abrirDetalhesEmb(id) {
       <div style="background:var(--creme2);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:12px"><div style="font-size:11px;color:var(--gray);margin-bottom:4px">Como nos encontrou</div><div style="font-size:13px;font-weight:600">${e.how_found||'—'}</div></div>
       <div style="background:var(--creme2);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:12px"><div style="font-size:11px;color:var(--gray);margin-bottom:4px">Cadastro</div><div style="font-size:13px;font-weight:600">${new Date(e.created_at).toLocaleDateString('pt-BR')}</div></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
       <div style="background:var(--creme2);border:0.5px solid var(--border);border-top:2px solid var(--pink);border-radius:var(--radius-md);padding:12px"><div style="font-size:20px;font-weight:900">${(pedidos||[]).length}</div><div style="font-size:11px;color:var(--gray)">Pedidos feitos</div></div>
       <div style="background:var(--creme2);border:0.5px solid var(--border);border-top:2px solid var(--pink);border-radius:var(--radius-md);padding:12px"><div style="font-size:20px;font-weight:900">${formatBRL(totalGasto)}</div><div style="font-size:11px;color:var(--gray)">Total comprado</div></div>
+      <div style="background:var(--creme2);border:0.5px solid var(--border);border-top:2px solid var(--ouro-cl);border-radius:var(--radius-md);padding:12px;cursor:pointer" onclick="abrirAlterarNivel('${e.id}','${e.full_name||''}','${e.nivel||'iniciante'}')">
+        <div style="font-size:18px">${{iniciante:'🟢',bronze:'🟤',prata:'⚪',ouro:'🟡',diamante:'💎'}[e.nivel||'iniciante']}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--bord-esc)">${{iniciante:'Iniciante',bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante'}[e.nivel||'iniciante']}</div>
+        <div style="font-size:10px;color:var(--gray)">Alterar nível</div>
+      </div>
     </div>
     <div style="display:flex;gap:8px">
       ${e.status==='pending'   ?`<button class="btn btn-primary btn-sm" style="flex:1" onclick="aprovarEmb('${e.id}');fecharModal()">Aprovar</button>`:''}
@@ -728,6 +736,50 @@ async function abrirDetalhesEmb(id) {
     </div>
   `);
 }
+
+async function abrirAlterarNivel(id, nome, nivelAtual) {
+  abrirModal(`
+    <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:4px">Alterar nível</h3>
+    <p style="font-size:13px;color:var(--gray);margin-bottom:20px">${s(nome)}</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+      ${[
+        {v:'iniciante', label:'🟢 Iniciante', desc:'Acesso livre — sem requisito'},
+        {v:'bronze',    label:'🟤 Bronze',    desc:'A partir de 4 pedidos pagos'},
+        {v:'prata',     label:'⚪ Prata',     desc:'A partir de 8 pedidos pagos'},
+        {v:'ouro',      label:'🟡 Ouro',      desc:'A partir de 14 pedidos pagos'},
+        {v:'diamante',  label:'💎 Diamante',  desc:'A partir de 20 pedidos pagos'},
+      ].map(n => `
+        <label style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid ${nivelAtual===n.v?'var(--pink)':'var(--border)'};border-radius:10px;cursor:pointer;background:${nivelAtual===n.v?'var(--pink-faint)':'var(--creme)'};transition:.15s">
+          <input type="radio" name="nivel-emb" value="${n.v}" ${nivelAtual===n.v?'checked':''} style="accent-color:var(--pink);width:16px;height:16px;flex-shrink:0"/>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--bord-esc)">${n.label}</div>
+            <div style="font-size:11px;color:var(--gray)">${n.desc}</div>
+          </div>
+        </label>
+      `).join('')}
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline" style="flex:1" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" style="flex:1" id="btn-salvar-nivel" onclick="salvarNivelEmb('${id}')">Salvar nível</button>
+    </div>
+  `);
+}
+
+async function salvarNivelEmb(id) {
+  const nivel = document.querySelector('input[name="nivel-emb"]:checked')?.value;
+  if (!nivel) { showToast('Selecione um nível.', 'error'); return; }
+  const btn = document.getElementById('btn-salvar-nivel');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
+  const { error } = await _supabase.from('profiles').update({ nivel }).eq('id', id);
+  if (error) { showToast('Erro ao salvar: ' + error.message, 'error'); btn.disabled = false; btn.textContent = 'Salvar nível'; return; }
+  const nomes = {iniciante:'Iniciante',bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante'};
+  showToast('Nível atualizado para ' + nomes[nivel] + '! ✅', 'success');
+  fecharModal();
+  renderEmbaixadoras();
+}
+
 
 function filtrarEmbs(el, status) {
   document.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active'));

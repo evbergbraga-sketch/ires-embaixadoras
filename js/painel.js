@@ -499,9 +499,11 @@ function _renderListaPedidos(lista) {
               <span style="font-size:14px;font-weight:800;color:var(--nb-text-hi)">${formatBRL(o.total)}</span>
             </div>
             <div style="font-size:12px;color:var(--nb-text-lo);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px">${s(nomesProdutos)}</div>
-            <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
               <span style="font-size:11px;color:var(--nb-text-lo)">${new Date(o.created_at).toLocaleDateString('pt-BR')}</span>
-              ${temRastreio ? `<span style="font-size:10px;color:#0ea5e9;font-weight:600">📦 ${s(o.shipping_tracking)}</span>` : ''}
+              <button onclick="event.stopPropagation();abrirDetalhePedido('${o.id}')" style="background:none;border:0.5px solid var(--nb-borda);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--nb-text-hi);cursor:pointer">
+                Ver detalhes
+              </button>
             </div>
           </div>
         </div>

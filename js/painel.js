@@ -1061,6 +1061,22 @@ function filtrarProdutosPainel() {
   }).join('');
 }
 
+function _corHex(nome) {
+  const mapa = {
+    'preto':'#1a1a1a','branco':'#ffffff','branca':'#ffffff','vermelho':'#e53e3e',
+    'rosa':'#f687b3','pink':'#f687b3','azul':'#3b82f6','azul marinho':'#1e3a5f',
+    'azul claro':'#90cdf4','verde':'#48bb78','verde água':'#4db6ac','verde agua':'#4db6ac',
+    'amarelo':'#ecc94b','laranja':'#ed8936','roxo':'#805ad5','lilas':'#b794f4',
+    'lilás':'#b794f4','cinza':'#a0aec0','cinza chumbo':'#4a5568','marrom':'#8b5e3c',
+    'bege':'#f5e6d3','nude':'#e8c4a0','caramelo':'#d4874f','vinho':'#7b2d3e',
+    'coral':'#ff7f6e','turquesa':'#40e0d0','dourado':'#c8a96e','ouro':'#c8a96e',
+    'prata':'#a8a9ad','creme':'#f5efe6','off white':'#f8f5f0','off-white':'#f8f5f0',
+    'sandia':'#f4808e','menta':'#98d4c0','salmão':'#fa8072','salmon':'#fa8072',
+  };
+  return mapa[nome?.toLowerCase()] || '#c8a96e';
+}
+
+
 function abrirProdutoPainel(id) {
   try {
   const p      = _todosProdutos.find(x => x.id === id);

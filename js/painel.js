@@ -444,7 +444,7 @@ async function renderPedidos() {
     const m = document.createElement('div');
     m.id = 'modal-pedido';
     m.style.cssText = 'display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.5);align-items:flex-end;justify-content:center';
-    m.innerHTML = '<div id="modal-pedido-body" style="background:var(--nb-bg);border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;position:relative"></div>';
+    m.innerHTML = '<div id="modal-pedido-body" style="background:#F5EFE6;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;position:relative"></div>';
     document.body.appendChild(m);
     m.addEventListener('click', e => { if (e.target === m) _fecharModalPedido(); });
   }
@@ -524,7 +524,7 @@ async function abrirDetalhePedido(id) {
     const m = document.createElement('div');
     m.id = 'modal-pedido';
     m.style.cssText = 'display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.55);align-items:flex-end;justify-content:center';
-    m.innerHTML = '<div id="modal-pedido-body" style="background:var(--nb-bg);border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;position:relative"></div>';
+    m.innerHTML = '<div id="modal-pedido-body" style="background:#F5EFE6;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;position:relative"></div>';
     document.body.appendChild(m);
     m.addEventListener('click', e => { if (e.target === m) _fecharModalPedido(); });
   }

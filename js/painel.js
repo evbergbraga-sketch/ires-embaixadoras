@@ -544,6 +544,13 @@ async function abrirDetalhePedido(id) {
       .select('id,status,total,notes,payment_url,payment_ref,shipping_name,shipping_price,shipping_tracking,created_at,order_items(quantity,unit_price,subtotal,size,color,products(name,images,min_quantity,price))')
       .eq('id', id).eq('reseller_id', _perfil.id).single();
     o = data;
+    // Salva no cache para recomprarPainel funcionar
+    if (o) {
+      window._todosPedidos = window._todosPedidos || [];
+      const idx = window._todosPedidos.findIndex(x => x.id === id);
+      if (idx >= 0) window._todosPedidos[idx] = o;
+      else window._todosPedidos.push(o);
+    }
   }
   if (!o) { _fecharModalPedido(); showToast('Pedido não encontrado.','error'); return; }
 

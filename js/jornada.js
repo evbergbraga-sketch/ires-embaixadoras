@@ -207,9 +207,11 @@ function _jornadaHTML({ profile, nivelAtual, nivelIdx, nivelObj, proximo, totalP
       </div>
     </div>`).join('');
 
-  // ── O QUE PRECISO PARA AVANÇAR (níveis bloqueados) ──
-  const proximosHTML = _NIVEIS.slice(nivelIdx + 1).map((n, i) => {
-    const faltamN = Math.max(0, n.min - totalPedidos);
+  // ── O QUE PRECISO PARA AVANÇAR (só níveis com compras pendentes) ──
+  // Filtra apenas níveis onde totalPedidos ainda não atingiu o mínimo
+  const niveisPendentes = _NIVEIS.slice(nivelIdx + 1).filter(n => totalPedidos < n.min);
+  const proximosHTML = niveisPendentes.map((n, i) => {
+    const faltamN = n.min - totalPedidos; // sempre > 0 após o filtro
     return `
       <div class="j2-prx-card ${i === 0 ? 'open' : ''} j2-animate" style="--nc:${n.cor};--nc-bg:${n.corBg};--nc-bdr:${n.corBdr}">
         <button class="j2-prx-hdr">
@@ -320,7 +322,7 @@ function _jornadaHTML({ profile, nivelAtual, nivelIdx, nivelObj, proximo, totalP
       </div>
 
       <!-- O que preciso para avançar -->
-      ${_NIVEIS.slice(nivelIdx + 1).length > 0 ? `
+      ${niveisPendentes.length > 0 ? `
         <div class="j2-section">
           <div class="j2-section-hdr j2-animate">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--nb-burg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>

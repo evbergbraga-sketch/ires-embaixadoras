@@ -1681,11 +1681,12 @@ function abrirFormSubmodulo(subId, moduloId) {
         <div class="form-group">
       <label>Nível mínimo para acessar</label>
       <select id="sub-nivel">
-        <option value="iniciante" ${(!sub?.nivel||sub?.nivel==='iniciante')?'selected':''}>🟢 Iniciante — liberado para todos</option>
-        <option value="bronze" ${sub?.nivel==='bronze'?'selected':''}>🟤 Bronze — a partir de 4 pedidos</option>
-        <option value="prata" ${sub?.nivel==='prata'?'selected':''}>⚪ Prata — a partir de 8 pedidos</option>
-        <option value="ouro" ${sub?.nivel==='ouro'?'selected':''}>🟡 Ouro — a partir de 14 pedidos</option>
-        <option value="diamante" ${sub?.nivel==='diamante'?'selected':''}>💎 Diamante — a partir de 20 pedidos</option>
+        <option value="iniciante" ${(!sub?.nivel||sub?.nivel==='iniciante')?'selected':''}>🎯 Iniciante — liberado para todos</option>
+        <option value="bronze" ${sub?.nivel==='bronze'?'selected':''}>🥉 Bronze — 1 compra de R$300</option>
+        <option value="prata" ${sub?.nivel==='prata'?'selected':''}>🥈 Prata — 3 compras de R$300</option>
+        <option value="ouro" ${sub?.nivel==='ouro'?'selected':''}>🥇 Ouro — 5 compras de R$300</option>
+        <option value="diamante" ${sub?.nivel==='diamante'?'selected':''}>💎 Diamante — 10 compras de R$300</option>
+        <option value="bonus" ${sub?.nivel==='bonus'?'selected':''}>⭐ Bônus — acesso exclusivo via admin</option>
       </select>
     </div>
     <div style="display:flex;gap:10px;margin-top:4px">
@@ -1894,7 +1895,7 @@ function abrirFormModulo(id) {
       </button>
     </div>
     <div class="form-group"><label>Ordem</label><input type="number" id="mod-order" value="${mod?.order||0}" min="0"/></div>
-    <div class="form-group"><label>Nível mínimo para acessar</label><select id="mod-nivel"><option value="iniciante" ${(!mod?.nivel||mod?.nivel==='iniciante')?'selected':''}>🟢 Iniciante — liberado para todos</option><option value="bronze" ${mod?.nivel==='bronze'?'selected':''}>🟤 Bronze — a partir de 4 pedidos</option><option value="prata" ${mod?.nivel==='prata'?'selected':''}>⚪ Prata — a partir de 8 pedidos</option><option value="ouro" ${mod?.nivel==='ouro'?'selected':''}>🟡 Ouro — a partir de 14 pedidos</option><option value="diamante" ${mod?.nivel==='diamante'?'selected':''}>💎 Diamante — a partir de 20 pedidos</option></select></div>
+    <div class="form-group"><label>Nível mínimo para acessar</label><select id="mod-nivel"><option value="iniciante" ${(!mod?.nivel||mod?.nivel==='iniciante')?'selected':''}>🎯 Iniciante — liberado para todos</option><option value="bronze" ${mod?.nivel==='bronze'?'selected':''}>🥉 Bronze — 1 compra de R$300</option><option value="prata" ${mod?.nivel==='prata'?'selected':''}>🥈 Prata — 3 compras de R$300</option><option value="ouro" ${mod?.nivel==='ouro'?'selected':''}>🥇 Ouro — 5 compras de R$300</option><option value="diamante" ${mod?.nivel==='diamante'?'selected':''}>💎 Diamante — 10 compras de R$300</option><option value="bonus" ${mod?.nivel==='bonus'?'selected':''}>⭐ Bônus — acesso exclusivo via admin</option></select></div>
     <div style="display:flex;gap:10px;margin-top:4px">
       <button class="btn btn-outline" style="flex:1" onclick="fecharModal()">Cancelar</button>
       <button class="btn btn-primary" style="flex:1" id="btn-mod" onclick="salvarModulo(${id?`'${id}'`:'null'})">Salvar</button>
@@ -1962,7 +1963,7 @@ function abrirFormAula(aulaId, moduloId, submoduloId=null) {
           ${a.cover_url ? '🔄 Trocar imagem' : '📷 Selecionar imagem'}
         </button>
       </div>
-      <div class="form-group"><label>Nível necessário</label><select id="aula-nivel"><option value="iniciante" ${(!a.nivel||a.nivel==='iniciante')?'selected':''}>🟢 Iniciante — liberado para todos</option><option value="bronze" ${a.nivel==='bronze'?'selected':''}>🟤 Bronze — a partir de 4 pedidos</option><option value="prata" ${a.nivel==='prata'?'selected':''}>⚪ Prata — a partir de 8 pedidos</option><option value="ouro" ${a.nivel==='ouro'?'selected':''}>🟡 Ouro — a partir de 14 pedidos</option><option value="diamante" ${a.nivel==='diamante'?'selected':''}>💎 Diamante — a partir de 20 pedidos</option></select></div>
+      <div class="form-group"><label>Nível necessário</label><select id="aula-nivel"><option value="iniciante" ${(!a.nivel||a.nivel==='iniciante')?'selected':''}>🎯 Iniciante — liberado para todos</option><option value="bronze" ${a.nivel==='bronze'?'selected':''}>🥉 Bronze — 1 compra de R$300</option><option value="prata" ${a.nivel==='prata'?'selected':''}>🥈 Prata — 3 compras de R$300</option><option value="ouro" ${a.nivel==='ouro'?'selected':''}>🥇 Ouro — 5 compras de R$300</option><option value="diamante" ${a.nivel==='diamante'?'selected':''}>💎 Diamante — 10 compras de R$300</option><option value="bonus" ${a.nivel==='bonus'?'selected':''}>⭐ Bônus — acesso exclusivo via admin</option></select></div>
       <div class="form-group">
         <button type="button" onclick="_previewYoutubeAdmin()" style="width:100%;padding:8px;background:transparent;border:0.5px solid var(--border);border-radius:var(--radius-md);color:var(--pink);font-size:13px;cursor:pointer">▶ Pré-visualizar</button>
         <div id="aula-preview" style="margin-top:10px;display:none;border-radius:10px;overflow:hidden"><div style="position:relative;padding-bottom:56.25%;height:0;background:#000"><iframe id="aula-iframe" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none" allowfullscreen></iframe></div></div>

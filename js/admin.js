@@ -691,7 +691,7 @@ function embRow(e, statusCores, statusNomes) {
       </div>
       <div style="display:flex;gap:6px;justify-content:flex-end">
         <button class="btn btn-sm btn-outline" onclick="abrirAlterarNivel('${e.id}','${e.full_name||''}','${e.nivel||'iniciante'}')" style="font-weight:700;gap:4px">
-          ${{iniciante:'🟢',bronze:'🟤',prata:'⚪',ouro:'🟡',diamante:'💎'}[e.nivel||'iniciante']} ${{iniciante:'Iniciante',bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante'}[e.nivel||'iniciante']}
+          ${{iniciante:'🎯',bronze:'🥉',prata:'🥈',ouro:'🥇',diamante:'💎'}[e.nivel||'iniciante']} ${{iniciante:'Iniciante',bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante'}[e.nivel||'iniciante']}${e.bonus_ativo?' ⭐':''}
         </button>
         ${e.status==='pending'   ?`<button class="btn btn-sm btn-primary" style="width:auto" onclick="aprovarEmb('${e.id}')">Aprovar</button>`:''}
         ${e.status==='active'    ?`<button class="btn btn-sm btn-danger" onclick="suspenderEmb('${e.id}')">Suspender</button>`:''}
@@ -729,7 +729,7 @@ async function abrirDetalhesEmb(id) {
       <div style="background:var(--creme2);border:0.5px solid var(--border);border-top:2px solid var(--pink);border-radius:var(--radius-md);padding:12px"><div style="font-size:20px;font-weight:900">${(pedidos||[]).length}</div><div style="font-size:11px;color:var(--gray)">Pedidos feitos</div></div>
       <div style="background:var(--creme2);border:0.5px solid var(--border);border-top:2px solid var(--pink);border-radius:var(--radius-md);padding:12px"><div style="font-size:20px;font-weight:900">${formatBRL(totalGasto)}</div><div style="font-size:11px;color:var(--gray)">Total comprado</div></div>
       <div style="background:var(--creme2);border:0.5px solid var(--border);border-top:2px solid var(--ouro-cl);border-radius:var(--radius-md);padding:12px;cursor:pointer" onclick="abrirAlterarNivel('${e.id}','${e.full_name||''}','${e.nivel||'iniciante'}')">
-        <div style="font-size:18px">${{iniciante:'🟢',bronze:'🟤',prata:'⚪',ouro:'🟡',diamante:'💎'}[e.nivel||'iniciante']}</div>
+        <div style="font-size:18px">${{iniciante:'🎯',bronze:'🥉',prata:'🥈',ouro:'🥇',diamante:'💎'}[e.nivel||'iniciante']}${e.bonus_ativo?' ⭐':''}</div>
         <div style="font-size:13px;font-weight:700;color:var(--bord-esc)">${{iniciante:'Iniciante',bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante'}[e.nivel||'iniciante']}</div>
         <div style="font-size:10px;color:var(--gray)">Alterar nível</div>
       </div>
@@ -745,20 +745,26 @@ async function abrirDetalhesEmb(id) {
 }
 
 async function abrirAlterarNivel(id, nome, nivelAtual) {
+  // Busca bonus_ativo atual
+  const { data: prof } = await _supabase.from('profiles').select('bonus_ativo').eq('id', id).single();
+  const bonusAtivo = prof?.bonus_ativo || false;
+
   abrirModal(`
     <button onclick="fecharModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--gray);cursor:pointer;font-size:20px">✕</button>
     <h3 style="font-size:16px;font-weight:800;margin-bottom:4px">Alterar nível</h3>
-    <p style="font-size:13px;color:var(--gray);margin-bottom:20px">${s(nome)}</p>
+    <p style="font-size:13px;color:var(--gray);margin-bottom:16px">${s(nome)}</p>
+
+    <div style="font-size:11px;font-weight:700;color:var(--bord);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Nível da embaixadora</div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
       ${[
-        {v:'iniciante', label:'🟢 Iniciante', desc:'Acesso livre — sem requisito'},
-        {v:'bronze',    label:'🟤 Bronze',    desc:'A partir de 4 pedidos pagos'},
-        {v:'prata',     label:'⚪ Prata',     desc:'A partir de 8 pedidos pagos'},
-        {v:'ouro',      label:'🟡 Ouro',      desc:'A partir de 14 pedidos pagos'},
-        {v:'diamante',  label:'💎 Diamante',  desc:'A partir de 20 pedidos pagos'},
+        {v:'iniciante', label:'🎯 Iniciante', desc:'Cadastro na plataforma'},
+        {v:'bronze',    label:'🥉 Bronze',    desc:'1 compra mínima de R$300'},
+        {v:'prata',     label:'🥈 Prata',     desc:'3 compras mínimas de R$300'},
+        {v:'ouro',      label:'🥇 Ouro',      desc:'5 compras + ativa a cada 3 meses'},
+        {v:'diamante',  label:'💎 Diamante',  desc:'10 compras + ativa a cada 2 meses'},
       ].map(n => `
-        <label style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid ${nivelAtual===n.v?'var(--pink)':'var(--border)'};border-radius:10px;cursor:pointer;background:${nivelAtual===n.v?'var(--pink-faint)':'var(--creme)'};transition:.15s">
-          <input type="radio" name="nivel-emb" value="${n.v}" ${nivelAtual===n.v?'checked':''} style="accent-color:var(--pink);width:16px;height:16px;flex-shrink:0"/>
+        <label style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid ${nivelAtual===n.v?'var(--bord)':'var(--border)'};border-radius:10px;cursor:pointer;background:${nivelAtual===n.v?'var(--creme2)':'var(--creme)'};transition:.15s">
+          <input type="radio" name="nivel-emb" value="${n.v}" ${nivelAtual===n.v?'checked':''} style="accent-color:var(--bord);width:16px;height:16px;flex-shrink:0"/>
           <div>
             <div style="font-size:14px;font-weight:700;color:var(--bord-esc)">${n.label}</div>
             <div style="font-size:11px;color:var(--gray)">${n.desc}</div>
@@ -766,9 +772,21 @@ async function abrirAlterarNivel(id, nome, nivelAtual) {
         </label>
       `).join('')}
     </div>
+
+    <div style="border-top:0.5px solid var(--border);padding-top:16px;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--ouro);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">⭐ Nível Bônus — Somente Admin</div>
+      <label style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border:1.5px solid ${bonusAtivo?'var(--ouro)':'var(--border)'};border-radius:10px;cursor:pointer;background:${bonusAtivo?'rgba(212,168,118,.08)':'var(--creme)'};transition:.15s">
+        <input type="checkbox" id="chk-bonus" ${bonusAtivo?'checked':''} style="accent-color:var(--ouro);width:16px;height:16px;flex-shrink:0;margin-top:2px"/>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--bord-esc)">⭐ Ativar Bônus</div>
+          <div style="font-size:11px;color:var(--gray);line-height:1.4">Desbloqueia aulas bônus na Capacitação desta embaixadora. Sem requisito de compras — concessão manual.</div>
+        </div>
+      </label>
+    </div>
+
     <div style="display:flex;gap:8px">
       <button class="btn btn-outline" style="flex:1" onclick="fecharModal()">Cancelar</button>
-      <button class="btn btn-primary" style="flex:1" id="btn-salvar-nivel" onclick="salvarNivelEmb('${id}')">Salvar nível</button>
+      <button class="btn btn-primary" style="flex:1" id="btn-salvar-nivel" onclick="salvarNivelEmb('${id}')">Salvar</button>
     </div>
   `);
 }
@@ -776,13 +794,15 @@ async function abrirAlterarNivel(id, nome, nivelAtual) {
 async function salvarNivelEmb(id) {
   const nivel = document.querySelector('input[name="nivel-emb"]:checked')?.value;
   if (!nivel) { showToast('Selecione um nível.', 'error'); return; }
+  const bonusAtivo = document.getElementById('chk-bonus')?.checked || false;
   const btn = document.getElementById('btn-salvar-nivel');
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
-  const { error } = await _supabase.from('profiles').update({ nivel }).eq('id', id);
-  if (error) { showToast('Erro ao salvar: ' + error.message, 'error'); btn.disabled = false; btn.textContent = 'Salvar nível'; return; }
+  const { error } = await _supabase.from('profiles').update({ nivel, bonus_ativo: bonusAtivo }).eq('id', id);
+  if (error) { showToast('Erro ao salvar: ' + error.message, 'error'); btn.disabled = false; btn.textContent = 'Salvar'; return; }
   const nomes = {iniciante:'Iniciante',bronze:'Bronze',prata:'Prata',ouro:'Ouro',diamante:'Diamante'};
-  showToast('Nível atualizado para ' + nomes[nivel] + '! ✅', 'success');
+  const bonusMsg = bonusAtivo ? ' + Bônus ativo ⭐' : '';
+  showToast('Nível: ' + nomes[nivel] + bonusMsg + ' ✅', 'success');
   fecharModal();
   renderEmbaixadoras();
 }

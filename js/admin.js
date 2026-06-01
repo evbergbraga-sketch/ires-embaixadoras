@@ -544,7 +544,7 @@ async function renderProdutos() {
           <div style="display:flex;align-items:center;justify-content:space-between">
             <div>
               <div style="font-size:14px;font-weight:800;color:var(--bord-esc)">${formatBRL(p.price)}</div>
-              <div style="font-size:10px;color:var(--gray)">mín. ${p.min_quantity} un.${p.sku ? ` · ${s(p.sku)}` : ''}${p.weight_grams ? ` · ${p.weight_grams}g` : ''}</div>
+              <div style="font-size:10px;color:var(--gray)">mín. ${p.min_quantity} un.${p.sku ? ` · ${s(p.sku)}` : ''}${p.weight_grams ? ` · ${p.weight_grams}g` : ''}${p.sob_encomenda ? ` · <span style="color:#8c5e38;font-weight:600">📦 Sob encomenda · ${p.prazo_dias||30}d</span>` : ''}</div>
             </div>
             <div style="display:flex;gap:6px">
               <button class="btn btn-sm btn-outline" onclick="abrirFormProduto('${p.id}')">Editar</button>
@@ -617,6 +617,29 @@ function abrirFormProduto(id) {
         </div>
         <input type="file" id="prod-img-file" accept="image/*" multiple style="display:none" onchange="uploadMultiplas(this.files)"/>
       </div>
+      <div style="border-top:0.5px solid var(--border);margin:16px 0;padding-top:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--bord-esc)">📦 Sob Encomenda</div>
+            <div style="font-size:11px;color:var(--gray);margin-top:2px">Produto não disponível para pronta entrega — vendido sob demanda</div>
+          </div>
+          <label class="prod-toggle">
+            <input type="checkbox" id="prod-sob-encomenda" ${p.sob_encomenda?'checked':''} onchange="toggleSobEncomenda(this.checked)"/>
+            <span class="prod-toggle-track"><span class="prod-toggle-thumb"></span></span>
+          </label>
+        </div>
+        <div id="campo-prazo" style="display:${p.sob_encomenda?'block':'none'};margin-top:12px">
+          <label style="font-size:11px;font-weight:600;color:var(--bord);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:6px">Prazo de entrega</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px" id="prazo-chips">
+            ${[15,20,30,45,60].map(d=>`<button type="button" class="prazo-chip ${(p.prazo_dias||30)===d?'active':''}" onclick="selecionarPrazo(${d})">${d} dias</button>`).join('')}
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="number" id="prod-prazo" value="${p.prazo_dias||30}" min="1" max="365" style="width:90px"
+              oninput="document.querySelectorAll('.prazo-chip').forEach(c=>c.classList.remove('active'));"/>
+            <span style="font-size:13px;color:var(--gray)">dias corridos após confirmação do pedido</span>
+          </div>
+        </div>
+      </div>
       <div style="display:flex;gap:10px;margin-top:4px">
         <button class="btn btn-outline" style="flex:1" onclick="fecharModal()">Cancelar</button>
         <button class="btn btn-primary" style="flex:1" id="btn-salvar-prod" onclick="salvarProduto(${id?`'${id}'`:'null'})">Salvar produto</button>
@@ -633,14 +656,16 @@ async function salvarProduto(id) {
   const min    = parseInt(document.getElementById('prod-min').value);
   const sku    = document.getElementById('prod-sku').value.trim() || null;
   const peso   = parseInt(document.getElementById('prod-peso').value) || 0;
-  const estoque= document.getElementById('prod-estoque').value;
-  const catId  = document.getElementById('prod-cat').value;
-  const sizes  = document.getElementById('prod-sizes').value.split(',').map(v=>v.trim()).filter(Boolean);
-  const colors = document.getElementById('prod-colors').value.split(',').map(v=>v.trim()).filter(Boolean);
+  const estoque      = document.getElementById('prod-estoque').value;
+  const catId        = document.getElementById('prod-cat').value;
+  const sizes        = document.getElementById('prod-sizes').value.split(',').map(v=>v.trim()).filter(Boolean);
+  const colors       = document.getElementById('prod-colors').value.split(',').map(v=>v.trim()).filter(Boolean);
+  const sobEncomenda = document.getElementById('prod-sob-encomenda').checked;
+  const prazoDias    = sobEncomenda ? (parseInt(document.getElementById('prod-prazo').value) || 30) : null;
   if (!nome)        { showToast('Informe o nome do produto.','error'); return; }
   if (isNaN(preco)) { showToast('Informe o preço.','error'); return; }
   if (min < 1)      { showToast('Quantidade mínima deve ser pelo menos 1.','error'); return; }
-  const payload = { name:nome, description:desc, price:preco, min_quantity:min, sku, weight_grams:peso, sizes, colors, stock:estoque?parseInt(estoque):null, category_id:catId||null, images:window._prodImagens||[] };
+  const payload = { name:nome, description:desc, price:preco, min_quantity:min, sku, weight_grams:peso, sizes, colors, stock:estoque?parseInt(estoque):null, category_id:catId||null, images:window._prodImagens||[], sob_encomenda:sobEncomenda, prazo_dias:prazoDias };
   const { error } = id ? await _supabase.from('products').update(payload).eq('id',id) : await _supabase.from('products').insert({...payload,is_active:true});
   if (error) { showToast('Erro ao salvar produto.','error'); return; }
   showToast(id?'Produto atualizado!':'Produto criado!','success');
@@ -654,6 +679,15 @@ async function toggleProduto(id, ativo) {
   if (error) { showToast('Erro.','error'); return; }
   showToast(ativo?'Produto desativado.':'Produto ativado!','success');
   renderProdutos();
+}
+
+// ── Sob Encomenda helpers ──
+function toggleSobEncomenda(checked) {
+  document.getElementById('campo-prazo').style.display = checked ? 'block' : 'none';
+}
+function selecionarPrazo(dias) {
+  document.getElementById('prod-prazo').value = dias;
+  document.querySelectorAll('.prazo-chip').forEach(c => c.classList.toggle('active', parseInt(c.textContent) === dias));
 }
 
 // ════════════════════════════════════════════
@@ -2062,3 +2096,44 @@ async function deletarAula(id) {
   if(error){showToast('Erro.','error');return;}
   showToast('Aula excluída.','success');renderCapacitacaoAdmin();
 }
+
+
+// ── Estilos: toggle Sob Encomenda + chips de prazo ──
+(function () {
+  if (document.getElementById('sob-enc-css')) return;
+  const s = document.createElement('style');
+  s.id = 'sob-enc-css';
+  s.textContent = `
+/* Toggle switch */
+.prod-toggle { position:relative; display:inline-flex; align-items:center; cursor:pointer; }
+.prod-toggle input { opacity:0; width:0; height:0; position:absolute; }
+.prod-toggle-track {
+  width:44px; height:24px; border-radius:12px;
+  background:var(--border); border:0.5px solid var(--border);
+  transition:background .2s, border-color .2s;
+  position:relative; flex-shrink:0;
+}
+.prod-toggle input:checked + .prod-toggle-track {
+  background:var(--bord); border-color:var(--bord);
+}
+.prod-toggle-thumb {
+  position:absolute; top:3px; left:3px;
+  width:18px; height:18px; border-radius:50%;
+  background:#fff; transition:transform .2s;
+  box-shadow:0 1px 3px rgba(0,0,0,.2);
+}
+.prod-toggle input:checked + .prod-toggle-track .prod-toggle-thumb {
+  transform:translateX(20px);
+}
+/* Prazo chips */
+.prazo-chip {
+  font-size:12px; font-weight:600; font-family:var(--font);
+  padding:6px 12px; border-radius:8px; cursor:pointer;
+  border:0.5px solid var(--border); background:var(--creme2);
+  color:var(--bord-esc); transition:.15s;
+}
+.prazo-chip:hover { border-color:var(--bord); color:var(--bord); }
+.prazo-chip.active { background:var(--bord); border-color:var(--bord); color:var(--ouro-cl); }
+`;
+  document.head.appendChild(s);
+})();

@@ -129,7 +129,10 @@ function renderProdutos(lista) {
             ? `<img src="${img}" alt="${p.name}" loading="lazy"/>`
             : `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>`
           }
-          ${catNome ? `<div class="product-tag"><span class="pill pill-pink">${catNome}</span></div>` : ''}
+          <div class="product-tag" style="display:flex;gap:4px;flex-wrap:wrap">
+            ${catNome ? `<span class="pill pill-pink">${catNome}</span>` : ''}
+            ${p.sob_encomenda ? `<span class="pill" style="background:rgba(140,94,56,.15);color:#8c5e38;border:0.5px solid rgba(140,94,56,.3);font-size:10px">📦 Sob encomenda</span>` : ''}
+          </div>
         </div>
         <div class="product-info">
           <div class="product-name">${p.name}</div>
@@ -213,6 +216,15 @@ function abrirProduto(id) {
           <p style="font-size:11px">Mínimo <strong>${p.min_quantity} un.</strong></p>
         </div>
       </div>
+      ${p.sob_encomenda ? `
+        <div style="display:flex;align-items:center;gap:10px;background:rgba(140,94,56,.08);border:0.5px solid rgba(140,94,56,.25);border-radius:10px;padding:10px 14px;margin-bottom:16px">
+          <span style="font-size:18px">📦</span>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:#8c5e38">Produto Sob Encomenda</div>
+            <div style="font-size:11px;color:var(--gray);margin-top:2px">Prazo de entrega: <strong>${p.prazo_dias || 30} dias corridos</strong> após confirmação do pedido</div>
+          </div>
+        </div>
+      ` : ''}
 
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
         <label style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:1px">Quantidade</label>
